@@ -2,11 +2,12 @@
 ## Title: DTC Raid Tracker
 ## Notes: WoW Addon that allows voting/counting after a boss fight to award points to players.
 ## Author: Voltrizzy
-## Version: 4.0.3
+## Version: 4.0.4
 ## SavedVariables: DTCRaidDB
 ## X-Wago-ID: 56ndd5G9
 ## X-Curse-Project-ID: 1442970
 
 
 DisneyTripWorker.lua
+
 
