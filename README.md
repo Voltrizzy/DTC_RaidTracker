@@ -1,6 +1,6 @@
 # DTC Raid Tracker (Disney Trip Controller)
 
-**Current Version:** 4.0.3 (Updated for WoW 12.0 Midnight)
+**Current Version:** 4.0.4 (Updated for WoW 12.0 Midnight)
 
 ## Overview
 DTC Raid Tracker is a specialized World of Warcraft addon designed to gamify raid attendance and performance. It allows raid members to vote on a "Winner" after every boss kill. Points are aggregated into a comprehensive leaderboard to determine who wins the ultimate prize: **A Trip to Disney!**
@@ -21,13 +21,9 @@ This addon handles everything from the voting popup to long-term database tracki
 * **Exportable:** One-click CSV export for external spreadsheet tracking.
 
 ### 🎭 Nickname Support
-* Assign custom nicknames to characters (e.g., "Voltrizzy" -> "Mike").
+* Assign custom nicknames to characters (e.g., "Garrana" -> "Sondenn").
 * Leaderboards can toggle between Character Names and Nicknames.
 * *Configurable via `/dtc config`.*
-
-### ⚖️ The "Mac vs. Pink" Rule
-* **Hardcoded Fairness Logic:** The addon enforces a strict rule where the player nicknamed "Mac" can never beat the player nicknamed "Pink".
-* *Logic:* If `Mac_Score >= Pink_Score`, Mac is automatically adjusted to `Pink_Score - 1`.
 
 ## Slash Commands
 
