@@ -1,5 +1,5 @@
 -- 1. INITIALIZATION
-local DTC_VERSION = "4.0.3" -- Voter Tracking History
+local DTC_VERSION = "4.0.4" -- Voter Tracking History
 local DTC_PREFIX = "DTCTRACKER"
 local f = CreateFrame("Frame")
 local isBossFight = false
@@ -802,3 +802,4 @@ SlashCmdList["DTC"] = function(msg)
     end
 
 end
+
