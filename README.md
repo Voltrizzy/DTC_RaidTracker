@@ -1,6 +1,6 @@
 # DTC Raid Tracker (Disney Trip Controller)
 
-**Current Version:** 4.0.0 (Updated for WoW 12.0 Midnight)
+**Current Version:** 4.0.3 (Updated for WoW 12.0 Midnight)
 
 ## Overview
 DTC Raid Tracker is a specialized World of Warcraft addon designed to gamify raid attendance and performance. It allows raid members to vote on a "Winner" after every boss kill. Points are aggregated into a comprehensive leaderboard to determine who wins the ultimate prize: **A Trip to Disney!**
