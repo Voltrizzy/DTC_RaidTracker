@@ -1,5 +1,5 @@
 -- 1. INITIALIZATION
-local DTC_VERSION = "3.3.0" -- Voter Tracking History
+local DTC_VERSION = "4.0.3" -- Voter Tracking History
 local DTC_PREFIX = "DTCTRACKER"
 local f = CreateFrame("Frame")
 local isBossFight = false
@@ -800,4 +800,5 @@ SlashCmdList["DTC"] = function(msg)
         print("  |cFF00FF00/dtc ver|r    - Check version")
         if UnitIsGroupLeader("player") then print("  |cFFFF0000/dtc config|r - Configure Nicknames |cFFFF0000(Leader Only)|r") end
     end
+
 end
