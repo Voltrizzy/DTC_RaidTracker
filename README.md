@@ -26,9 +26,9 @@ Current Version: **4.15.1**
 * **Export:** One-click CSV export for external spreadsheet analysis.
 
 ### ⚙️ Configuration (`/dtc config`)
-A fully integrated, RCLC-style settings menu with three tabs:
+A fully integrated, native-style settings menu with three tabs:
 1.  **General:** Maintenance tools (Test Vote, Version Check, Sync).
-2.  **Nicknames:** Assign custom nicknames to characters (e.g., "Voltrizzy" -> "Mike").
+2.  **Nicknames:** Assign custom nicknames to characters (e.g., "Voltrizzy" -> "Sondenn").
 3.  **Leaderboard:**
     * Reset Data (Local or Global).
     * **Announcement Format:** Choose how names appear in chat (Character, Nickname, or Both).
@@ -85,7 +85,7 @@ Data is automatically shared between users when the Raid Leader creates a "Final
 * **v4.15.1:** Updated default trip award message.
 * **v4.15.0:** Fixed award message variable `%s` to respect name formatting settings.
 * **v4.14.0:** Added customizable Award Messages and Announcement Name formats.
-* **v4.13.0:** Updated rules.
+* **v4.13.0:** Logic updates for scoring calculation.
 * **v4.12.0:** Added Difficulty filtering to the Leaderboard.
 * **v4.11.0:** Split Raid and Difficulty into separate columns in the History view.
 * **v4.10.0:** Added Raid Difficulty tracking (Normal/Heroic/Mythic) to history logs.
