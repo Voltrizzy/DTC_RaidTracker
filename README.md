@@ -1,91 +1,72 @@
-# DTC Raid Tracker (Disney Trip Champion)
+# DTC Raid Tracker
 
-**DTC Raid Tracker** is a World of Warcraft addon designed to gamify raid attendance and performance. It allows raid members to vote for a "Champion" after every boss kill, tracking points over time to determine who wins an all-expenses-paid trip to Disney World.
+**Author:** Voltrizzy  
+**Version:** 6.4.1  
+**Interface:** 12.0.0 (Midnight)
 
-Current Version: **4.15.1**
+## Overview
 
-## 🚀 Features
+**DTC Raid Tracker** is a specialized World of Warcraft addon designed to track, manage, and award votes for the "Disney Trip Champion" contest. It allows raid members to vote for MVPs after boss encounters, tracks scores across expansions and difficulties, and provides tools for the Raid Leader to manage the data.
 
-### 🗳️ Voting System
-* **Automatic Popup:** The voting window opens automatically after a boss encounter ends.
-* **Voting:** Every raid member gets 3 votes to distribute to their peers.
-* **Roster Awareness:** Shows current raid members with class colors.
-* **Test Mode:** Leaders can simulate a vote via the Config menu to test the UI.
+## Key Features
 
-### 🏆 Leaderboard
-* **Dynamic Filtering:** Filter scores by Time (All Time/Today/Trips Won), Expansion, Raid, Boss, and **Difficulty** (Normal/Heroic/Mythic).
-* **View Modes:** Toggle between Character Names and Nicknames.
-* **Award Trip:** A dedicated button for the Raid Leader to declare a winner.
-    * *Customizable Broadcast Message:* Configure the shout-out text in the settings.
-    * *Default Message:* "CONGRATULATIONS [Name]! You have won an all expenses paid trip to Disney World!"
+* **Automated Voting:** Voting window pops up automatically after a boss encounter ends.
+* **Roster Management:**
+    * Automatically captures player classes for colored names.
+    * Supports custom Nicknames (defaults to Character Name if not set).
+* **Leaderboard:**
+    * Filter by Expansion, Raid, Boss, Difficulty, or Time (All Time/Today/Trips).
+    * CSV Export functionality for external spreadsheet tracking.
+* **Data Synchronization:**
+    * **Targeted Push:** Send your history data to a specific player to keep officers in sync.
+    * **Granular Purge:** Delete history entries based on specific criteria (e.g., delete only "Classic" raids or specific dates).
 
-### 📜 History Log
-* **Detailed Records:** Keeps a permanent log of every finalized vote.
-* **Raid Difficulty:** Tracks the difficulty setting (LFR, Normal, Heroic, Mythic) for every kill.
-* **Filters:** Filter history by Date or specific Character Name.
-* **Export:** One-click CSV export for external spreadsheet analysis.
-
-### ⚙️ Configuration (`/dtc config`)
-A fully integrated, native-style settings menu with three tabs:
-1.  **General:** Maintenance tools (Test Vote, Version Check, Sync).
-2.  **Nicknames:** Assign custom nicknames to characters (e.g., "Voltrizzy" -> "Sondenn").
-3.  **Leaderboard:**
-    * Reset Data (Local or Global).
-    * **Announcement Format:** Choose how names appear in chat (Character, Nickname, or Both).
-    * **Award Message:** Customize the text displayed when awarding a trip.
-
----
-
-## 💻 Slash Commands
+## Slash Commands
 
 | Command | Description |
 | :--- | :--- |
-| `/dtc lb` | Opens the **Leaderboard** window. |
-| `/dtc vote` | Manually opens the **Voting** window. |
-| `/dtc history` | Opens the **History Log** (with CSV export). |
-| `/dtc config` | Opens the **Configuration** panel (Nicknames, Settings). |
-| `/dtc ver` | Checks the current version installed. |
-| `/dtc reset` | Quick command to reset local data (Emergency use). |
+| `/dtc vote` | Manually open the Voting window. |
+| `/dtc lb` | Open the Leaderboard window. |
+| `/dtc history` | Open the detailed History log. |
+| `/dtc config` | Open the Configuration/Options panel. |
+| `/dtc reset` | Emergency command to reset local data. |
+| `/dtc ver` | Print current version number. |
 
----
+## Configuration Guide
 
-## 📦 Installation
+Access the settings via **Options > AddOns > DTC Raid Tracker** or by typing `/dtc config`.
+
+### 1. General
+* **Test Vote Window:** Opens a simulation of the voting window to test UI layout.
+* **Version Check:** Pings the raid to see who has the addon installed.
+
+### 2. Nicknames
+* Manage the mapping between Character Names and real-life Nicknames.
+* *Note:* Class colors are preserved automatically once the addon "sees" a player in the group.
+
+### 3. Leaderboard
+* **Name Format:** Choose how names are displayed (Character Name, Nickname, or Both).
+* **Award Message:** Customize the shout message used when the "Award Trip" button is clicked.
+
+### 4. History & Sync
+* **Database Maintenance:** Reset local data or (Leader Only) reset the entire database.
+* **Sync Data:** Push specific history data (filtered by Exp/Raid/Date) to a target player.
+* **Purge Data:** Permanently delete history entries matching specific filters.
+
+### 5. Voting
+* **List Format:** Toggle the voting list between **"Show Players and Roles"** (Grouped by Tank/Healer/DPS) or **"Show Only Players"** (Alphabetical list).
+* **Announce Configuration:**
+    * **Results Header:** Custom text for the start of an announcement.
+    * **Winner Message:** Custom congratulations text for the #1 voter.
+    * **2nd/3rd Place Message:** Encouragement text for runners-up.
+    * **Lowest Votes Message:** Call-out text for players with the lowest votes.
+    * **Toggle:** Enable/Disable the "Lowest Votes" call-out.
+* **Finalize Configuration:** Custom text announced to the raid when voting is closed.
+
+*Note: Use `%s` in custom messages to insert the relevant Names or Boss Names.*
+
+## Installation
 
 1.  Download the latest release.
-2.  Extract the `DTC_RaidTracker` folder into your WoW Addons directory:
-    * `_retail_/Interface/AddOns/DTC_RaidTracker`
-3.  (Optional) If you are the Raid Leader, ensure you have the latest version to broadcast Sync data correctly.
-
----
-
-## 🛠️ Configuration Guide
-
-### Setting up Nicknames
-1.  Type `/dtc config` and select the **Nicknames** tab.
-2.  You will see a list of everyone in your current group, plus any previously saved characters.
-3.  Type a nickname in the box next to their name and press Enter.
-    * *Note:* Only the Raid Leader (or solo users) can edit nicknames. Raid members can view them in read-only mode.
-
-### Customizing the Award Message
-1.  Type `/dtc config` and select the **Leaderboard** tab.
-2.  Scroll down to **Award Configuration**.
-3.  Edit the text in the box. Use `%s` as a placeholder for the winner's name.
-    * *Example:* `Winner winner chicken dinner! %s takes it home!`
-
----
-
-## 🔄 Syncing Data
-Data is automatically shared between users when the Raid Leader creates a "Finalize" event.
-* **Manual Sync:** If you join late or miss data, the Raid Leader can click **"Broadcast Sync"** in the `/dtc config` -> **General** tab to push their database to the entire raid.
-
----
-
-## 📝 Recent Changelog
-
-* **v4.15.1:** Updated default trip award message.
-* **v4.15.0:** Fixed award message variable `%s` to respect name formatting settings.
-* **v4.14.0:** Added customizable Award Messages and Announcement Name formats.
-* **v4.13.0:** Logic updates for scoring calculation.
-* **v4.12.0:** Added Difficulty filtering to the Leaderboard.
-* **v4.11.0:** Split Raid and Difficulty into separate columns in the History view.
-* **v4.10.0:** Added Raid Difficulty tracking (Normal/Heroic/Mythic) to history logs.
+2.  Extract the `DTC_RaidTracker` folder to your `World of Warcraft/_retail_/Interface/AddOns/` directory.
+3.  Restart WoW.
