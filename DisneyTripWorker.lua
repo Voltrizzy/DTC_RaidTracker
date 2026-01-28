@@ -1,5 +1,5 @@
 -- 1. INITIALIZATION
-local DTC_VERSION = "6.4.1" -- UI Layout Tweak
+local DTC_VERSION = "6.8.0" -- Leaderboard Detail Toggle
 local DTC_PREFIX = "DTCTRACKER"
 local f = CreateFrame("Frame")
 local isBossFight = false
@@ -103,9 +103,8 @@ end
 
 function DTC_GetAnnounceName(name)
     local nick = DTCRaidDB.identities[name]
-    local fmt = DTCRaidDB.settings.announceFormat or "BOTH"
-    if not nick then return name end
-    if fmt == "CHAR" then return name elseif fmt == "NICK" then return nick else return name .. " (" .. nick .. ")" end
+    if nick and nick ~= "" then return nick end
+    return name
 end
 
 function DTC_EnsureNicknames()
@@ -149,15 +148,15 @@ f:SetScript("OnEvent", function(self, event, ...)
             
             -- Defaults
             DTCRaidDB.settings.awardMsg = DTCRaidDB.settings.awardMsg or "CONGRATULATIONS %s! You have won an all expenses paid trip to Disney World!"
-            DTCRaidDB.settings.announceFormat = DTCRaidDB.settings.announceFormat or "BOTH"
             DTCRaidDB.settings.voteSortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
             DTCRaidDB.settings.voteAnnounceHeader = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
             DTCRaidDB.settings.voteFinalizeMsg = DTCRaidDB.settings.voteFinalizeMsg or "Voting has been finalized for %s!"
-            
             DTCRaidDB.settings.voteWinMsg = DTCRaidDB.settings.voteWinMsg or "Congrats %s on getting the most votes!"
             DTCRaidDB.settings.voteRunnerUpMsg = DTCRaidDB.settings.voteRunnerUpMsg or "%s are right on your heels! Don't let up!"
             DTCRaidDB.settings.voteLowMsg = DTCRaidDB.settings.voteLowMsg or "%s, step your game up if you want a shot at Disney World!"
             if DTCRaidDB.settings.voteLowEnabled == nil then DTCRaidDB.settings.voteLowEnabled = true end
+            -- New Leaderboard Detail Setting
+            DTCRaidDB.settings.lbDetailMode = DTCRaidDB.settings.lbDetailMode or "ALL"
             
             DTC_InitOptionsPanel()
             DTC_EnsureNicknames() 
@@ -216,7 +215,18 @@ end
 function DTC_OpenVotingWindow() 
     DTC_CreateUI()
     if DTC_MainFrame:IsShown() then DTC_MainFrame:Hide() return end
-    DTC_MainFrame.title:SetText("Voting: " .. (lastBossName or "Test"))
+    
+    local titleText = lastBossName or "Test"
+    if not isTestMode then
+        local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
+        if diffName and diffName ~= "" then
+            titleText = "(" .. diffName .. ") " .. titleText
+        end
+    else
+        titleText = "(Test) " .. titleText
+    end
+    
+    DTC_MainFrame.title:SetText("Voting: " .. titleText)
     DTC_MainFrame:Show()
     DTC_RefreshVotingList() 
 end
@@ -224,7 +234,7 @@ end
 function DTC_CreateUI()
     if DTC_MainFrame then return end
     local frame = CreateFrame("Frame", "DTC_MainFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(350, 480); frame:SetClampedToScreen(true)
+    frame:SetSize(400, 480); frame:SetClampedToScreen(true)
     if DTCRaidDB.settings and DTCRaidDB.settings.votePos then local p = DTCRaidDB.settings.votePos; frame:SetPoint(p[1], UIParent, p[2], p[4], p[5]) else frame:SetPoint("CENTER") end
     frame:SetMovable(true); frame:EnableMouse(true); frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
@@ -250,7 +260,9 @@ function DTC_CreateUI()
                 C_ChatInfo.SendAddonMessage(DTC_PREFIX, "FINALIZE:"..p..","..v..","..lastBossName..","..raidName..","..dStr..","..(difficultyName or "Normal"), "RAID") 
             end
         end
-        local msg = DTCRaidDB.settings.voteFinalizeMsg:format(lastBossName or "Boss")
+        local bossNameWithDiff = lastBossName
+        if difficultyName and difficultyName ~= "" then bossNameWithDiff = "("..difficultyName..") " .. lastBossName end
+        local msg = DTCRaidDB.settings.voteFinalizeMsg:format(bossNameWithDiff)
         SendChatMessage(msg, "RAID")
         votingOpen = false; DTC_RefreshVotingList()
     end)
@@ -262,11 +274,15 @@ function DTC_CreateUI()
         local sorted = {}; for p, v in pairs(currentVotes) do if not p:find("_VOTED_BY_ME") and v > 0 then table.insert(sorted, {n=p, v=v}) end end
         table.sort(sorted, function(a,b) return a.v > b.v end)
         
-        -- Header
-        local head = DTCRaidDB.settings.voteAnnounceHeader:format(lastBossName or "Boss")
+        -- Header with Difficulty
+        local _, _, _, _, _, _, _, _, _, difficultyName = GetInstanceInfo()
+        local bossNameWithDiff = lastBossName
+        if difficultyName and difficultyName ~= "" then bossNameWithDiff = "("..difficultyName..") " .. lastBossName end
+        
+        local head = DTCRaidDB.settings.voteAnnounceHeader:format(bossNameWithDiff)
         SendChatMessage(head, "RAID")
         
-        -- List
+        -- List (Use Nicknames)
         for i=1, math.min(3, #sorted) do 
             local dName = DTC_GetAnnounceName(sorted[i].n)
             SendChatMessage(i .. ". " .. dName .. " (" .. sorted[i].v .. " pts)", "RAID") 
@@ -483,12 +499,29 @@ function DTC_RefreshNickOptions(content)
 end
 
 -- CONFIG DROPDOWN HELPERS
-local function DTC_SelectConfigFormat(self) DTCRaidDB.settings.announceFormat = self.arg1; UIDropDownMenu_SetText(DTC_OptionsAnnounceDD, self.value); CloseDropDownMenus() end
-function DTC_InitConfigFormatMenu(self, level)
-    local info = UIDropDownMenu_CreateInfo(); info.func = DTC_SelectConfigFormat
-    info.text = "Character Name"; info.arg1 = "CHAR"; info.value = "Character Name"; info.checked = (DTCRaidDB.settings.announceFormat == "CHAR"); UIDropDownMenu_AddButton(info, level)
-    info.text = "Nickname"; info.arg1 = "NICK"; info.value = "Nickname"; info.checked = (DTCRaidDB.settings.announceFormat == "NICK"); UIDropDownMenu_AddButton(info, level)
-    info.text = "Both"; info.arg1 = "BOTH"; info.value = "Both"; info.checked = (DTCRaidDB.settings.announceFormat == "BOTH"); UIDropDownMenu_AddButton(info, level)
+local function DTC_SelectLBDetail(self)
+    DTCRaidDB.settings.lbDetailMode = self.arg1
+    UIDropDownMenu_SetText(DTC_OptionsLBDetailDD, self.value)
+    CloseDropDownMenus()
+    if DTC_LeaderboardFrame and DTC_LeaderboardFrame:IsShown() then DTC_RefreshLeaderboard() end
+end
+
+function DTC_InitLBDetailMenu(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+    info.func = DTC_SelectLBDetail
+    info.text = "Show All Votes"
+    info.arg1 = "ALL"
+    info.value = "Show All Votes"
+    info.checked = (DTCRaidDB.settings.lbDetailMode == "ALL")
+    UIDropDownMenu_AddButton(info, level)
+
+    info = UIDropDownMenu_CreateInfo()
+    info.func = DTC_SelectLBDetail
+    info.text = "Show Only Nickname"
+    info.arg1 = "SIMPLE"
+    info.value = "Show Only Nickname"
+    info.checked = (DTCRaidDB.settings.lbDetailMode == "SIMPLE")
+    UIDropDownMenu_AddButton(info, level)
 end
 
 local function DTC_SelectVoteSort(self) DTCRaidDB.settings.voteSortMode = self.arg1; UIDropDownMenu_SetText(DTC_OptionsVoteSortDD, self.value); CloseDropDownMenus() end
@@ -539,9 +572,11 @@ function DTC_InitOptionsPanel()
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content); f2.content = content
     
     -- TAB 3: LEADERBOARD
-    local b3 = CreateGroupBox(f3, "Announcement Options", 580, 80); b3:SetPoint("TOPLEFT", 0, 0)
-    local la = b3:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); la:SetPoint("TOPLEFT", 15, -30); la:SetText("Name Format:")
-    local da = CreateFrame("Frame", "DTC_OptionsAnnounceDD", b3, "UIDropDownMenuTemplate"); da:SetPoint("LEFT", la, "RIGHT", 0, -2); UIDropDownMenu_SetWidth(da, 160); UIDropDownMenu_Initialize(da, DTC_InitConfigFormatMenu); local it="Both"; if DTCRaidDB.settings.announceFormat=="CHAR" then it="Character Name" elseif DTCRaidDB.settings.announceFormat=="NICK" then it="Nickname" end; UIDropDownMenu_SetText(da, it)
+    local b3 = CreateGroupBox(f3, "Leaderboard Options", 580, 80); b3:SetPoint("TOPLEFT", 0, 0)
+    local la = b3:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); la:SetPoint("TOPLEFT", 15, -30); la:SetText("Detail Level:")
+    local da = CreateFrame("Frame", "DTC_OptionsLBDetailDD", b3, "UIDropDownMenuTemplate"); da:SetPoint("LEFT", la, "RIGHT", 0, -2); UIDropDownMenu_SetWidth(da, 160); UIDropDownMenu_Initialize(da, DTC_InitLBDetailMenu); 
+    local it="Show All Votes"; if DTCRaidDB.settings.lbDetailMode=="SIMPLE" then it="Show Only Nickname" end; UIDropDownMenu_SetText(da, it)
+    
     local b4 = CreateGroupBox(f3, "Award Configuration", 580, 100); b4:SetPoint("TOPLEFT", b3, "BOTTOMLEFT", 0, -10)
     local lm = b4:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lm:SetPoint("TOPLEFT", 15, -30); lm:SetText("Winning Message (%s = Name):")
     local em = CreateFrame("EditBox", nil, b4, "InputBoxTemplate"); em:SetSize(540, 30); em:SetPoint("TOPLEFT", lm, "BOTTOMLEFT", 0, -10); em:SetAutoFocus(false); em:SetText(DTCRaidDB.settings.awardMsg or ""); em:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings.awardMsg=self:GetText() end); em:SetScript("OnEnterPressed", function(self) DTCRaidDB.settings.awardMsg=self:GetText(); self:ClearFocus() end)
@@ -602,7 +637,11 @@ function DTC_GetSortedData()
         local displayData = {}; for p, v in pairs(DTCRaidDB.trips) do local key = p; if viewMode == "NICK" and DTCRaidDB.identities[p] then key = DTCRaidDB.identities[p] end; displayData[key] = (displayData[key] or 0) + v end
         local sorted = {}; for n, v in pairs(displayData) do table.insert(sorted, {n=n, v=v}) end; table.sort(sorted, function(a,b) return a.v > b.v end); return sorted
     end
-    local rawData = {}
+    
+    -- NICKNAME AGGREGATION LOGIC
+    local nickData = {}
+    local rawData = {} 
+    
     if selTime == "ALL" and selDiff == "ALL" then
         if selExp == "ALL" then rawData = DTCRaidDB.global
         else if selRaid == "ALL" then local raids = STATIC_DATA[tonumber(selExp)] or {}; for rName, _ in pairs(raids) do if DTCRaidDB.raids[rName] then for p, v in pairs(DTCRaidDB.raids[rName]) do rawData[p] = (rawData[p] or 0) + v end end end
@@ -619,11 +658,27 @@ function DTC_GetSortedData()
             if pass then rawData[h.w] = (rawData[h.w] or 0) + h.p end
         end
     end
-    local displayData = {}
-    for charName, val in pairs(rawData) do local key = charName; if viewMode == "NICK" and DTCRaidDB.identities[charName] then key = DTCRaidDB.identities[charName] end; displayData[key] = (displayData[key] or 0) + val end
-    local pinkInRaid = false; if IsInGroup() then for i = 1, GetNumGroupMembers() do local name = GetRaidRosterInfo(i); if name and DTCRaidDB.identities[name] == "Pink" then pinkInRaid = true; break end end else local name = UnitName("player"); if name and DTCRaidDB.identities[name] == "Pink" then pinkInRaid = true end end
-    if pinkInRaid then local ms = displayData["Mac"]; local ps = displayData["Pink"]; if ms and ps then if ms >= ps then displayData["Mac"] = ps - 1 end end end
-    local sorted = {}; for n, v in pairs(displayData) do table.insert(sorted, {n=n, v=v}) end; table.sort(sorted, function(a,b) return a.v > b.v end); return sorted
+
+    -- Process Raw Data into Nicknames
+    for charName, val in pairs(rawData) do
+        local nick = DTCRaidDB.identities[charName] or charName
+        if not nickData[nick] then nickData[nick] = { total=0, chars={} } end
+        nickData[nick].total = nickData[nick].total + val
+        table.insert(nickData[nick].chars, {n=charName, v=val})
+    end
+    
+    -- Pink Rule Logic (Applied to Aggregate)
+    local pinkInRaid = false; if IsInGroup() then for i = 1, GetNumGroupMembers() do local name = GetRaidRosterInfo(i); if name and (DTCRaidDB.identities[name] == "Pink" or name == "Pink") then pinkInRaid = true; break end end else local name = UnitName("player"); if name and (DTCRaidDB.identities[name] == "Pink" or name == "Pink") then pinkInRaid = true end end
+    if pinkInRaid and nickData["Mac"] and nickData["Pink"] then
+        if nickData["Mac"].total >= nickData["Pink"].total then nickData["Mac"].total = nickData["Pink"].total - 1 end
+    end
+
+    local sorted = {}
+    for n, data in pairs(nickData) do
+        table.insert(sorted, {n=n, v=data.total, chars=data.chars})
+    end
+    table.sort(sorted, function(a,b) return a.v > b.v end)
+    return sorted
 end
 
 function DTC_CreateLeaderboardUI()
@@ -643,39 +698,87 @@ function DTC_CreateLeaderboardUI()
     local ddBoss = CreateFrame("Frame", "DTC_BossDD", lb, "UIDropDownMenuTemplate"); ddBoss:SetPoint("LEFT", ddRaid, "RIGHT", -20, 0); UIDropDownMenu_SetWidth(ddBoss, 160); UIDropDownMenu_Initialize(ddBoss, DTC_InitBossMenu); UIDropDownMenu_SetText(ddBoss, "Boss"); lb.ddBoss = ddBoss
     local ddDiff = CreateFrame("Frame", "DTC_DiffDD", lb, "UIDropDownMenuTemplate"); ddDiff:SetPoint("LEFT", ddBoss, "RIGHT", -20, 0); UIDropDownMenu_SetWidth(ddDiff, 110); UIDropDownMenu_Initialize(ddDiff, DTC_InitDiffMenu); UIDropDownMenu_SetText(ddDiff, "Difficulty"); lb.ddDiff = ddDiff
 
-    lb.viewToggle = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.viewToggle:SetSize(120, 22); lb.viewToggle:SetPoint("TOPRIGHT", -20, -45); lb.viewToggle:SetText("View: NICKNAMES")
-    lb.viewToggle:SetScript("OnClick", function() viewMode = (viewMode == "NICK") and "CHAR" or "NICK"; lb.viewToggle:SetText("View: " .. (viewMode == "NICK" and "NICKNAMES" or "CHARACTERS")); DTC_RefreshLeaderboard() end)
-
+    -- CLEANED UI: Removed View Toggle, History Button, and Export Button
+    
     local sf = CreateFrame("ScrollFrame", nil, lb, "UIPanelScrollFrameTemplate"); sf:SetPoint("TOPLEFT", 15, -80); sf:SetPoint("BOTTOMRIGHT", -30, 50)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content); lb.content = content
 
-    lb.configBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.configBtn:SetSize(90, 22); lb.configBtn:SetPoint("BOTTOMLEFT", 15, 15); lb.configBtn:SetText("Config IDs"); lb.configBtn:SetScript("OnClick", function() if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC_OptionsCategoryID) else InterfaceOptionsFrame_OpenToCategory("DTC Raid Tracker") end end); lb.configBtn:Hide()
     lb.announceBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.announceBtn:SetSize(90, 22); lb.announceBtn:SetPoint("BOTTOMLEFT", 15, 15); lb.announceBtn:SetText("Announce"); 
     lb.announceBtn:SetScript("OnClick", function() 
         local data = DTC_GetSortedData()
         local t = (selBoss~="ALL" and selBoss) or (selRaid~="ALL" and selRaid) or (selExp~="ALL" and EXPANSION_NAMES[tonumber(selExp)]) or "All Time"
         if selTime == "TODAY" then t = t .. " (Today)" end
-        SendChatMessage("--- DTC: " .. t .. " [" .. viewMode .. "] ---", "RAID")
-        for i=1, math.min(10, #data) do local dName = DTC_GetAnnounceName(data[i].n); SendChatMessage(i .. ". " .. dName .. ": " .. data[i].v, "RAID") end 
+        SendChatMessage("--- DTC: " .. t .. " [NICKNAMES] ---", "RAID")
+        for i=1, math.min(10, #data) do 
+            local dName = data[i].n -- Nickname
+            SendChatMessage(i .. ". " .. dName .. ": " .. data[i].v, "RAID") 
+        end 
     end)
     lb.awardBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.awardBtn:SetSize(100, 22); lb.awardBtn:SetPoint("LEFT", lb.announceBtn, "RIGHT", 5, 0); lb.awardBtn:SetText("Award Trip"); 
     lb.awardBtn:SetScript("OnClick", function() 
         local data = DTC_GetSortedData()
         if #data > 0 then 
-            local winnerName = data[1].n
+            local winnerName = data[1].n -- Nickname
             DTCRaidDB.trips[winnerName] = (DTCRaidDB.trips[winnerName] or 0) + 1
             SendChatMessage("--- DTC DISNEY TRIP AWARD ---", "RAID")
-            local msg = DTCRaidDB.settings.awardMsg:format(DTC_GetAnnounceName(winnerName))
+            local msg = DTCRaidDB.settings.awardMsg:format(winnerName)
             SendChatMessage(msg, "RAID")
             C_ChatInfo.SendAddonMessage(DTC_PREFIX, "SYNC_DATA:TRIP,"..winnerName..","..DTCRaidDB.trips[winnerName], "RAID")
             DTC_RefreshLeaderboard() 
         else print("|cFFFF0000DTC:|r No votes found to award.") end 
     end)
-    lb.histBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.histBtn:SetSize(80, 22); lb.histBtn:SetPoint("TOPLEFT", lb.configBtn, "BOTTOMLEFT", 0, -2); lb.histBtn:SetText("History"); lb.histBtn:SetScript("OnClick", function() DTC_CreateHistoryUI(); if DTC_HistoryFrame:IsShown() then DTC_HistoryFrame:Hide() else DTC_RefreshHistory(); DTC_HistoryFrame:Show() end end)
-    lb.exportBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.exportBtn:SetSize(100, 22); lb.exportBtn:SetPoint("BOTTOMLEFT", 495, 15); lb.exportBtn:SetText("Export CSV"); lb.exportBtn:SetScript("OnClick", function() local exportBuffer = { "Date,Raid,Boss,Winner,Points" }; for _, h in ipairs(DTCRaidDB.history) do table.insert(exportBuffer, string.format("%s,%s,%s,%s,%d", h.d, h.r or "?", h.b, h.w, h.p)) end; local str = table.concat(exportBuffer, "\n"); local eb = CreateFrame("EditBox", nil, lb, "InputBoxTemplate"); eb:SetSize(570, 30); eb:SetPoint("BOTTOM", 0, -35); eb:SetText(str); eb:HighlightText(); eb:SetFocus() end)
     lb.closeBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.closeBtn:SetSize(60, 22); lb.closeBtn:SetPoint("BOTTOMRIGHT", -30, 15); lb.closeBtn:SetText("Close"); lb.closeBtn:SetScript("OnClick", function() lb:Hide() end)
     lb:Hide()
 end
+
+function DTC_RefreshLeaderboard()
+    DTC_CreateLeaderboardUI()
+    local content = DTC_LeaderboardFrame.content
+    for _, child in ipairs({content:GetChildren()}) do child:Hide(); child:SetParent(nil) end
+    local isLeader = UnitIsGroupLeader("player")
+    DTC_LeaderboardFrame.announceBtn:SetShown(isLeader)
+    local isRaidLevel = (selExp ~= "ALL" and selRaid ~= "ALL" and selBoss == "ALL")
+    DTC_LeaderboardFrame.awardBtn:SetShown(isLeader and isRaidLevel)
+    
+    if selExp == "ALL" then 
+        UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddRaid); 
+        UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddBoss);
+        UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddDiff)
+    else 
+        UIDropDownMenu_EnableDropDown(DTC_LeaderboardFrame.ddRaid); 
+        if selRaid == "ALL" then 
+            UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddBoss)
+            UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddDiff)
+        else 
+            UIDropDownMenu_EnableDropDown(DTC_LeaderboardFrame.ddBoss)
+            UIDropDownMenu_EnableDropDown(DTC_LeaderboardFrame.ddDiff)
+        end 
+    end
+
+    local data = DTC_GetSortedData()
+    local yOffset = 0
+    for i, item in ipairs(data) do
+        -- Main Nickname Row
+        local row = CreateFrame("Frame", nil, content); row:SetSize(300, 20); row:SetPoint("TOPLEFT", 0, yOffset)
+        local t = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); t:SetPoint("LEFT", 5, 0)
+        t:SetText(item.n .. ": " .. item.v)
+        yOffset = yOffset - 20
+        
+        -- Sub Character Rows (ONLY IF NOT IN SIMPLE MODE)
+        if DTCRaidDB.settings.lbDetailMode ~= "SIMPLE" and item.chars then
+            for _, sub in ipairs(item.chars) do
+                local sRow = CreateFrame("Frame", nil, content); sRow:SetSize(300, 16); sRow:SetPoint("TOPLEFT", 0, yOffset)
+                local st = sRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall"); st:SetPoint("LEFT", 25, 0)
+                st:SetText("- " .. sub.n .. ": " .. sub.v)
+                st:SetTextColor(0.7, 0.7, 0.7)
+                yOffset = yOffset - 16
+            end
+        end
+        yOffset = yOffset - 5 -- Spacing between nicknames
+    end
+end
+
+-- *** RESTORED HISTORY FUNCTIONS ***
 
 function DTC_RefreshHistory()
     if not DTC_HistoryFrame then return end
@@ -694,12 +797,17 @@ function DTC_RefreshHistory()
     for _, h in ipairs(filtered) do
         local row = CreateFrame("Frame", nil, content); row:SetSize(800, 20); row:SetPoint("TOPLEFT", 0, yOffset)
         local tDate = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall"); tDate:SetPoint("LEFT", 0, 0); tDate:SetWidth(80); tDate:SetJustifyH("LEFT"); tDate:SetText(h.d)
+        
         local tRaid = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); tRaid:SetPoint("LEFT", 85, 0); tRaid:SetWidth(130); tRaid:SetJustifyH("LEFT"); tRaid:SetText(h.r)
+        
         local diffText = h.diff or ""
         local tDiff = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall"); tDiff:SetPoint("LEFT", 220, 0); tDiff:SetWidth(80); tDiff:SetJustifyH("LEFT"); tDiff:SetText(diffText)
+        
         local tBoss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); tBoss:SetPoint("LEFT", 305, 0); tBoss:SetWidth(130); tBoss:SetJustifyH("LEFT"); tBoss:SetText(h.b)
+        
         local champName = h.w; if DTCRaidDB.identities[h.w] then champName = h.w .. " ("..DTCRaidDB.identities[h.w]..")" end
         local tChamp = row:CreateFontString(nil, "OVERLAY", "GameFontNormal"); tChamp:SetPoint("LEFT", 440, 0); tChamp:SetWidth(100); tChamp:SetJustifyH("LEFT"); tChamp:SetText(champName)
+        
         local tVoters = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); tVoters:SetPoint("LEFT", 550, 0); tVoters:SetJustifyH("LEFT"); tVoters:SetText(h.v or "None")
         yOffset = yOffset - 20
     end
@@ -746,9 +854,9 @@ function DTC_SelectHName(self) hSelName=self.arg1; UIDropDownMenu_SetText(DTC_Hi
 
 function DTC_InitTimeMenu(self, level) local i=UIDropDownMenu_CreateInfo(); i.text="All Time"; i.arg1="ALL"; i.value="All Time"; i.func=DTC_SelectTime; i.checked=(selTime=="ALL"); UIDropDownMenu_AddButton(i, level); i.text="Today"; i.arg1="TODAY"; i.value="Today"; i.func=DTC_SelectTime; i.checked=(selTime=="TODAY"); UIDropDownMenu_AddButton(i, level); i.text="Trips Won"; i.arg1="TRIPS"; i.value="Trips Won"; i.func=DTC_SelectTime; i.checked=(selTime=="TRIPS"); UIDropDownMenu_AddButton(i, level) end
 function DTC_InitExpMenu(self, level) local i=UIDropDownMenu_CreateInfo(); i.text="None"; i.arg1="ALL"; i.value="Expansion"; i.func=DTC_SelectExp; i.checked=(selExp=="ALL"); UIDropDownMenu_AddButton(i, level); for x=11,0,-1 do i.text=EXPANSION_NAMES[x]; i.arg1=tostring(x); i.value=EXPANSION_NAMES[x]; i.func=DTC_SelectExp; i.checked=(selExp==tostring(x)); UIDropDownMenu_AddButton(i, level) end end
-function DTC_InitRaidMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selExp=="ALL" then i.text="Select Exp"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return end; i.text="None"; i.arg1="ALL"; i.value="Raid"; i.func=DTC_SelectRaid; i.checked=(selRaid=="ALL"); UIDropDownMenu_AddButton(i, level); if STATIC_DATA[tonumber(selExp)] then local rs={}; for k,_ in pairs(STATIC_DATA[tonumber(selExp)]) do table.insert(rs,k) end; table.sort(rs); for _,r in ipairs(rs) do i.text=r; i.arg1=r; i.value=r; i.func=DTC_SelectRaid; i.checked=(selRaid==r); UIDropDownMenu_AddButton(i, level) end end end
-function DTC_InitBossMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selRaid=="ALL" then i.text="Select Raid"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return end; i.text="None"; i.arg1="ALL"; i.value="Boss"; i.func=DTC_SelectBoss; i.checked=(selBoss=="ALL"); UIDropDownMenu_AddButton(i, level); if STATIC_DATA[tonumber(selExp)] and STATIC_DATA[tonumber(selExp)][selRaid] then for _,b in ipairs(STATIC_DATA[tonumber(selExp)][selRaid]) do i.text=b; i.arg1=b; i.value=b; i.func=DTC_SelectBoss; i.checked=(selBoss==b); UIDropDownMenu_AddButton(i, level) end end end
-function DTC_InitDiffMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selRaid=="ALL" then i.text="Select Raid"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return end; i.text="All Diffs"; i.arg1="ALL"; i.value="Difficulty"; i.func=DTC_SelectDiff; i.checked=(selDiff=="ALL"); UIDropDownMenu_AddButton(i, level); local ds=EXP_DIFFICULTIES[tonumber(selExp)] or EXP_DIFFICULTIES["DEFAULT"]; for _,d in ipairs(ds) do i.text=d; i.arg1=d; i.value=d; i.func=DTC_SelectDiff; i.checked=(selDiff==d); UIDropDownMenu_AddButton(i, level) end end
+function DTC_InitRaidMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selExp=="ALL" then i.text="Select Exp"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return; end; i.text="None"; i.arg1="ALL"; i.value="Raid"; i.func=DTC_SelectRaid; i.checked=(selRaid=="ALL"); UIDropDownMenu_AddButton(i, level); if STATIC_DATA[tonumber(selExp)] then local rs={}; for k,_ in pairs(STATIC_DATA[tonumber(selExp)]) do table.insert(rs,k) end; table.sort(rs); for _,r in ipairs(rs) do i.text=r; i.arg1=r; i.value=r; i.func=DTC_SelectRaid; i.checked=(selRaid==r); UIDropDownMenu_AddButton(i, level) end end end
+function DTC_InitBossMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selRaid=="ALL" then i.text="Select Raid"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return; end; i.text="None"; i.arg1="ALL"; i.value="Boss"; i.func=DTC_SelectBoss; i.checked=(selBoss=="ALL"); UIDropDownMenu_AddButton(i, level); if STATIC_DATA[tonumber(selExp)] and STATIC_DATA[tonumber(selExp)][selRaid] then for _,b in ipairs(STATIC_DATA[tonumber(selExp)][selRaid]) do i.text=b; i.arg1=b; i.value=b; i.func=DTC_SelectBoss; i.checked=(selBoss==b); UIDropDownMenu_AddButton(i, level) end end end
+function DTC_InitDiffMenu(self, level) local i=UIDropDownMenu_CreateInfo(); if selRaid=="ALL" then i.text="Select Raid"; i.disabled=true; UIDropDownMenu_AddButton(i, level); return; end; i.text="All Diffs"; i.arg1="ALL"; i.value="Difficulty"; i.func=DTC_SelectDiff; i.checked=(selDiff=="ALL"); UIDropDownMenu_AddButton(i, level); local ds=EXP_DIFFICULTIES[tonumber(selExp)] or EXP_DIFFICULTIES["DEFAULT"]; for _,d in ipairs(ds) do i.text=d; i.arg1=d; i.value=d; i.func=DTC_SelectDiff; i.checked=(selDiff==d); UIDropDownMenu_AddButton(i, level) end end
 function DTC_InitHDateMenu(self, level) local i=UIDropDownMenu_CreateInfo(); i.text="All Dates"; i.arg1="ALL"; i.func=DTC_SelectHDate; i.checked=(hSelDate=="ALL"); UIDropDownMenu_AddButton(i, level); local seen={}; local list={}; for _,h in ipairs(DTCRaidDB.history) do if not seen[h.d] then seen[h.d]=true; table.insert(list,h.d) end end; table.sort(list, function(a,b) return a>b end); for _,d in ipairs(list) do i.text=d; i.arg1=d; i.func=DTC_SelectHDate; i.checked=(hSelDate==d); UIDropDownMenu_AddButton(i, level) end end
 function DTC_InitHNameMenu(self, level) local i=UIDropDownMenu_CreateInfo(); i.text="All Names"; i.arg1="ALL"; i.func=DTC_SelectHName; i.checked=(hSelName=="ALL"); UIDropDownMenu_AddButton(i, level); local seen={}; local list={}; for _,h in ipairs(DTCRaidDB.history) do if not seen[h.w] then seen[h.w]=true; table.insert(list,h.w) end end; table.sort(list); for _,n in ipairs(list) do i.text=n; i.arg1=n; i.func=DTC_SelectHName; i.checked=(hSelName==n); UIDropDownMenu_AddButton(i, level) end end
 
