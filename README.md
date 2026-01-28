@@ -1,7 +1,7 @@
 # DTC Raid Tracker
 
 **Author:** Voltrizzy  
-**Version:** 6.4.1  
+**Version:** 6.8.0  
 **Interface:** 12.0.0 (Midnight)
 
 ## Overview
@@ -14,8 +14,10 @@
 * **Roster Management:**
     * Automatically captures player classes for colored names.
     * Supports custom Nicknames (defaults to Character Name if not set).
+    * **Nickname Aggregation:** Scores are tracked by Nickname. Multiple characters sharing the same Nickname contribute to a single total score.
 * **Leaderboard:**
     * Filter by Expansion, Raid, Boss, Difficulty, or Time (All Time/Today/Trips).
+    * **Detailed View:** View scores by Nickname, with an optional breakdown of the specific characters that contributed to that score.
     * CSV Export functionality for external spreadsheet tracking.
 * **Data Synchronization:**
     * **Targeted Push:** Send your history data to a specific player to keep officers in sync.
@@ -45,7 +47,9 @@ Access the settings via **Options > AddOns > DTC Raid Tracker** or by typing `/d
 * *Note:* Class colors are preserved automatically once the addon "sees" a player in the group.
 
 ### 3. Leaderboard
-* **Name Format:** Choose how names are displayed (Character Name, Nickname, or Both).
+* **Detail Level:**
+    * **Show All Votes:** Displays the Nickname total, followed by an indented list of characters that contributed to that score.
+    * **Show Only Nickname:** Displays only the Nickname and the total score.
 * **Award Message:** Customize the shout message used when the "Award Trip" button is clicked.
 
 ### 4. History & Sync
