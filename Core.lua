@@ -26,7 +26,7 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED"); 
 f:RegisterEvent("PLAYER_LOGOUT"); 
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
-f:RegisterEvent("ZONE_CHANGED_NEW_AREA") -- Added to catch zoning into raids
+f:RegisterEvent("ZONE_CHANGED_NEW_AREA") 
 
 f:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" and ... == folderName then
@@ -63,17 +63,18 @@ end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
 
--- AUTO-POPULATE LOGIC
+-- AUTO-POPULATE LOGIC (Updated to Exclude LFR)
 function DTC:CheckRosterForNicknames()
     if not IsInRaid() then return end
     
-    -- 1. Validate Zone
-    local name, instanceType, difficultyID, _, _, _, _, instanceID = GetInstanceInfo()
-    if instanceType ~= "raid" then return end -- Must be a raid instance
+    -- 1. Validate Zone & Difficulty
+    local name, instanceType, difficultyID = GetInstanceInfo()
+    if instanceType ~= "raid" then return end 
     
+    -- EXCLUDE LFR (7 = Legacy LFR, 17 = Modern LFR)
+    if difficultyID == 7 or difficultyID == 17 then return end
+
     -- 2. Validate against our Supported Raid List
-    -- (This prevents auto-adding from random legacy raids you might solo, if desired, 
-    --  or keeps it strictly to the content DTC tracks)
     local isValidRaid = false
     if DTC.Static and DTC.Static.RAID_DATA then
         for expID, raidList in pairs(DTC.Static.RAID_DATA) do
@@ -90,16 +91,17 @@ function DTC:CheckRosterForNicknames()
     for i = 1, GetNumGroupMembers() do
         local charName, _, _, _, _, classFile = GetRaidRosterInfo(i)
         if charName then
-            -- Handle realm names (e.g. "Player-Realm" -> "Player") if you prefer defaults without realms
-            -- charName = strsplit("-", charName) 
-            
-            -- If we don't know this person yet, set default nickname = name
-            if not DTCRaidDB.identities[charName] then
-                DTCRaidDB.identities[charName] = charName
-                -- Optional: print("|cFF00FF00DTC:|r Added " .. charName .. " to database.")
+            -- Remove realm if present to keep nicknames clean by default
+            if string.find(charName, "-") then
+                charName = strsplit("-", charName)
             end
             
-            -- Always keep class updated (useful if they changed chars but kept name, rare but possible)
+            -- If we don't know this person yet, set default nickname = CharacterName
+            if not DTCRaidDB.identities[charName] then
+                DTCRaidDB.identities[charName] = charName
+            end
+            
+            -- Always keep class updated
             if classFile then
                 DTCRaidDB.classes[charName] = classFile
             end
