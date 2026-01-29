@@ -1,0 +1,60 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+    <Frame name="DTC_LeaderboardFrame" inherits="DTC_WindowTemplate" parent="UIParent" hidden="true">
+        <Size x="900" y="600"/>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Frames>
+            <Frame parentKey="TimeDD" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="-5" y="-30"/> </Anchors>
+            </Frame>
+
+            <Frame parentKey="ExpDD" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.TimeDD" relativePoint="RIGHT" x="-25" y="0"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="RaidDD" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.ExpDD" relativePoint="RIGHT" x="-25" y="0"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="BossDD" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.RaidDD" relativePoint="RIGHT" x="-25" y="0"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="DiffDD" inherits="UIDropDownMenuTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeKey="$parent.BossDD" relativePoint="RIGHT" x="-25" y="0"/>
+                </Anchors>
+            </Frame>
+
+            <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="15" y="-80"/>
+                    <Anchor point="BOTTOMRIGHT" x="-35" y="50"/>
+                </Anchors>
+                <ScrollChild>
+                    <Frame parentKey="Content">
+                        <Size x="850" y="1"/>
+                    </Frame>
+                </ScrollChild>
+            </ScrollFrame>
+
+            <Button parentKey="AwardBtn" inherits="UIPanelButtonTemplate" text="Award Trip">
+                <Size x="140" y="25"/>
+                <Anchors>
+                    <Anchor point="BOTTOM" x="0" y="15"/>
+                </Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
+</Ui>

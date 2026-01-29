@@ -1,0 +1,210 @@
+local folderName, DTC = ...
+DTC.HistoryUI = {}
+
+local frame
+local rows = {} -- Frame pool
+
+-- 1. Initialize
+function DTC.HistoryUI:Init()
+    frame = DTC_HistoryFrame -- Defined in UI/History.xml
+    
+    -- Set Title
+    if frame.SetTitle then
+        frame:SetTitle("DTC Voting History")
+    end
+    
+    -- Handle Window Closing (Reset Test Mode when closed)
+    frame:SetScript("OnHide", function() 
+        DTC.isTestModeHist = false 
+    end)
+    
+    -- Export Button
+    frame.ExportBtn:SetScript("OnClick", function() self:ShowExportPopup() end)
+    
+    -- Setup Dropdowns (Set Widths to prevent clumping)
+    UIDropDownMenu_SetWidth(frame.DateDD, 130)
+    UIDropDownMenu_Initialize(frame.DateDD, function(self, level) 
+        DTC.HistoryUI:InitDateMenu(self, level) 
+    end)
+    UIDropDownMenu_SetText(frame.DateDD, "All Dates")
+    
+    UIDropDownMenu_SetWidth(frame.NameDD, 130)
+    UIDropDownMenu_Initialize(frame.NameDD, function(self, level) 
+        DTC.HistoryUI:InitNameMenu(self, level) 
+    end)
+    UIDropDownMenu_SetText(frame.NameDD, "All Names")
+    
+    -- Headers
+    if not frame.Headers then
+        frame.Headers = {}
+        local function CreateHeader(text, x)
+            local h = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            h:SetPoint("TOPLEFT", 20 + x, -65)
+            h:SetText(text)
+            return h
+        end
+        CreateHeader("Date", 0)
+        CreateHeader("Raid", 85)
+        CreateHeader("Diff", 220)
+        CreateHeader("Boss", 305)
+        CreateHeader("Winner", 440)
+        CreateHeader("Voters", 550)
+        frame.Headers = true
+    end
+end
+
+-- 2. Toggle
+function DTC.History:Toggle()
+    if not frame then DTC.HistoryUI:Init() end
+    
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        local title = "DTC Voting History"
+        if DTC.isTestModeHist then title = "(Test) " .. title end
+        if frame.SetTitle then frame:SetTitle(title) end
+        
+        frame:Show()
+        DTC.HistoryUI:UpdateList()
+    end
+end
+
+-- 3. Update List
+function DTC.HistoryUI:UpdateList()
+    if not frame or not frame:IsShown() then return end
+    
+    -- Clean rows
+    for _, r in ipairs(rows) do r:Hide() end
+    
+    -- Get Data
+    local data = DTC.History:GetData(DTC.isTestModeHist)
+    local content = frame.ListScroll.Content
+    local yOffset = 0
+    
+    for i, h in ipairs(data) do
+        local row = rows[i]
+        if not row then
+            row = CreateFrame("Frame", nil, content, "DTC_ListRowTemplate")
+            row:SetSize(800, 20)
+            
+            row.Date = row.Text 
+            
+            row.Raid = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.Raid:SetPoint("LEFT", 85, 0); row.Raid:SetWidth(130); row.Raid:SetJustifyH("LEFT")
+            
+            row.Diff = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            row.Diff:SetPoint("LEFT", 220, 0); row.Diff:SetWidth(80); row.Diff:SetJustifyH("LEFT")
+            
+            row.Boss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.Boss:SetPoint("LEFT", 305, 0); row.Boss:SetWidth(130); row.Boss:SetJustifyH("LEFT")
+            
+            row.Winner = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            row.Winner:SetPoint("LEFT", 440, 0); row.Winner:SetWidth(100); row.Winner:SetJustifyH("LEFT")
+            
+            row.Voters = row.Value 
+            row.Voters:ClearAllPoints()
+            row.Voters:SetPoint("LEFT", 550, 0); row.Voters:SetJustifyH("LEFT")
+            
+            table.insert(rows, row)
+        end
+        
+        row:SetPoint("TOPLEFT", 0, yOffset)
+        row.Date:SetText(h.d)
+        row.Raid:SetText(h.r)
+        row.Diff:SetText(h.diff or "")
+        row.Boss:SetText(h.b)
+        
+        local wName = h.w
+        if DTCRaidDB.identities and DTCRaidDB.identities[h.w] then
+            wName = h.w .. " (" .. DTCRaidDB.identities[h.w] .. ")"
+        end
+        row.Winner:SetText(wName)
+        
+        row.Voters:SetText(h.v or "None")
+        
+        row:Show()
+        yOffset = yOffset - 20
+    end
+end
+
+-- 4. CSV Popup
+function DTC.HistoryUI:ShowExportPopup()
+    local str = DTC.History:GetCSV()
+    local p = DTC_ExportPopup
+    if not p then
+        p = CreateFrame("Frame", "DTC_ExportPopup", frame, "DTC_WindowTemplate")
+        p:SetSize(500, 300)
+        p:SetPoint("CENTER", 0, 0)
+        p:SetFrameStrata("DIALOG")
+        if p.SetTitle then p:SetTitle("Export Data (Ctrl+C)") end
+        
+        p.Scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
+        p.Scroll:SetPoint("TOPLEFT", 10, -30)
+        p.Scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+        
+        p.EditBox = CreateFrame("EditBox", nil, p.Scroll)
+        p.EditBox:SetMultiLine(true)
+        p.EditBox:SetFontObject(ChatFontNormal)
+        p.EditBox:SetWidth(460)
+        p.Scroll:SetScrollChild(p.EditBox)
+        p.EditBox:SetScript("OnEscapePressed", function() p:Hide() end)
+    end
+    p.EditBox:SetText(str)
+    p.EditBox:HighlightText()
+    p:Show()
+end
+
+-- 5. Dropdown Init Helpers (Fixed Checkboxes)
+function DTC.HistoryUI:InitDateMenu(menu, level)
+    local dates = DTC.History:GetUniqueMenus()
+    local info = UIDropDownMenu_CreateInfo()
+    
+    info.text = "All Dates"
+    info.value = "ALL"
+    info.checked = (DTC.History.Filters.Date == "ALL")
+    info.func = function() 
+        DTC.History.Filters.Date = "ALL"
+        UIDropDownMenu_SetText(menu, "All Dates")
+        self:UpdateList() 
+    end
+    UIDropDownMenu_AddButton(info, level)
+    
+    for _, d in ipairs(dates) do
+        info.text = d
+        info.value = d
+        info.checked = (DTC.History.Filters.Date == d)
+        info.func = function() 
+            DTC.History.Filters.Date = d
+            UIDropDownMenu_SetText(menu, d)
+            self:UpdateList() 
+        end
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
+
+function DTC.HistoryUI:InitNameMenu(menu, level)
+    local _, names = DTC.History:GetUniqueMenus()
+    local info = UIDropDownMenu_CreateInfo()
+    
+    info.text = "All Names"
+    info.value = "ALL"
+    info.checked = (DTC.History.Filters.Name == "ALL")
+    info.func = function() 
+        DTC.History.Filters.Name = "ALL"
+        UIDropDownMenu_SetText(menu, "All Names")
+        self:UpdateList() 
+    end
+    UIDropDownMenu_AddButton(info, level)
+    
+    for _, n in ipairs(names) do
+        info.text = n
+        info.value = n
+        info.checked = (DTC.History.Filters.Name == n)
+        info.func = function() 
+            DTC.History.Filters.Name = n
+            UIDropDownMenu_SetText(menu, n)
+            self:UpdateList() 
+        end
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
