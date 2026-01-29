@@ -1,0 +1,68 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+    <Frame name="DTC_WindowTemplate" virtual="true" inherits="PortraitFrameTemplate" movable="true" enableMouse="true" toplevel="true" clampedToScreen="true">
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="StatusText" inherits="GameFontHighlightSmall">
+                    <Anchors>
+                        <Anchor point="BOTTOMLEFT" x="15" y="10"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        
+        <Frames>
+            <Frame parentKey="Inset" inherits="InsetFrameTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-60"/>
+                    <Anchor point="BOTTOMRIGHT" x="-6" y="26"/>
+                </Anchors>
+            </Frame>
+        </Frames>
+
+        <Scripts>
+            <OnLoad>
+                -- MODERN API FIX: Use SetPortraitToAsset instead of the removed global
+                if self.SetPortraitToAsset then
+                    self:SetPortraitToAsset("Interface\\Icons\\garrison_building_storehouse")
+                end
+                
+                -- Set Title using the proper key for PortraitFrameTemplate
+                if self.SetTitle then
+                    self:SetTitle("DTC Tracker")
+                elseif self.TitleText then
+                    self.TitleText:SetText("DTC Tracker")
+                end
+                
+                -- Make draggable
+                self:RegisterForDrag("LeftButton")
+            </OnLoad>
+            <OnDragStart>
+                self:StartMoving()
+            </OnDragStart>
+            <OnDragStop>
+                self:StopMovingOrSizing()
+            </OnDragStop>
+        </Scripts>
+    </Frame>
+
+    <Frame name="DTC_ListRowTemplate" virtual="true">
+        <Size x="300" y="20"/>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="LEFT" x="5" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Value" inherits="GameFontNormal" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="RIGHT" x="-5" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
+</Ui>
