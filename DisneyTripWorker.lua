@@ -1,5 +1,5 @@
 -- 1. INITIALIZATION
-local DTC_VERSION = "6.8.0" -- Leaderboard Detail Toggle
+local DTC_VERSION = "6.9.2" -- UI Adjustment (General Options Height)
 local DTC_PREFIX = "DTCTRACKER"
 local f = CreateFrame("Frame")
 local isBossFight = false
@@ -11,6 +11,9 @@ local viewMode = "NICK"
 local lastBossName = "No Recent Boss"
 local votingOpen = false 
 local isTestMode = false 
+-- Test Flags
+local isTestModeLB = false
+local isTestModeHist = false
 
 -- Forward Declarations
 DTC_RefreshLeaderboard = nil
@@ -39,6 +42,19 @@ local EXP_DIFFICULTIES = {
     [1] = {"Normal"},
     [2] = {"10m Normal", "25m Normal", "10m Heroic", "25m Heroic"}, 
     ["DEFAULT"] = {"LFR", "Normal", "Heroic", "Mythic", "10m Normal", "25m Normal", "10m Heroic", "25m Heroic"}
+}
+
+-- MOCK DATA FOR TESTS
+local MOCK_LB_DATA = {
+    {n="Mickey", v=50, chars={{n="Mickey", v=25}, {n="Steamboat", v=25}}},
+    {n="Donald", v=40, chars={{n="Donald", v=40}}},
+    {n="Goofy", v=10, chars={{n="Goofy", v=10}}}
+}
+
+local MOCK_HIST_DATA = {
+    {d="2026-01-28", r="Nerub-ar Palace", diff="Mythic", b="Queen Ansurek", w="Mickey", p=1, v="20"},
+    {d="2026-01-27", r="Nerub-ar Palace", diff="Heroic", b="Silken Court", w="Donald", p=1, v="19"},
+    {d="2026-01-20", r="Liberation of Undermine", diff="Normal", b="Gallywix", w="Goofy", p=1, v="5"}
 }
 
 -- FULL STATIC DATA
@@ -121,13 +137,7 @@ function DTC_EnsureNicknames()
 end
 
 function DTC_RebuildAggregates()
-    DTCRaidDB.global = {}; DTCRaidDB.raids = {}; DTCRaidDB.bosses = {}; DTCRaidDB.trips = DTCRaidDB.trips or {}
-    for _, h in ipairs(DTCRaidDB.history) do
-        local pts = h.p or 0; local winner = h.w
-        DTCRaidDB.global[winner] = (DTCRaidDB.global[winner] or 0) + pts
-        DTCRaidDB.raids[h.r] = DTCRaidDB.raids[h.r] or {}; DTCRaidDB.raids[h.r][winner] = (DTCRaidDB.raids[h.r][winner] or 0) + pts
-        DTCRaidDB.bosses[h.b] = DTCRaidDB.bosses[h.b] or {}; DTCRaidDB.bosses[h.b][winner] = (DTCRaidDB.bosses[h.b][winner] or 0) + pts
-    end
+    -- Aggregation happens dynamically now in GetSortedData
     if DTC_RefreshLeaderboard then DTC_RefreshLeaderboard() end
 end
 
@@ -151,11 +161,11 @@ f:SetScript("OnEvent", function(self, event, ...)
             DTCRaidDB.settings.voteSortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
             DTCRaidDB.settings.voteAnnounceHeader = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
             DTCRaidDB.settings.voteFinalizeMsg = DTCRaidDB.settings.voteFinalizeMsg or "Voting has been finalized for %s!"
+            
             DTCRaidDB.settings.voteWinMsg = DTCRaidDB.settings.voteWinMsg or "Congrats %s on getting the most votes!"
             DTCRaidDB.settings.voteRunnerUpMsg = DTCRaidDB.settings.voteRunnerUpMsg or "%s are right on your heels! Don't let up!"
             DTCRaidDB.settings.voteLowMsg = DTCRaidDB.settings.voteLowMsg or "%s, step your game up if you want a shot at Disney World!"
             if DTCRaidDB.settings.voteLowEnabled == nil then DTCRaidDB.settings.voteLowEnabled = true end
-            -- New Leaderboard Detail Setting
             DTCRaidDB.settings.lbDetailMode = DTCRaidDB.settings.lbDetailMode or "ALL"
             
             DTC_InitOptionsPanel()
@@ -274,7 +284,6 @@ function DTC_CreateUI()
         local sorted = {}; for p, v in pairs(currentVotes) do if not p:find("_VOTED_BY_ME") and v > 0 then table.insert(sorted, {n=p, v=v}) end end
         table.sort(sorted, function(a,b) return a.v > b.v end)
         
-        -- Header with Difficulty
         local _, _, _, _, _, _, _, _, _, difficultyName = GetInstanceInfo()
         local bossNameWithDiff = lastBossName
         if difficultyName and difficultyName ~= "" then bossNameWithDiff = "("..difficultyName..") " .. lastBossName end
@@ -282,26 +291,22 @@ function DTC_CreateUI()
         local head = DTCRaidDB.settings.voteAnnounceHeader:format(bossNameWithDiff)
         SendChatMessage(head, "RAID")
         
-        -- List (Use Nicknames)
         for i=1, math.min(3, #sorted) do 
             local dName = DTC_GetAnnounceName(sorted[i].n)
             SendChatMessage(i .. ". " .. dName .. " (" .. sorted[i].v .. " pts)", "RAID") 
         end
         
-        -- Winner Msg
         if #sorted >= 1 then
             local winName = DTC_GetAnnounceName(sorted[1].n)
             SendChatMessage(DTCRaidDB.settings.voteWinMsg:format(winName), "RAID")
         end
         
-        -- Runners Up
         if #sorted >= 2 then
             local runners = DTC_GetAnnounceName(sorted[2].n)
             if sorted[3] then runners = runners .. " & " .. DTC_GetAnnounceName(sorted[3].n) end
             SendChatMessage(DTCRaidDB.settings.voteRunnerUpMsg:format(runners), "RAID")
         end
         
-        -- Low Votes
         if DTCRaidDB.settings.voteLowEnabled and #sorted > 0 then
             local minScore = sorted[#sorted].v
             local losers = {}
@@ -562,9 +567,14 @@ function DTC_InitOptionsPanel()
     for i, t in ipairs(panel.Tabs) do t:SetScript("OnClick", function() UpdTabs(i) end) end; UpdTabs(1)
     
     -- TAB 1: GENERAL
-    local b1 = CreateGroupBox(f1, "General Options", 580, 80); b1:SetPoint("TOPLEFT", 0, 0)
+    local b1 = CreateGroupBox(f1, "General Options", 580, 100); b1:SetPoint("TOPLEFT", 0, 0)
     local btnTest = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate"); btnTest:SetSize(140, 24); btnTest:SetPoint("TOPLEFT", 15, -40); btnTest:SetText("Test Vote Window"); btnTest:SetScript("OnClick", function() isTestMode=true; votingOpen=true; lastBossName="Test Boss"; currentVotes={}; myVotesLeft=3; DTC_OpenVotingWindow() end)
-    local btnVer = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate"); btnVer:SetSize(140, 24); btnVer:SetPoint("LEFT", btnTest, "RIGHT", 10, 0); btnVer:SetText("Version Check"); btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC_PREFIX, "VER_QUERY", "RAID") end)
+    
+    -- MOCK TEST WINDOW BUTTONS
+    local btnTestLB = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate"); btnTestLB:SetSize(140, 24); btnTestLB:SetPoint("LEFT", btnTest, "RIGHT", 10, 0); btnTestLB:SetText("Test Leaderboard"); btnTestLB:SetScript("OnClick", function() isTestModeLB=true; DTC_CreateLeaderboardUI(); DTC_LeaderboardFrame:Show(); DTC_RefreshLeaderboard() end)
+    local btnTestHist = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate"); btnTestHist:SetSize(140, 24); btnTestHist:SetPoint("LEFT", btnTestLB, "RIGHT", 10, 0); btnTestHist:SetText("Test History"); btnTestHist:SetScript("OnClick", function() isTestModeHist=true; DTC_CreateHistoryUI(); DTC_HistoryFrame:Show(); DTC_RefreshHistory() end)
+    
+    local btnVer = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate"); btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check"); btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC_PREFIX, "VER_QUERY", "RAID") end)
     
     -- TAB 2: NICKNAMES
     local b2 = CreateGroupBox(f2, "Roster Configuration", 580, 400); b2:SetPoint("TOPLEFT", 0, 0)
@@ -633,6 +643,7 @@ end
 
 -- 6. LEADERBOARD / HISTORY FUNCTIONS
 function DTC_GetSortedData()
+    if isTestModeLB then return MOCK_LB_DATA end
     if selTime == "TRIPS" then
         local displayData = {}; for p, v in pairs(DTCRaidDB.trips) do local key = p; if viewMode == "NICK" and DTCRaidDB.identities[p] then key = DTCRaidDB.identities[p] end; displayData[key] = (displayData[key] or 0) + v end
         local sorted = {}; for n, v in pairs(displayData) do table.insert(sorted, {n=n, v=v}) end; table.sort(sorted, function(a,b) return a.v > b.v end); return sorted
@@ -698,36 +709,31 @@ function DTC_CreateLeaderboardUI()
     local ddBoss = CreateFrame("Frame", "DTC_BossDD", lb, "UIDropDownMenuTemplate"); ddBoss:SetPoint("LEFT", ddRaid, "RIGHT", -20, 0); UIDropDownMenu_SetWidth(ddBoss, 160); UIDropDownMenu_Initialize(ddBoss, DTC_InitBossMenu); UIDropDownMenu_SetText(ddBoss, "Boss"); lb.ddBoss = ddBoss
     local ddDiff = CreateFrame("Frame", "DTC_DiffDD", lb, "UIDropDownMenuTemplate"); ddDiff:SetPoint("LEFT", ddBoss, "RIGHT", -20, 0); UIDropDownMenu_SetWidth(ddDiff, 110); UIDropDownMenu_Initialize(ddDiff, DTC_InitDiffMenu); UIDropDownMenu_SetText(ddDiff, "Difficulty"); lb.ddDiff = ddDiff
 
-    -- CLEANED UI: Removed View Toggle, History Button, and Export Button
-    
     local sf = CreateFrame("ScrollFrame", nil, lb, "UIPanelScrollFrameTemplate"); sf:SetPoint("TOPLEFT", 15, -80); sf:SetPoint("BOTTOMRIGHT", -30, 50)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content); lb.content = content
 
-    lb.announceBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.announceBtn:SetSize(90, 22); lb.announceBtn:SetPoint("BOTTOMLEFT", 15, 15); lb.announceBtn:SetText("Announce"); 
-    lb.announceBtn:SetScript("OnClick", function() 
-        local data = DTC_GetSortedData()
-        local t = (selBoss~="ALL" and selBoss) or (selRaid~="ALL" and selRaid) or (selExp~="ALL" and EXPANSION_NAMES[tonumber(selExp)]) or "All Time"
-        if selTime == "TODAY" then t = t .. " (Today)" end
-        SendChatMessage("--- DTC: " .. t .. " [NICKNAMES] ---", "RAID")
-        for i=1, math.min(10, #data) do 
-            local dName = data[i].n -- Nickname
-            SendChatMessage(i .. ". " .. dName .. ": " .. data[i].v, "RAID") 
-        end 
-    end)
-    lb.awardBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.awardBtn:SetSize(100, 22); lb.awardBtn:SetPoint("LEFT", lb.announceBtn, "RIGHT", 5, 0); lb.awardBtn:SetText("Award Trip"); 
+    -- SINGLE CENTERED AWARD BUTTON
+    lb.awardBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate")
+    lb.awardBtn:SetSize(120, 25)
+    lb.awardBtn:SetPoint("BOTTOM", 0, 15)
+    lb.awardBtn:SetText("Award Trip")
     lb.awardBtn:SetScript("OnClick", function() 
+        if isTestModeLB then print("|cFFFF0000DTC:|r Cannot award trips in Test Mode."); return end
         local data = DTC_GetSortedData()
         if #data > 0 then 
-            local winnerName = data[1].n -- Nickname
+            local winnerName = data[1].n -- Nickname from aggregated data
             DTCRaidDB.trips[winnerName] = (DTCRaidDB.trips[winnerName] or 0) + 1
             SendChatMessage("--- DTC DISNEY TRIP AWARD ---", "RAID")
             local msg = DTCRaidDB.settings.awardMsg:format(winnerName)
             SendChatMessage(msg, "RAID")
             C_ChatInfo.SendAddonMessage(DTC_PREFIX, "SYNC_DATA:TRIP,"..winnerName..","..DTCRaidDB.trips[winnerName], "RAID")
             DTC_RefreshLeaderboard() 
-        else print("|cFFFF0000DTC:|r No votes found to award.") end 
+        else 
+            print("|cFFFF0000DTC:|r No votes found to award.") 
+        end 
     end)
-    lb.closeBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.closeBtn:SetSize(60, 22); lb.closeBtn:SetPoint("BOTTOMRIGHT", -30, 15); lb.closeBtn:SetText("Close"); lb.closeBtn:SetScript("OnClick", function() lb:Hide() end)
+
+    lb.closeBtn = CreateFrame("Button", nil, lb, "UIPanelButtonTemplate"); lb.closeBtn:SetSize(60, 22); lb.closeBtn:SetPoint("BOTTOMRIGHT", -30, 15); lb.closeBtn:SetText("Close"); lb.closeBtn:SetScript("OnClick", function() lb:Hide(); isTestModeLB=false end)
     lb:Hide()
 end
 
@@ -736,9 +742,9 @@ function DTC_RefreshLeaderboard()
     local content = DTC_LeaderboardFrame.content
     for _, child in ipairs({content:GetChildren()}) do child:Hide(); child:SetParent(nil) end
     local isLeader = UnitIsGroupLeader("player")
-    DTC_LeaderboardFrame.announceBtn:SetShown(isLeader)
-    local isRaidLevel = (selExp ~= "ALL" and selRaid ~= "ALL" and selBoss == "ALL")
-    DTC_LeaderboardFrame.awardBtn:SetShown(isLeader and isRaidLevel)
+    
+    -- Show Award Button only to Leader OR in Test Mode
+    DTC_LeaderboardFrame.awardBtn:SetShown(isLeader or isTestModeLB)
     
     if selExp == "ALL" then 
         UIDropDownMenu_DisableDropDown(DTC_LeaderboardFrame.ddRaid); 
@@ -785,11 +791,16 @@ function DTC_RefreshHistory()
     local content = DTC_HistoryFrame.content
     for _, child in ipairs({content:GetChildren()}) do child:Hide(); child:SetParent(nil) end
     
+    local sourceData = DTCRaidDB.history
+    if isTestModeHist then sourceData = MOCK_HIST_DATA end
+
     local filtered = {}
-    for _, h in ipairs(DTCRaidDB.history) do
+    for _, h in ipairs(sourceData) do
         local pass = true
-        if hSelDate ~= "ALL" and h.d ~= hSelDate then pass = false end
-        if hSelName ~= "ALL" and h.w ~= hSelName then pass = false end
+        if not isTestModeHist then
+            if hSelDate ~= "ALL" and h.d ~= hSelDate then pass = false end
+            if hSelName ~= "ALL" and h.w ~= hSelName then pass = false end
+        end
         if pass then table.insert(filtered, h) end
     end
 
@@ -838,7 +849,7 @@ function DTC_CreateHistoryUI()
     local sf = CreateFrame("ScrollFrame", nil, hf, "UIPanelScrollFrameTemplate"); sf:SetPoint("TOPLEFT", 20, -95); sf:SetPoint("BOTTOMRIGHT", -30, 50)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(800, 1); sf:SetScrollChild(content); hf.content = content
 
-    local closeBtn = CreateFrame("Button", nil, hf, "UIPanelButtonTemplate"); closeBtn:SetSize(80, 25); closeBtn:SetPoint("BOTTOMRIGHT", -20, 15); closeBtn:SetText("Close"); closeBtn:SetScript("OnClick", function() hf:Hide() end)
+    local closeBtn = CreateFrame("Button", nil, hf, "UIPanelButtonTemplate"); closeBtn:SetSize(80, 25); closeBtn:SetPoint("BOTTOMRIGHT", -20, 15); closeBtn:SetText("Close"); closeBtn:SetScript("OnClick", function() hf:Hide(); isTestModeHist=false end)
     local exportBtn = CreateFrame("Button", nil, hf, "UIPanelButtonTemplate"); exportBtn:SetSize(100, 25); exportBtn:SetPoint("RIGHT", closeBtn, "LEFT", -10, 0); exportBtn:SetText("Export CSV"); exportBtn:SetScript("OnClick", function() local exportBuffer = { "Date,Raid,Diff,Boss,Name,Points,Voters" }; for _, h in ipairs(DTCRaidDB.history) do table.insert(exportBuffer, string.format("%s,%s,%s,%s,%s,%d,%s", h.d, h.r, h.diff or "", h.b, h.w, h.p, h.v or "")) end; local str = table.concat(exportBuffer, "\n"); local eb = CreateFrame("EditBox", nil, hf, "InputBoxTemplate"); eb:SetSize(600, 30); eb:SetPoint("BOTTOM", 0, -10); eb:SetText(str); eb:HighlightText(); eb:SetFocus() end)
     hf:Hide()
 end
