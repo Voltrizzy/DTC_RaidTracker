@@ -1,7 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
-    <Frame name="DTC_WindowTemplate" virtual="true" inherits="PortraitFrameTemplate" movable="true" enableMouse="true" toplevel="true" clampedToScreen="true">
+    <Frame name="DTC_WindowTemplate" inherits="BasicFrameTemplate" virtual="true" toplevel="true" movable="true" enableMouse="true" clampedToScreen="true">
         <Layers>
             <Layer level="OVERLAY">
                 <FontString parentKey="StatusText" inherits="GameFontHighlightSmall">
@@ -15,20 +15,14 @@
         <Frames>
             <Frame parentKey="Inset" inherits="InsetFrameTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" x="4" y="-60"/>
-                    <Anchor point="BOTTOMRIGHT" x="-6" y="26"/>
+                    <Anchor point="TOPLEFT" x="4" y="-24"/> <Anchor point="BOTTOMRIGHT" x="-6" y="26"/>
                 </Anchors>
             </Frame>
         </Frames>
 
         <Scripts>
             <OnLoad>
-                -- MODERN API FIX: Use SetPortraitToAsset instead of the removed global
-                if self.SetPortraitToAsset then
-                    self:SetPortraitToAsset("Interface\\Icons\\garrison_building_storehouse")
-                end
-                
-                -- Set Title using the proper key for PortraitFrameTemplate
+                -- Set the Title
                 if self.SetTitle then
                     self:SetTitle("DTC Tracker")
                 elseif self.TitleText then
