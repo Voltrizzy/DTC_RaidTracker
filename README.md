@@ -1,7 +1,7 @@
 # DTC Raid Tracker
 
 **Author:** Voltrizzy  
-**Version:** 6.9.2  
+**Version:** 6.8.0  
 **Interface:** 12.0.0 (Midnight)
 
 ## Overview
