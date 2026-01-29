@@ -1,7 +1,6 @@
 local folderName, DTC = ...
 DTC.Config = {}
 
--- Helper to create the gray borders
 local function CreateGroupBox(parent, title, width, height)
     local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     frame:SetSize(width, height)
@@ -16,7 +15,6 @@ function DTC.Config:Init()
     DTCRaidDB = DTCRaidDB or {}
     DTCRaidDB.settings = DTCRaidDB.settings or {}
 
-    -- Main Panel
     local panel = CreateFrame("Frame", "DTC_OptionsPanel")
     panel.name = "DTC Raid Tracker"
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -24,7 +22,6 @@ function DTC.Config:Init()
     
     panel.Tabs = {}; panel.SubFrames = {}
     
-    -- Tab Switching Logic
     local function SelectTab(id)
         for i, tab in ipairs(panel.Tabs) do
             if i == id then 
@@ -86,30 +83,111 @@ end
 function DTC.Config:BuildNicknamesTab(frame)
     local box = CreateGroupBox(frame, "Roster Configuration", 580, 400)
     box:SetPoint("TOPLEFT", 0, 0)
+    
+    -- ScrollFrame to handle many rows
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigNickScroll", box, "UIPanelScrollFrameTemplate")
-    sf:SetPoint("TOPLEFT", 10, -35); sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    sf:SetPoint("TOPLEFT", 10, -35)
+    sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    
     local content = CreateFrame("Frame", nil, sf)
-    content:SetSize(540, 1); sf:SetScrollChild(content)
+    content:SetSize(540, 1) 
+    sf:SetScrollChild(content)
     frame.content = content
 end
+
+-- UPDATED: Guild Grouping & Delete Logic
 function DTC.Config:RefreshNicknames(content)
-    local kids = {content:GetChildren()}; for _, child in ipairs(kids) do child:Hide(); child:SetParent(nil) end
-    local keys = {}; if DTCRaidDB.identities then for k, _ in pairs(DTCRaidDB.identities) do table.insert(keys, k) end end
-    if IsInGroup() then for i=1, GetNumGroupMembers() do local n=GetRaidRosterInfo(i); if n and (not DTCRaidDB.identities or not DTCRaidDB.identities[n]) then table.insert(keys, n) end end end
-    local seen, unique = {}, {}; for _, k in ipairs(keys) do if not seen[k] then seen[k]=true; table.insert(unique, k) end end
-    table.sort(unique)
+    -- 1. Clear existing
+    local kids = {content:GetChildren()}
+    for _, child in ipairs(kids) do 
+        child:Hide(); child:SetParent(nil) 
+    end
+    
+    -- 2. Gather Data (Sorted by Guild)
+    local roster = {}
+    if DTCRaidDB.identities then
+        for name, nick in pairs(DTCRaidDB.identities) do
+            local guild = DTCRaidDB.guilds and DTCRaidDB.guilds[name]
+            if not guild or guild == "" then guild = "No Guild" end
+            
+            if not roster[guild] then roster[guild] = {} end
+            table.insert(roster[guild], name)
+        end
+    end
+    
+    -- 3. Sort Guilds (Alphabetical, "No Guild" last)
+    local sortedGuilds = {}
+    for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
+    table.sort(sortedGuilds, function(a,b)
+        if a == "No Guild" then return false end
+        if b == "No Guild" then return true end
+        return a < b
+    end)
+    
+    -- 4. Render
     local yOffset = 0
-    for _, name in ipairs(unique) do
-        local row = CreateFrame("Frame", nil, content); row:SetSize(520, 24); row:SetPoint("TOPLEFT", 0, yOffset)
-        local cFile = (DTCRaidDB.classes and DTCRaidDB.classes[name]) or "PRIEST"
-        local color = RAID_CLASS_COLORS[cFile] or {r=0.6,g=0.6,b=0.6}
-        local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); label:SetPoint("LEFT", 5, 0); label:SetWidth(150); label:SetJustifyH("LEFT")
-        label:SetText(name); label:SetTextColor(color.r, color.g, color.b)
-        local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate"); eb:SetSize(200, 20); eb:SetPoint("LEFT", label, "RIGHT", 10, 0); eb:SetAutoFocus(false)
-        local val = DTCRaidDB.identities and DTCRaidDB.identities[name]; if not val or val == "" then val = name end; eb:SetText(val)
-        eb:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities = DTCRaidDB.identities or {}; DTCRaidDB.identities[name] = self:GetText(); self:ClearFocus() end)
-        eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities = DTCRaidDB.identities or {}; DTCRaidDB.identities[name] = self:GetText() end)
-        yOffset = yOffset - 25
+    
+    for _, guild in ipairs(sortedGuilds) do
+        -- Guild Header
+        local hdr = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        hdr:SetPoint("TOPLEFT", 0, yOffset)
+        hdr:SetText(guild)
+        hdr:SetTextColor(1, 0.82, 0) -- Gold
+        yOffset = yOffset - 20
+        
+        -- Sort Players in Guild
+        local players = roster[guild]
+        table.sort(players)
+        
+        for _, name in ipairs(players) do
+            local row = CreateFrame("Frame", nil, content)
+            row:SetSize(520, 24)
+            row:SetPoint("TOPLEFT", 10, yOffset) -- Indent players slightly
+            
+            local cFile = (DTCRaidDB.classes and DTCRaidDB.classes[name]) or "PRIEST"
+            local color = RAID_CLASS_COLORS[cFile] or {r=0.6,g=0.6,b=0.6}
+            
+            -- Name Label
+            local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            label:SetPoint("LEFT", 5, 0)
+            label:SetWidth(150)
+            label:SetJustifyH("LEFT")
+            label:SetText(name)
+            label:SetTextColor(color.r, color.g, color.b)
+            
+            -- Nickname EditBox
+            local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
+            eb:SetSize(200, 20)
+            eb:SetPoint("LEFT", label, "RIGHT", 10, 0)
+            eb:SetAutoFocus(false)
+            local val = DTCRaidDB.identities[name]
+            if not val or val == "" then val = name end
+            eb:SetText(val)
+            eb:SetScript("OnEnterPressed", function(self) 
+                DTCRaidDB.identities[name] = self:GetText()
+                self:ClearFocus() 
+            end)
+            eb:SetScript("OnEditFocusLost", function(self) 
+                DTCRaidDB.identities[name] = self:GetText() 
+            end)
+            
+            -- Delete Button (Small X)
+            local delBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+            delBtn:SetSize(20, 20)
+            delBtn:SetPoint("LEFT", eb, "RIGHT", 5, 0)
+            delBtn:SetText("X")
+            delBtn:SetScript("OnClick", function() 
+                -- Delete Logic
+                DTCRaidDB.identities[name] = nil
+                if DTCRaidDB.guilds then DTCRaidDB.guilds[name] = nil end
+                if DTCRaidDB.classes then DTCRaidDB.classes[name] = nil end
+                -- Refresh UI
+                DTC.Config:RefreshNicknames(content)
+            end)
+            
+            yOffset = yOffset - 25
+        end
+        yOffset = yOffset - 10 -- Spacer between guilds
     end
 end
 
@@ -136,35 +214,24 @@ function DTC.Config:BuildLeaderboardTab(frame)
     e2:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings.awardMsg = self:GetText() end)
 end
 
--- ============================================================================
--- TAB 4: HISTORY (Updated Layout to Fix Overlap)
--- ============================================================================
 function DTC.Config:BuildHistoryTab(frame)
-    -- 1. Maintenance Frame
     local b1 = CreateGroupBox(frame, "Database Maintenance", 580, 80)
     b1:SetPoint("TOPLEFT", 0, 0)
     local btnReset = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate")
     btnReset:SetSize(160, 24); btnReset:SetPoint("TOPLEFT", 15, -40); btnReset:SetText("Reset Local Data")
     btnReset:SetScript("OnClick", function() StaticPopup_Show("DTC_RESET_CONFIRM") end)
     
-    -- Filter Set Helper (Tuned Widths: 115, 115, 80, 100)
     local function CreateFilterSet(parent, prefix)
         local filters = { exp="ALL", raid="ALL", diff="ALL", date="ALL" }
-        
-        -- Widths adjusted to fit comfortably in 580px
         local ddExp = CreateFrame("Frame", prefix.."Exp", parent, "UIDropDownMenuTemplate")
         ddExp:SetPoint("TOPLEFT", -5, -30); UIDropDownMenu_SetWidth(ddExp, 115) 
-        
         local ddRaid = CreateFrame("Frame", prefix.."Raid", parent, "UIDropDownMenuTemplate")
         ddRaid:SetPoint("LEFT", ddExp, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddRaid, 115) 
-        
         local ddDiff = CreateFrame("Frame", prefix.."Diff", parent, "UIDropDownMenuTemplate")
         ddDiff:SetPoint("LEFT", ddRaid, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDiff, 80) 
-        
         local ddDate = CreateFrame("Frame", prefix.."Date", parent, "UIDropDownMenuTemplate")
         ddDate:SetPoint("LEFT", ddDiff, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDate, 100) 
         
-        -- Init Functions
         UIDropDownMenu_Initialize(ddExp, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.exp = s.arg1; UIDropDownMenu_SetText(ddExp, s.value); filters.raid = "ALL"; UIDropDownMenu_SetText(ddRaid, "All Raids") end
@@ -172,7 +239,6 @@ function DTC.Config:BuildHistoryTab(frame)
             for i=11,0,-1 do info.text = DTC.Static.EXPANSION_NAMES[i]; info.arg1 = tostring(i); info.value = DTC.Static.EXPANSION_NAMES[i]; UIDropDownMenu_AddButton(info, level) end
         end)
         UIDropDownMenu_SetText(ddExp, "All Exp")
-        
         UIDropDownMenu_Initialize(ddRaid, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.raid = s.arg1; UIDropDownMenu_SetText(ddRaid, s.value) end
@@ -182,7 +248,6 @@ function DTC.Config:BuildHistoryTab(frame)
             end
         end)
         UIDropDownMenu_SetText(ddRaid, "All Raids")
-        
         UIDropDownMenu_Initialize(ddDiff, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.diff = s.arg1; UIDropDownMenu_SetText(ddDiff, s.value) end
@@ -192,7 +257,6 @@ function DTC.Config:BuildHistoryTab(frame)
             for _, d in ipairs(dList) do info.text=d; info.arg1=d; info.value=d; UIDropDownMenu_AddButton(info, level) end
         end)
         UIDropDownMenu_SetText(ddDiff, "All")
-        
         UIDropDownMenu_Initialize(ddDate, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.date = s.arg1; UIDropDownMenu_SetText(ddDate, s.value) end
@@ -204,26 +268,20 @@ function DTC.Config:BuildHistoryTab(frame)
         return filters
     end
     
-    -- 2. Sync Frame (Aligned)
     local bSync = CreateGroupBox(frame, "Sync Data", 580, 120)
     bSync:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     local sFilters = CreateFilterSet(bSync, "DTCSync")
-    
     local lblSync = bSync:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     lblSync:SetPoint("TOPLEFT", 20, -75); lblSync:SetText("Target Player:")
-    
     local ebSync = CreateFrame("EditBox", nil, bSync, "InputBoxTemplate")
     ebSync:SetSize(150, 24); ebSync:SetPoint("LEFT", lblSync, "RIGHT", 10, 0); ebSync:SetAutoFocus(false)
-    
     local btnSync = CreateFrame("Button", nil, bSync, "UIPanelButtonTemplate")
     btnSync:SetSize(120, 24); btnSync:SetPoint("LEFT", ebSync, "RIGHT", 10, 0); btnSync:SetText("Push Data")
     btnSync:SetScript("OnClick", function() if DTC.History then DTC.History:PushSync(ebSync:GetText(), sFilters) end end)
     
-    -- 3. Purge Frame (Aligned)
     local bPurge = CreateGroupBox(frame, "Purge Data", 580, 120)
     bPurge:SetPoint("TOPLEFT", bSync, "BOTTOMLEFT", 0, -10)
     local pFilters = CreateFilterSet(bPurge, "DTCPurge")
-    
     local btnPurge = CreateFrame("Button", nil, bPurge, "UIPanelButtonTemplate")
     btnPurge:SetSize(160, 24); btnPurge:SetPoint("TOPLEFT", 20, -75); btnPurge:SetText("Purge Matching")
     btnPurge:SetScript("OnClick", function()
