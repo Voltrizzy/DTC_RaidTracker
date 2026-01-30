@@ -87,3 +87,10 @@ DTC_RaidTracker/
     ├── Leaderboard.xml/lua  # Ranking Window
     ├── History.xml/lua      # Log Window
     └── BribeUI.xml/lua      # Popups, Trackers & Lists
+
+📜 License
+Author: Voltrizzy
+
+Version: 7.1.0-Beta
+
+Project ID: 1442970 (CurseForge) / 56ndd5G9 (Wago)
