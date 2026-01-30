@@ -53,11 +53,16 @@ function DTC:InitDatabase()
     DTCRaidDB.history = DTCRaidDB.history or {}
     DTCRaidDB.trips = DTCRaidDB.trips or {}
     DTCRaidDB.identities = DTCRaidDB.identities or {}
-    DTCRaidDB.guilds = DTCRaidDB.guilds or {} -- NEW: Store Guilds
+    DTCRaidDB.guilds = DTCRaidDB.guilds or {}
     DTCRaidDB.classes = DTCRaidDB.classes or {}
+    DTCRaidDB.bribes = DTCRaidDB.bribes or {} -- NEW: Store Accepted Bribes
     DTCRaidDB.settings = DTCRaidDB.settings or {}
+    
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
+    
+    -- Register Comm Prefix if not already
+    C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
@@ -121,3 +126,4 @@ SlashCmdList["DTC"] = function(msg)
     elseif cmd == "reset" then DTC:ResetDatabase()
     else print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc config, /dtc reset") end
 end
+
