@@ -5,9 +5,9 @@ DTC.Vote = {}
 DTC.Vote.isOpen = false
 DTC.Vote.currentBoss = "Unknown"
 DTC.Vote.myVotesLeft = 3
-DTC.Vote.votes = {}      -- [Name] = Count
-DTC.Vote.voters = {}     -- [Name] = true (Who has cast a vote)
-DTC.Vote.versions = {}   -- [Name] = "x.y.z" (Added for Version Check)
+DTC.Vote.votes = {}      -- [Name] = Count (Votes received)
+DTC.Vote.voters = {}     -- [Name] = Count (Votes cast by this person)
+DTC.Vote.versions = {}   -- [Name] = "x.y.z"
 DTC.Vote.myHistory = {}  -- [Name] = true (Who I voted for)
 DTC.Vote.isTestMode = false
 
@@ -20,18 +20,11 @@ function DTC.Vote:Init()
     end)
 end
 
--- 2. Event Handlers (Updated with Dungeon Check)
+-- 2. Event Handlers
 function DTC.Vote:OnEncounterEnd(encounterID, encounterName, difficultyID, raidSize, endStatus)
-    -- Only proceed if the encounter was defeated (status 1)
     if endStatus ~= 1 then return end
-
-    -- STRICT CHECK: Only trigger in Raids
     local _, instanceType = GetInstanceInfo()
-    if instanceType ~= "raid" then 
-        -- instanceType can be "party" (dungeon), "pvp", "arena", "none" (world)
-        return 
-    end
-
+    if instanceType ~= "raid" then return end
     self:StartSession(encounterName) 
 end
 
@@ -41,13 +34,12 @@ function DTC.Vote:StartSession(bossName, isTest)
     self.currentBoss = bossName
     self.myVotesLeft = 3
     self.votes = {}
-    self.voters = {}
-    self.versions = {} -- Reset versions
+    self.voters = {}      -- Reset to empty
+    self.versions = {} 
     self.myHistory = {}
     self.isTestMode = isTest or false
     
     if not isTest then
-        -- Ping raid with OUR version
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
     end
     
@@ -59,22 +51,18 @@ function DTC.Vote:EndSession()
     if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
 end
 
--- 4. Actions (Updated with Self-Vote Restriction)
+-- 4. Actions
 function DTC.Vote:CastVote(targetName)
     if not self.isOpen or self.myVotesLeft <= 0 then return end
-    
-    -- RULE: Cannot vote for yourself
-    if targetName == UnitName("player") then 
-        print("|cFFFF0000DTC:|r You cannot vote for yourself.")
-        return 
-    end
-
-    -- Check if already voted for this person
+    if targetName == UnitName("player") then print("|cFFFF0000DTC:|r You cannot vote for yourself."); return end
     if self.myHistory[targetName] then return end
     
     self.myVotesLeft = self.myVotesLeft - 1
     self.myHistory[targetName] = true
-    self.voters[UnitName("player")] = true
+    
+    -- Track that *I* cast a vote (Increment count)
+    local myName = UnitName("player")
+    self.voters[myName] = (self.voters[myName] or 0) + 1
     
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
     
@@ -86,7 +74,6 @@ end
 
 function DTC.Vote:Finalize()
     if not self.isOpen then return end
-    
     local raidInfo = GetInstanceInfo()
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
     local dateStr = date("%Y-%m-%d")
@@ -109,19 +96,14 @@ function DTC.Vote:Finalize()
     self:EndSession()
 end
 
--- 5. Announcement Logic (Mac vs Pink Rule Included)
+-- 5. Announcement Logic
 function DTC.Vote:Announce()
-    -- Helpers to find real names from nicknames
     local function GetRealNameByNick(targetNick)
         if not DTCRaidDB.identities then return nil end
-        -- 1. Check current roster
         for i = 1, GetNumGroupMembers() do
             local name = GetRaidRosterInfo(i)
-            if name and DTCRaidDB.identities[name] == targetNick then
-                return name
-            end
+            if name and DTCRaidDB.identities[name] == targetNick then return name end
         end
-        -- 2. Check vote table (in case they left raid but received votes)
         for name, _ in pairs(self.votes) do
             if DTCRaidDB.identities[name] == targetNick then return name end
         end
@@ -130,21 +112,14 @@ function DTC.Vote:Announce()
 
     local pinkRealName = GetRealNameByNick("Pink")
     local macRealName = GetRealNameByNick("Mac")
-    
-    -- Prepare data for sorting (using effective votes)
     local sorted = {}
     
     for n, v in pairs(self.votes) do
         local effectiveVotes = v
-        
-        -- THE RULE: If Pink is in the raid, Mac must have (Pink - 1) votes max.
         if pinkRealName and n == macRealName then
             local pinkVotes = self.votes[pinkRealName] or 0
-            if effectiveVotes >= pinkVotes then
-                effectiveVotes = pinkVotes - 1
-            end
+            if effectiveVotes >= pinkVotes then effectiveVotes = pinkVotes - 1 end
         end
-        
         table.insert(sorted, {name=n, val=effectiveVotes}) 
     end
     
@@ -176,7 +151,6 @@ end
 -- 6. Data Provider
 function DTC.Vote:GetRosterData()
     local roster = {}
-    
     if self.isTestMode then
         return {
             {name="Mickey", class="MAGE", role="DAMAGER", hasVoted=true, hasAddon=true, versionMismatch=false},
@@ -193,12 +167,16 @@ function DTC.Vote:GetRosterData()
             local mismatch = false
             if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
             
+            -- Check "hasVoted" (True if count > 0)
+            local voteCount = self.voters[name] or 0
+            local hasVotedBool = (voteCount > 0)
+
             table.insert(roster, {
                 name = name,
                 class = classFile,
                 role = role,
                 nick = nick,
-                hasVoted = self.voters[name],
+                hasVoted = hasVotedBool,
                 hasAddon = hasAddon,
                 versionMismatch = mismatch
             })
@@ -210,13 +188,21 @@ end
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
 
+-- NEW HELPER: Get number of votes cast by a specific player
+function DTC.Vote:GetVotesCastBy(name)
+    return self.voters[name] or 0
+end
+
 -- 7. Comms
 function DTC.Vote:OnComm(action, data, sender)
     if action == "VOTE" then
         if sender ~= UnitName("player") then
             local target = data
             self.votes[target] = (self.votes[target] or 0) + 1
-            self.voters[sender] = true
+            
+            -- Increment Voter Count
+            self.voters[sender] = (self.voters[sender] or 0) + 1
+            
             if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
         end
         
