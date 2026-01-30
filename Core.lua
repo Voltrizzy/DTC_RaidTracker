@@ -1,7 +1,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC 
 
-DTC.VERSION = "7.0.0"
+DTC.VERSION = "7.0.0-Alpha"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -12,10 +12,11 @@ StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
     button1 = "Yes", button2 = "No",
     OnAccept = function()
         local s = DTCRaidDB.settings or {}
-        DTCRaidDB = { global={}, history={}, trips={}, identities={}, guilds={}, classes={}, settings=s }
+        DTCRaidDB = { global={}, history={}, trips={}, identities={}, guilds={}, classes={}, bribes={}, settings=s }
         print("|cFFFFD700DTC:|r Database reset.")
         if DTC.LeaderboardUI then DTC.LeaderboardUI:UpdateList() end
         if DTC.HistoryUI then DTC.HistoryUI:UpdateList() end
+        if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -40,6 +41,8 @@ f:SetScript("OnEvent", function(self, event, ...)
             local action, data = strsplit(":", msg, 2)
             if DTC.Vote then DTC.Vote:OnComm(action, data, sender) end
             if DTC.History then DTC.History:OnComm(action, data, sender) end
+            -- Bribe comms handled in Bribe.lua via its own listener or shared here, 
+            -- but Bribe.lua currently has its own listener for clean separation.
         end
         
     elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
@@ -60,9 +63,6 @@ function DTC:InitDatabase()
     
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
-    
-    -- Register Comm Prefix if not already
-    C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
@@ -85,7 +85,7 @@ function DTC:CheckRosterForNicknames()
     end
     if not isValidRaid then return end
 
-    -- Iterate Roster to capture Name, Class, AND Guild
+    -- Iterate Roster
     for i = 1, GetNumGroupMembers() do
         local unitID = "raid"..i
         local charName, _, _, _, _, classFile = GetRaidRosterInfo(i)
@@ -93,21 +93,16 @@ function DTC:CheckRosterForNicknames()
         if charName then
             if string.find(charName, "-") then charName = strsplit("-", charName) end
             
-            -- Set default nickname
             if not DTCRaidDB.identities[charName] then
                 DTCRaidDB.identities[charName] = charName
             end
             
-            -- Save Class
             if classFile then DTCRaidDB.classes[charName] = classFile end
             
-            -- Save Guild (NEW)
             local guildName, _, _, _ = GetGuildInfo(unitID)
             if guildName then 
                 DTCRaidDB.guilds[charName] = guildName 
             else
-                -- Only overwrite with "No Guild" if they genuinely don't have one and we had one before? 
-                -- Safer to just set it to nil or empty so sorting catches it.
                  DTCRaidDB.guilds[charName] = "" 
             end
         end
@@ -117,13 +112,20 @@ end
 SLASH_DTC1 = "/dtc"
 SlashCmdList["DTC"] = function(msg)
     local cmd = msg:match("^(%S*)"):lower()
-    if cmd == "vote" then if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
-    elseif cmd == "lb" then DTC.isTestModeLB = false; if DTC.Leaderboard then DTC.Leaderboard:Toggle() end
-    elseif cmd == "history" then DTC.isTestModeHist = false; if DTC.History then DTC.History:Toggle() end
+    if cmd == "vote" then 
+        if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
+    elseif cmd == "lb" then 
+        DTC.isTestModeLB = false; if DTC.Leaderboard then DTC.Leaderboard:Toggle() end
+    elseif cmd == "history" then 
+        DTC.isTestModeHist = false; if DTC.History then DTC.History:Toggle() end
+    elseif cmd == "awards" or cmd == "bribes" then
+        if DTC.BribeUI then DTC.BribeUI:ToggleTracker() end
     elseif cmd == "config" then
         if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) 
         else InterfaceOptionsFrame_OpenToCategory("DTC Raid Tracker") end
-    elseif cmd == "reset" then DTC:ResetDatabase()
-    else print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc config, /dtc reset") end
+    elseif cmd == "reset" then 
+        DTC:ResetDatabase()
+    else 
+        print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
+    end
 end
-
