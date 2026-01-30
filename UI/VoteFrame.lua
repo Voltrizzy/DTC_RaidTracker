@@ -81,6 +81,10 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
         yOffset = yOffset - 20
     end
     table.sort(list, function(a,b) return a.name < b.name end)
+    
+    -- CHECK DEBT STATUS ONCE
+    local hasDebt = DTC.Bribe and DTC.Bribe:HasUnpaidDebt()
+    
     for i, p in ipairs(list) do
         local row = rows[#rows + 1]
         if not row then
@@ -89,19 +93,12 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
             row.StatusIcon = row:CreateTexture(nil, "OVERLAY"); row.StatusIcon:SetSize(16, 16); row.StatusIcon:SetPoint("LEFT", 0, 0)
             row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); row.Name:SetPoint("LEFT", 20, 0)
             
-            -- VOTE BUTTON
             row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.VoteBtn:SetSize(50, 20)
-            row.VoteBtn:SetPoint("RIGHT", -5, 0)
-            row.VoteBtn:SetText("Vote")
+            row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
 
-            -- BRIBE BUTTON
             row.BribeBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.BribeBtn:SetSize(50, 20)
-            row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0)
-            row.BribeBtn:SetText("Bribe")
+            row.BribeBtn:SetSize(50, 20); row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0); row.BribeBtn:SetText("Bribe")
             
-            -- VOTE COUNT LABEL
             row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             row.Count:SetPoint("RIGHT", row.BribeBtn, "LEFT", -10, 0)
             
@@ -112,35 +109,28 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
         row.Name:SetTextColor(color.r, color.g, color.b)
         row.Name:SetText(p.nick and (p.name.." ("..p.nick..")") or p.name)
         
-        -- Status Icon Logic
         if p.hasVoted then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Ready")
         elseif not p.hasAddon then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
         elseif p.versionMismatch then row.StatusIcon:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
         else row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Waiting") end
         
-        -- Vote Button Logic
         row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(p.name) end end)
         local canVote = DTC.Vote and DTC.Vote.isOpen and (DTC.Vote.myVotesLeft > 0)
         local already = DTC.Vote and DTC.Vote:HasVotedFor(p.name)
         local isMe = (p.name == UnitName("player"))
         
-        if canVote and not already and not isMe then 
-            row.VoteBtn:Enable() 
-        else 
-            row.VoteBtn:Disable() 
-        end
+        if canVote and not already and not isMe then row.VoteBtn:Enable() else row.VoteBtn:Disable() end
 
-        -- Bribe Button Logic
-        row.BribeBtn:SetScript("OnClick", function() 
-            if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(p.name) end 
-        end)
+        row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(p.name) end end)
         
-        -- CHECK: Has this player used all 3 votes?
+        -- BRIBE DISABLE LOGIC:
+        -- 1. Can't bribe self
+        -- 2. Can't bribe if target used all votes
+        -- 3. Can't bribe if I have UNPAID DEBT
         local votesCast = DTC.Vote:GetVotesCastBy(p.name)
         local hasVotesRemaining = (votesCast < 3)
-
-        -- Disable bribe button if it's ME OR if target has no votes left
-        if isMe or not hasVotesRemaining then
+        
+        if isMe or not hasVotesRemaining or hasDebt then
             row.BribeBtn:Disable()
         else
             row.BribeBtn:Enable()
