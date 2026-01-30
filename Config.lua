@@ -50,7 +50,7 @@ function DTC.Config:Init()
     CreateTabButton(3, "Leaderboard", panel.Tabs[2])
     CreateTabButton(4, "History", panel.Tabs[3])
     CreateTabButton(5, "Voting", panel.Tabs[4])
-    CreateTabButton(6, "Bribes", panel.Tabs[5]) 
+    CreateTabButton(6, "Bribes", panel.Tabs[5]) -- NEW TAB
     
     self:BuildGeneralTab(panel.SubFrames[1])
     self:BuildNicknamesTab(panel.SubFrames[2])
@@ -85,6 +85,7 @@ function DTC.Config:BuildGeneralTab(frame)
     btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check")
     btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VER_QUERY", "RAID") end)
     
+    -- NEW: Test Bribes Button
     local btnBribe = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnBribe:SetSize(140, 24); btnBribe:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnBribe:SetText("Test Incoming Bribe")
     btnBribe:SetScript("OnClick", function() 
@@ -118,8 +119,6 @@ function DTC.Config:RefreshNicknames(content)
             table.insert(roster[guild], name)
         end
     end
-    local sortedGuilds = {}; for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
-    table.sort(sortedGuilds, function(a,b) if a == "No Guild" then return false end; if b == "No Guild" then return true end; return a < b end)
     
     local sortedGuilds = {}
     for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
