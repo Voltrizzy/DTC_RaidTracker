@@ -50,14 +50,14 @@ function DTC.Config:Init()
     CreateTabButton(3, "Leaderboard", panel.Tabs[2])
     CreateTabButton(4, "History", panel.Tabs[3])
     CreateTabButton(5, "Voting", panel.Tabs[4])
-    CreateTabButton(6, "Bribes", panel.Tabs[5]) -- NEW TAB
+    CreateTabButton(6, "Bribes", panel.Tabs[5]) 
     
     self:BuildGeneralTab(panel.SubFrames[1])
     self:BuildNicknamesTab(panel.SubFrames[2])
     self:BuildLeaderboardTab(panel.SubFrames[3])
     self:BuildHistoryTab(panel.SubFrames[4])
     self:BuildVotingTab(panel.SubFrames[5])
-    self:BuildBribeTab(panel.SubFrames[6]) -- NEW BUILDER
+    self:BuildBribeTab(panel.SubFrames[6])
     
     local cat = Settings.RegisterCanvasLayoutCategory(panel, "DTC Raid Tracker")
     Settings.RegisterAddOnCategory(cat)
@@ -85,7 +85,6 @@ function DTC.Config:BuildGeneralTab(frame)
     btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check")
     btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VER_QUERY", "RAID") end)
     
-    -- NEW: Test Bribes Button
     local btnBribe = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnBribe:SetSize(140, 24); btnBribe:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnBribe:SetText("Test Incoming Bribe")
     btnBribe:SetScript("OnClick", function() 
@@ -101,12 +100,8 @@ function DTC.Config:BuildNicknamesTab(frame)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigNickScroll", box, "UIPanelScrollFrameTemplate")
-    sf:SetPoint("TOPLEFT", 10, -35)
-    sf:SetPoint("BOTTOMRIGHT", -30, 10)
-    
-    local content = CreateFrame("Frame", nil, sf)
-    content:SetSize(540, 1) 
-    sf:SetScrollChild(content)
+    sf:SetPoint("TOPLEFT", 10, -35); sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content)
     frame.content = content
 end
 
@@ -137,8 +132,10 @@ function DTC.Config:RefreshNicknames(content)
         local hdr = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         hdr:SetPoint("TOPLEFT", 0, yOffset); hdr:SetText(guild); hdr:SetTextColor(1, 0.82, 0)
         yOffset = yOffset - 20
+        
         local players = roster[guild]
         table.sort(players)
+        
         for _, name in ipairs(players) do
             local row = CreateFrame("Frame", nil, content)
             row:SetSize(520, 24); row:SetPoint("TOPLEFT", 10, yOffset)
@@ -198,16 +195,16 @@ function DTC.Config:BuildHistoryTab(frame)
     btnReset:SetSize(160, 24); btnReset:SetPoint("TOPLEFT", 15, -40); btnReset:SetText("Reset Local Data")
     btnReset:SetScript("OnClick", function() StaticPopup_Show("DTC_RESET_CONFIRM") end)
     
+    local btnBribeHist = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate")
+    btnBribeHist:SetSize(140, 24); btnBribeHist:SetPoint("LEFT", btnReset, "RIGHT", 10, 0); btnBribeHist:SetText("Open Bribe Ledger")
+    btnBribeHist:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:ToggleTracker() end end)
+    
     local function CreateFilterSet(parent, prefix)
         local filters = { exp="ALL", raid="ALL", diff="ALL", date="ALL" }
-        local ddExp = CreateFrame("Frame", prefix.."Exp", parent, "UIDropDownMenuTemplate")
-        ddExp:SetPoint("TOPLEFT", -5, -30); UIDropDownMenu_SetWidth(ddExp, 115) 
-        local ddRaid = CreateFrame("Frame", prefix.."Raid", parent, "UIDropDownMenuTemplate")
-        ddRaid:SetPoint("LEFT", ddExp, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddRaid, 115) 
-        local ddDiff = CreateFrame("Frame", prefix.."Diff", parent, "UIDropDownMenuTemplate")
-        ddDiff:SetPoint("LEFT", ddRaid, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDiff, 80) 
-        local ddDate = CreateFrame("Frame", prefix.."Date", parent, "UIDropDownMenuTemplate")
-        ddDate:SetPoint("LEFT", ddDiff, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDate, 100) 
+        local ddExp = CreateFrame("Frame", prefix.."Exp", parent, "UIDropDownMenuTemplate"); ddExp:SetPoint("TOPLEFT", -5, -30); UIDropDownMenu_SetWidth(ddExp, 115) 
+        local ddRaid = CreateFrame("Frame", prefix.."Raid", parent, "UIDropDownMenuTemplate"); ddRaid:SetPoint("LEFT", ddExp, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddRaid, 115) 
+        local ddDiff = CreateFrame("Frame", prefix.."Diff", parent, "UIDropDownMenuTemplate"); ddDiff:SetPoint("LEFT", ddRaid, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDiff, 80) 
+        local ddDate = CreateFrame("Frame", prefix.."Date", parent, "UIDropDownMenuTemplate"); ddDate:SetPoint("LEFT", ddDiff, "RIGHT", -15, 0); UIDropDownMenu_SetWidth(ddDate, 100) 
         
         UIDropDownMenu_Initialize(ddExp, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
@@ -248,27 +245,15 @@ function DTC.Config:BuildHistoryTab(frame)
     local bSync = CreateGroupBox(frame, "Sync Data", 580, 120)
     bSync:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     local sFilters = CreateFilterSet(bSync, "DTCSync")
-    local lblSync = bSync:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    lblSync:SetPoint("TOPLEFT", 20, -75); lblSync:SetText("Target Player:")
-    local ebSync = CreateFrame("EditBox", nil, bSync, "InputBoxTemplate")
-    ebSync:SetSize(150, 24); ebSync:SetPoint("LEFT", lblSync, "RIGHT", 10, 0); ebSync:SetAutoFocus(false)
-    local btnSync = CreateFrame("Button", nil, bSync, "UIPanelButtonTemplate")
-    btnSync:SetSize(120, 24); btnSync:SetPoint("LEFT", ebSync, "RIGHT", 10, 0); btnSync:SetText("Push Data")
+    local lblSync = bSync:CreateFontString(nil, "OVERLAY", "GameFontNormal"); lblSync:SetPoint("TOPLEFT", 20, -75); lblSync:SetText("Target Player:")
+    local ebSync = CreateFrame("EditBox", nil, bSync, "InputBoxTemplate"); ebSync:SetSize(150, 24); ebSync:SetPoint("LEFT", lblSync, "RIGHT", 10, 0); ebSync:SetAutoFocus(false)
+    local btnSync = CreateFrame("Button", nil, bSync, "UIPanelButtonTemplate"); btnSync:SetSize(120, 24); btnSync:SetPoint("LEFT", ebSync, "RIGHT", 10, 0); btnSync:SetText("Push Data")
     btnSync:SetScript("OnClick", function() if DTC.History then DTC.History:PushSync(ebSync:GetText(), sFilters) end end)
     
-    -- NEW: Open Bribe Ledger Button (In Sync Box for lack of space, or we can make a new row. 
-    -- Actually, let's put it in the "Database Maintenance" box since it's related to checking records.)
-    local btnBribeHist = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate")
-    btnBribeHist:SetSize(140, 24)
-    btnBribeHist:SetPoint("LEFT", btnReset, "RIGHT", 10, 0)
-    btnBribeHist:SetText("Open Bribe Ledger")
-    btnBribeHist:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:ToggleTracker() end end)
-
     local bPurge = CreateGroupBox(frame, "Purge Data", 580, 120)
     bPurge:SetPoint("TOPLEFT", bSync, "BOTTOMLEFT", 0, -10)
     local pFilters = CreateFilterSet(bPurge, "DTCPurge")
-    local btnPurge = CreateFrame("Button", nil, bPurge, "UIPanelButtonTemplate")
-    btnPurge:SetSize(160, 24); btnPurge:SetPoint("TOPLEFT", 20, -75); btnPurge:SetText("Purge Matching")
+    local btnPurge = CreateFrame("Button", nil, bPurge, "UIPanelButtonTemplate"); btnPurge:SetSize(160, 24); btnPurge:SetPoint("TOPLEFT", 20, -75); btnPurge:SetText("Purge Matching")
     btnPurge:SetScript("OnClick", function()
         StaticPopupDialogs["DTC_PURGE_CONFIRM"] = {text = "Permanently delete matching entries?", button1 = "Yes", button2 = "No", OnAccept = function() if DTC.History then DTC.History:PurgeMatching(pFilters) end end, timeout = 0, whileDead = true, hideOnEscape = true}
         StaticPopup_Show("DTC_PURGE_CONFIRM")
@@ -278,10 +263,8 @@ end
 function DTC.Config:BuildVotingTab(frame)
     local b1 = CreateGroupBox(frame, "Voting Options", 580, 80)
     b1:SetPoint("TOPLEFT", 0, 0)
-    local lbl = b1:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    lbl:SetPoint("TOPLEFT", 15, -30); lbl:SetText("List Format:")
-    local dd = CreateFrame("Frame", "DTC_ConfigVoteSortDD", b1, "UIDropDownMenuTemplate")
-    dd:SetPoint("LEFT", lbl, "RIGHT", 0, -2); UIDropDownMenu_SetWidth(dd, 200)
+    local lbl = b1:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("TOPLEFT", 15, -30); lbl:SetText("List Format:")
+    local dd = CreateFrame("Frame", "DTC_ConfigVoteSortDD", b1, "UIDropDownMenuTemplate"); dd:SetPoint("LEFT", lbl, "RIGHT", 0, -2); UIDropDownMenu_SetWidth(dd, 200)
     local function InitMenu(self, level)
         local info = UIDropDownMenu_CreateInfo()
         info.func = function(s) DTCRaidDB.settings.voteSortMode = s.arg1; UIDropDownMenu_SetText(dd, s.value) end
@@ -300,10 +283,10 @@ function DTC.Config:BuildVotingTab(frame)
     AddEdit("Winner Message:", "voteWinMsg", -20)
     AddEdit("Runner Up Message:", "voteRunnerUpMsg", -65)
     AddEdit("Lowest Vote Message:", "voteLowMsg", -110)
+end
 
-    -- NEW: Bribe Configuration Tab
 function DTC.Config:BuildBribeTab(frame)
-    local box = CreateGroupBox(frame, "Timer Settings", 580, 200) -- Increased height
+    local box = CreateGroupBox(frame, "Timer Settings", 580, 200)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local function AddSlider(title, key, minVal, maxVal, y)
@@ -316,27 +299,16 @@ function DTC.Config:BuildBribeTab(frame)
         _G[s:GetName() .. "Text"]:SetText(title)
         _G[s:GetName() .. "Low"]:SetText(minVal.."s")
         _G[s:GetName() .. "High"]:SetText(maxVal.."s")
-        
-        local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
-        
-        s:SetScript("OnValueChanged", function(self, value)
-            value = math.floor(value)
-            DTCRaidDB.settings[key] = value
-            valLabel:SetText(value .. " seconds")
-        end)
-        
-        s:SetScript("OnShow", function(self)
-            local val = DTCRaidDB.settings[key] or 90 -- Default fallback
+        local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
+        s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings[key] = value; valLabel:SetText(value .. " seconds") end)
+        s:SetScript("OnShow", function(self) 
+            local val = DTCRaidDB.settings[key] or 90
             if key == "lobbyTimer" then val = DTCRaidDB.settings[key] or 120 end
-            self:SetValue(val)
-            valLabel:SetText(val .. " seconds")
+            self:SetValue(val); valLabel:SetText(val .. " seconds") 
         end)
     end
     
     AddSlider("Bribe Offer Expiration", "bribeTimer", 30, 300, -40)
     AddSlider("Proposition Expiration", "propTimer", 30, 300, -90)
-    AddSlider("Lobbying Expiration", "lobbyTimer", 30, 300, -140) -- NEW
+    AddSlider("Lobbying Expiration", "lobbyTimer", 30, 300, -140)
 end
-
-
