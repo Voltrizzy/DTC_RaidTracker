@@ -25,14 +25,13 @@ function DTC.BribeUI:Init()
 
     -- Tracker Init
     self.TrackerFrame = DTC_BribeTrackerFrame
-    if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("Bribe Tracker") end
+    if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("Bribe History") end
     self.TrackerFrame.ClearBtn:SetScript("OnClick", function() 
         DTCRaidDB.bribes = {} 
         self:UpdateTracker() 
     end)
 end
 
--- OFFER FLOW
 function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then self:Init() end
     self.OfferFrame.target = targetName
@@ -42,7 +41,6 @@ function DTC.BribeUI:OpenOfferWindow(targetName)
     self.OfferFrame:Show()
 end
 
--- INCOMING FLOW
 function DTC.BribeUI:ShowNextOffer()
     if not self.IncomingFrame then self:Init() end
     
@@ -52,14 +50,13 @@ function DTC.BribeUI:ShowNextOffer()
         return
     end
     
-    local offer = DTC.Bribe.IncomingQueue[1] -- Show oldest first
+    local offer = DTC.Bribe.IncomingQueue[1]
     self.CurrentOfferID = offer.id
     
     self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%d Gold|r", offer.sender, offer.amount))
     self.IncomingFrame:Show()
 end
 
--- TRACKER FLOW
 function DTC.BribeUI:ToggleTracker()
     if not self.TrackerFrame then self:Init() end
     if self.TrackerFrame:IsShown() then self.TrackerFrame:Hide() else self.TrackerFrame:Show(); self:UpdateTracker() end
@@ -68,7 +65,6 @@ end
 function DTC.BribeUI:UpdateTracker()
     if not self.TrackerFrame or not self.TrackerFrame:IsShown() then return end
     
-    -- Clean existing
     local content = self.TrackerFrame.ListScroll.Content
     local kids = {content:GetChildren()}
     for _, k in ipairs(kids) do k:Hide(); k:SetParent(nil) end
@@ -76,28 +72,42 @@ function DTC.BribeUI:UpdateTracker()
     local yOffset = 0
     local data = DTCRaidDB.bribes or {}
     
-    for i, entry in ipairs(data) do
+    -- Reverse sort to show newest first
+    local sorted = {}
+    for i, e in ipairs(data) do 
+        e.originalIndex = i -- keep track of DB index
+        table.insert(sorted, e) 
+    end
+    table.sort(sorted, function(a,b) return a.timestamp > b.timestamp end)
+    
+    for _, entry in ipairs(sorted) do
         local row = CreateFrame("Frame", nil, content, "DTC_BribeRowTemplate")
         row:SetPoint("TOPLEFT", 0, yOffset)
         
-        local txt = string.format("%s -> %s", entry.offerer, entry.recipient)
+        -- Text: Offerer -> Recipient (Boss)
+        local txt = string.format("%s -> %s (%s)", entry.offerer, entry.recipient, entry.boss or "?")
         row.Text:SetText(txt)
-        row.Amount:SetText(entry.amount .. "g")
         
-        -- Logic for Trade Button:
-        -- Only enable if *I* am the offerer, and I'm targeting the recipient (or logic to help targeting)
+        -- Amount & Status
+        local status = entry.paid and "|cFF00FF00PAID|r" or "|cFFFF0000OWED|r"
+        row.Amount:SetText(entry.amount .. "g  " .. status)
+        
+        -- Trade Button Logic
         row.TradeBtn:SetScript("OnClick", function()
-            -- If I am the offerer, I need to pay the recipient
+            -- If I am the Offerer AND it's unpaid, this button helps me pay.
+            -- We pass 'entry.originalIndex' so we can mark it paid when trade closes.
             if entry.offerer == UnitName("player") then
-                DTC.Bribe:InitiateTrade(entry.recipient, entry.amount)
+                DTC.Bribe:InitiateTrade(entry.recipient, entry.amount, entry.originalIndex)
             elseif entry.recipient == UnitName("player") then
-                -- If I am the recipient, maybe I want to trade to demand money? 
-                DTC.Bribe:InitiateTrade(entry.offerer, 0) -- Don't autofill money if receiving
+                DTC.Bribe:InitiateTrade(entry.offerer, 0, nil) 
             else
-                -- Just open trade with whoever
-                DTC.Bribe:InitiateTrade(entry.recipient, 0)
+                DTC.Bribe:InitiateTrade(entry.recipient, 0, nil)
             end
         end)
+        
+        -- Hide Trade button if paid? Or leave it open? 
+        -- Leaving enabled is safer in case the "Auto Mark Paid" logic missed it.
+        if entry.paid then row.TradeBtn:Disable() else row.TradeBtn:Enable() end
         
         yOffset = yOffset - 25
     end
