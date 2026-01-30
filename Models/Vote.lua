@@ -65,6 +65,11 @@ function DTC.Vote:CastVote(targetName)
     self.voters[myName] = (self.voters[myName] or 0) + 1
     
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
+
+    -- NEW: AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
+    if self.myVotesLeft <= 0 and DTC.Bribe then
+        DTC.Bribe:DeclineAll()
+    end
     
     if not self.isTestMode then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..targetName, "RAID")
