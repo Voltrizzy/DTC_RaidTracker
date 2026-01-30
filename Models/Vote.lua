@@ -34,7 +34,7 @@ function DTC.Vote:StartSession(bossName, isTest)
     self.currentBoss = bossName
     self.myVotesLeft = 3
     self.votes = {}
-    self.voters = {}      
+    self.voters = {}      -- Reset to empty
     self.versions = {} 
     self.myHistory = {}
     self.isTestMode = isTest or false
@@ -60,11 +60,16 @@ function DTC.Vote:CastVote(targetName)
     self.myVotesLeft = self.myVotesLeft - 1
     self.myHistory[targetName] = true
     
-    -- Track that *I* cast a vote
+    -- Track that *I* cast a vote (Increment count)
     local myName = UnitName("player")
     self.voters[myName] = (self.voters[myName] or 0) + 1
     
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
+
+    -- NEW: AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
+    if self.myVotesLeft <= 0 and DTC.Bribe then
+        DTC.Bribe:DeclineAll()
+    end
     
     -- AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
     if self.myVotesLeft <= 0 and DTC.Bribe then
@@ -101,24 +106,46 @@ function DTC.Vote:Finalize()
     self:EndSession()
 end
 
--- 5. Announcement Logic (Cleaned: No Mac vs Pink Rule)
+-- 5. Announcement Logic
 function DTC.Vote:Announce()
+    local function GetRealNameByNick(targetNick)
+        if not DTCRaidDB.identities then return nil end
+        for i = 1, GetNumGroupMembers() do
+            local name = GetRaidRosterInfo(i)
+            if name and DTCRaidDB.identities[name] == targetNick then return name end
+        end
+        for name, _ in pairs(self.votes) do
+            if DTCRaidDB.identities[name] == targetNick then return name end
+        end
+        return nil
+    end
+
+    local pinkRealName = GetRealNameByNick("Pink")
+    local macRealName = GetRealNameByNick("Mac")
     local sorted = {}
     
     -- Gather and Sort (Standard)
     for n, v in pairs(self.votes) do
-        table.insert(sorted, {name=n, val=v}) 
+        local effectiveVotes = v
+        if pinkRealName and n == macRealName then
+            local pinkVotes = self.votes[pinkRealName] or 0
+            if effectiveVotes >= pinkVotes then effectiveVotes = pinkVotes - 1 end
+        end
+        table.insert(sorted, {name=n, val=effectiveVotes}) 
     end
     
     table.sort(sorted, function(a,b) return a.val > b.val end)
     
-    -- Display
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
     local bossDisplay = self.currentBoss
     if diffName and diffName ~= "" then bossDisplay = "("..diffName..") " .. self.currentBoss end
     
     local header = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
     SendChatMessage(header:format(bossDisplay), "RAID")
+    
+    if pinkRealName and macRealName and self.votes[macRealName] and (self.votes[macRealName] >= (self.votes[pinkRealName] or 0)) then
+        SendChatMessage("(Mac Penalty Rule Active: Mac votes capped below Pink)", "RAID")
+    end
     
     for i=1, math.min(3, #sorted) do
         local dName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[i].name) or sorted[i].name
@@ -173,13 +200,21 @@ function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
 function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
+-- NEW HELPER: Get number of votes cast by a specific player
+function DTC.Vote:GetVotesCastBy(name)
+    return self.voters[name] or 0
+end
+
 -- 7. Comms
 function DTC.Vote:OnComm(action, data, sender)
     if action == "VOTE" then
         if sender ~= UnitName("player") then
             local target = data
             self.votes[target] = (self.votes[target] or 0) + 1
+            
+            -- Increment Voter Count
             self.voters[sender] = (self.voters[sender] or 0) + 1
+            
             if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
         end
         

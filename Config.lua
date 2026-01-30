@@ -98,6 +98,7 @@ end
 function DTC.Config:BuildNicknamesTab(frame)
     local box = CreateGroupBox(frame, "Roster Configuration", 580, 400)
     box:SetPoint("TOPLEFT", 0, 0)
+    
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigNickScroll", box, "UIPanelScrollFrameTemplate")
     sf:SetPoint("TOPLEFT", 10, -35); sf:SetPoint("BOTTOMRIGHT", -30, 10)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content)
@@ -105,25 +106,41 @@ function DTC.Config:BuildNicknamesTab(frame)
 end
 
 function DTC.Config:RefreshNicknames(content)
-    local kids = {content:GetChildren()}; for _, child in ipairs(kids) do child:Hide(); child:SetParent(nil) end
+    local kids = {content:GetChildren()}
+    for _, child in ipairs(kids) do child:Hide(); child:SetParent(nil) end
+    
     local roster = {}
     if DTCRaidDB.identities then
         for name, nick in pairs(DTCRaidDB.identities) do
-            local guild = DTCRaidDB.guilds and DTCRaidDB.guilds[name]; if not guild or guild == "" then guild = "No Guild" end
-            if not roster[guild] then roster[guild] = {} end; table.insert(roster[guild], name)
+            local guild = DTCRaidDB.guilds and DTCRaidDB.guilds[name]
+            if not guild or guild == "" then guild = "No Guild" end
+            if not roster[guild] then roster[guild] = {} end
+            table.insert(roster[guild], name)
         end
     end
     local sortedGuilds = {}; for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
     table.sort(sortedGuilds, function(a,b) if a == "No Guild" then return false end; if b == "No Guild" then return true end; return a < b end)
+    
+    local sortedGuilds = {}
+    for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
+    table.sort(sortedGuilds, function(a,b)
+        if a == "No Guild" then return false end
+        if b == "No Guild" then return true end
+        return a < b
+    end)
     
     local yOffset = 0
     for _, guild in ipairs(sortedGuilds) do
         local hdr = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         hdr:SetPoint("TOPLEFT", 0, yOffset); hdr:SetText(guild); hdr:SetTextColor(1, 0.82, 0)
         yOffset = yOffset - 20
-        local players = roster[guild]; table.sort(players)
+        
+        local players = roster[guild]
+        table.sort(players)
+        
         for _, name in ipairs(players) do
-            local row = CreateFrame("Frame", nil, content); row:SetSize(520, 24); row:SetPoint("TOPLEFT", 10, yOffset)
+            local row = CreateFrame("Frame", nil, content)
+            row:SetSize(520, 24); row:SetPoint("TOPLEFT", 10, yOffset)
             local cFile = (DTCRaidDB.classes and DTCRaidDB.classes[name]) or "PRIEST"
             local color = RAID_CLASS_COLORS[cFile] or {r=0.6,g=0.6,b=0.6}
             local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -131,7 +148,8 @@ function DTC.Config:RefreshNicknames(content)
             label:SetText(name); label:SetTextColor(color.r, color.g, color.b)
             local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
             eb:SetSize(200, 20); eb:SetPoint("LEFT", label, "RIGHT", 10, 0); eb:SetAutoFocus(false)
-            local val = DTCRaidDB.identities[name]; if not val or val == "" then val = name end
+            local val = DTCRaidDB.identities[name]
+            if not val or val == "" then val = name end
             eb:SetText(val)
             eb:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText(); self:ClearFocus() end)
             eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText() end)

@@ -41,6 +41,8 @@ f:SetScript("OnEvent", function(self, event, ...)
             local action, data = strsplit(":", msg, 2)
             if DTC.Vote then DTC.Vote:OnComm(action, data, sender) end
             if DTC.History then DTC.History:OnComm(action, data, sender) end
+            -- Bribe comms handled in Bribe.lua via its own listener or shared here, 
+            -- but Bribe.lua currently has its own listener for clean separation.
         end
         
     elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
@@ -56,17 +58,17 @@ function DTC:InitDatabase()
     DTCRaidDB.identities = DTCRaidDB.identities or {}
     DTCRaidDB.guilds = DTCRaidDB.guilds or {}
     DTCRaidDB.classes = DTCRaidDB.classes or {}
-    DTCRaidDB.bribes = DTCRaidDB.bribes or {} 
+    DTCRaidDB.bribes = DTCRaidDB.bribes or {} -- NEW: Store Accepted Bribes
     DTCRaidDB.settings = DTCRaidDB.settings or {}
     
-    -- Vote Defaults
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
-    
-    -- Timer Defaults (Bribe, Proposition, Lobby)
+-- Timer Defaults
     if DTCRaidDB.settings.bribeTimer == nil then DTCRaidDB.settings.bribeTimer = 90 end
     if DTCRaidDB.settings.propTimer == nil then DTCRaidDB.settings.propTimer = 90 end
-    if DTCRaidDB.settings.lobbyTimer == nil then DTCRaidDB.settings.lobbyTimer = 120 end
+    if DTCRaidDB.settings.lobbyTimer == nil then DTCRaidDB.settings.lobbyTimer = 120 end -- NEW
+    
+    C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
@@ -89,17 +91,26 @@ function DTC:CheckRosterForNicknames()
     end
     if not isValidRaid then return end
 
+    -- Iterate Roster
     for i = 1, GetNumGroupMembers() do
         local unitID = "raid"..i
         local charName, _, _, _, _, classFile = GetRaidRosterInfo(i)
         
         if charName then
             if string.find(charName, "-") then charName = strsplit("-", charName) end
-            if not DTCRaidDB.identities[charName] then DTCRaidDB.identities[charName] = charName end
+            
+            if not DTCRaidDB.identities[charName] then
+                DTCRaidDB.identities[charName] = charName
+            end
+            
             if classFile then DTCRaidDB.classes[charName] = classFile end
             
             local guildName, _, _, _ = GetGuildInfo(unitID)
-            if guildName then DTCRaidDB.guilds[charName] = guildName else DTCRaidDB.guilds[charName] = "" end
+            if guildName then 
+                DTCRaidDB.guilds[charName] = guildName 
+            else
+                 DTCRaidDB.guilds[charName] = "" 
+            end
         end
     end
 end
@@ -124,3 +135,5 @@ SlashCmdList["DTC"] = function(msg)
         print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
     end
 end
+
+

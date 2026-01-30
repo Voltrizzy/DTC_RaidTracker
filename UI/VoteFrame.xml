@@ -27,17 +27,18 @@
             </ScrollFrame>
 
             <Button parentKey="FinalizeBtn" inherits="UIPanelButtonTemplate" text="Finalize">
-                <Size x="100" y="24"/>
-                <Anchors>
-                    <Anchor point="LEFT" relativePoint="BOTTOMLEFT" x="10" y="44"/>
-                </Anchors>
+                <Size x="80" y="24"/>
+                <Anchors><Anchor point="LEFT" relativePoint="BOTTOMLEFT" x="10" y="44"/></Anchors>
             </Button>
 
             <Button parentKey="AnnounceBtn" inherits="UIPanelButtonTemplate" text="Announce">
+                <Size x="80" y="24"/>
+                <Anchors><Anchor point="LEFT" relativeKey="$parent.FinalizeBtn" relativePoint="RIGHT" x="5" y="0"/></Anchors>
+            </Button>
+            
+            <Button parentKey="PropBtn" inherits="UIPanelButtonTemplate" text="Proposition">
                 <Size x="100" y="24"/>
-                <Anchors>
-                    <Anchor point="LEFT" relativeKey="$parent.FinalizeBtn" relativePoint="RIGHT" x="10" y="0"/>
-                </Anchors>
+                <Anchors><Anchor point="LEFT" relativeKey="$parent.AnnounceBtn" relativePoint="RIGHT" x="5" y="0"/></Anchors>
             </Button>
         </Frames>
         
@@ -51,5 +52,6 @@
             </Layer>
         </Layers>
     </Frame>
+
 
 </Ui>
