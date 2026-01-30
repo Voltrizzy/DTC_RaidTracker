@@ -5,9 +5,9 @@ DTC.Vote = {}
 DTC.Vote.isOpen = false
 DTC.Vote.currentBoss = "Unknown"
 DTC.Vote.myVotesLeft = 3
-DTC.Vote.votes = {}      -- [Name] = Count
-DTC.Vote.voters = {}     -- [Name] = true (Who has cast a vote)
-DTC.Vote.versions = {}   -- [Name] = "x.y.z" (Added for Version Check)
+DTC.Vote.votes = {}      -- [Name] = Count (Votes received)
+DTC.Vote.voters = {}     -- [Name] = Count (Votes cast by this person)
+DTC.Vote.versions = {}   -- [Name] = "x.y.z"
 DTC.Vote.myHistory = {}  -- [Name] = true (Who I voted for)
 DTC.Vote.isTestMode = false
 
@@ -22,7 +22,10 @@ end
 
 -- 2. Event Handlers
 function DTC.Vote:OnEncounterEnd(encounterID, encounterName, difficultyID, raidSize, endStatus)
-    if endStatus == 1 then self:StartSession(encounterName) end
+    if endStatus ~= 1 then return end
+    local _, instanceType = GetInstanceInfo()
+    if instanceType ~= "raid" then return end
+    self:StartSession(encounterName) 
 end
 
 -- 3. Session Management
@@ -31,13 +34,12 @@ function DTC.Vote:StartSession(bossName, isTest)
     self.currentBoss = bossName
     self.myVotesLeft = 3
     self.votes = {}
-    self.voters = {}
-    self.versions = {} -- Reset versions
+    self.voters = {}      
+    self.versions = {} 
     self.myHistory = {}
     self.isTestMode = isTest or false
     
     if not isTest then
-        -- Ping raid with OUR version
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
     end
     
@@ -52,13 +54,22 @@ end
 -- 4. Actions
 function DTC.Vote:CastVote(targetName)
     if not self.isOpen or self.myVotesLeft <= 0 then return end
+    if targetName == UnitName("player") then print("|cFFFF0000DTC:|r You cannot vote for yourself."); return end
     if self.myHistory[targetName] then return end
     
     self.myVotesLeft = self.myVotesLeft - 1
     self.myHistory[targetName] = true
-    self.voters[UnitName("player")] = true
+    
+    -- Track that *I* cast a vote
+    local myName = UnitName("player")
+    self.voters[myName] = (self.voters[myName] or 0) + 1
     
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
+    
+    -- AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
+    if self.myVotesLeft <= 0 and DTC.Bribe then
+        DTC.Bribe:DeclineAll()
+    end
     
     if not self.isTestMode then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..targetName, "RAID")
@@ -68,7 +79,6 @@ end
 
 function DTC.Vote:Finalize()
     if not self.isOpen then return end
-    
     local raidInfo = GetInstanceInfo()
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
     local dateStr = date("%Y-%m-%d")
@@ -91,60 +101,24 @@ function DTC.Vote:Finalize()
     self:EndSession()
 end
 
--- 5. Announcement Logic (Updated with Mac vs Pink Penalty Rule)
+-- 5. Announcement Logic (Cleaned: No Mac vs Pink Rule)
 function DTC.Vote:Announce()
-    -- Helpers to find real names from nicknames
-    local function GetRealNameByNick(targetNick)
-        if not DTCRaidDB.identities then return nil end
-        -- 1. Check current roster
-        for i = 1, GetNumGroupMembers() do
-            local name = GetRaidRosterInfo(i)
-            if name and DTCRaidDB.identities[name] == targetNick then
-                return name
-            end
-        end
-        -- 2. Check vote table (in case they left raid but received votes)
-        for name, _ in pairs(self.votes) do
-            if DTCRaidDB.identities[name] == targetNick then return name end
-        end
-        return nil
-    end
-
-    local pinkRealName = GetRealNameByNick("Pink")
-    local macRealName = GetRealNameByNick("Mac")
-    
-    -- Prepare data for sorting (using effective votes)
     local sorted = {}
     
+    -- Gather and Sort (Standard)
     for n, v in pairs(self.votes) do
-        local effectiveVotes = v
-        
-        -- THE RULE: If Pink is in the raid, Mac must have (Pink - 1) votes max.
-        if pinkRealName and n == macRealName then
-            local pinkVotes = self.votes[pinkRealName] or 0
-            if effectiveVotes >= pinkVotes then
-                effectiveVotes = pinkVotes - 1
-            end
-        end
-        
-        table.insert(sorted, {name=n, val=effectiveVotes}) 
+        table.insert(sorted, {name=n, val=v}) 
     end
     
-    -- Standard Sort
     table.sort(sorted, function(a,b) return a.val > b.val end)
     
-    -- Output Logic
+    -- Display
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
     local bossDisplay = self.currentBoss
     if diffName and diffName ~= "" then bossDisplay = "("..diffName..") " .. self.currentBoss end
     
     local header = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
     SendChatMessage(header:format(bossDisplay), "RAID")
-    
-    -- If rule applied, optionally announce it (remove if too spammy)
-    if pinkRealName and macRealName and self.votes[macRealName] and (self.votes[macRealName] >= (self.votes[pinkRealName] or 0)) then
-        SendChatMessage("(Mac Penalty Rule Active: Mac votes capped below Pink)", "RAID")
-    end
     
     for i=1, math.min(3, #sorted) do
         local dName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[i].name) or sorted[i].name
@@ -158,12 +132,10 @@ function DTC.Vote:Announce()
     end
 end
 
--- 6. Data Provider (Updated with Version Logic)
+-- 6. Data Provider
 function DTC.Vote:GetRosterData()
     local roster = {}
-    
     if self.isTestMode then
-        -- Mock Data with Test Versions
         return {
             {name="Mickey", class="MAGE", role="DAMAGER", hasVoted=true, hasAddon=true, versionMismatch=false},
             {name="Donald", class="WARRIOR", role="TANK", hasVoted=false, hasAddon=true, versionMismatch=true}, 
@@ -177,46 +149,44 @@ function DTC.Vote:GetRosterData()
             local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
             local hasAddon = (self.versions[name] ~= nil)
             local mismatch = false
+            if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
             
-            -- Version Check Logic
-            if hasAddon and self.versions[name] ~= DTC.VERSION then
-                mismatch = true
-            end
-            
+            -- Check "hasVoted" (True if count > 0)
+            local voteCount = self.voters[name] or 0
+            local hasVotedBool = (voteCount > 0)
+
             table.insert(roster, {
                 name = name,
                 class = classFile,
                 role = role,
                 nick = nick,
-                hasVoted = self.voters[name],
+                hasVoted = hasVotedBool,
                 hasAddon = hasAddon,
                 versionMismatch = mismatch
             })
         end
     end
-    
     return roster
 end
 
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
+function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
--- 7. Comms (Updated for Version Ping/Pong)
+-- 7. Comms
 function DTC.Vote:OnComm(action, data, sender)
     if action == "VOTE" then
         if sender ~= UnitName("player") then
             local target = data
             self.votes[target] = (self.votes[target] or 0) + 1
-            self.voters[sender] = true
+            self.voters[sender] = (self.voters[sender] or 0) + 1
             if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
         end
         
     elseif action == "PING_ADDON" then
-        -- Reply with OUR version
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PONG_ADDON:"..DTC.VERSION, "RAID")
         
     elseif action == "PONG_ADDON" then
-        -- Store THEIR version
         self.versions[sender] = data or "Unknown"
         if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
     end
