@@ -2,7 +2,7 @@
 ## Title: DTC Raid Tracker
 ## Notes: Modular version of the Disney Trip Champion tracker.
 ## Author: Voltrizzy
-## Version: 7.0.0
+## Version: 7.1.0
 ## SavedVariables: DTCRaidDB
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 ## X-Wago-ID: 56ndd5G9
@@ -15,6 +15,7 @@ Utils\Helpers.lua
 
 # 2. Data Models
 Models\StaticData.lua
+Models\Bribe.lua
 Models\Vote.lua
 Models\Leaderboard.lua
 Models\History.lua
@@ -24,6 +25,9 @@ Config.lua
 
 # 4. Visuals (XML must load before Lua)
 UI\Widgets.xml
+
+UI\BribeUI.xml
+UI\BribeUI.lua
 
 UI\VoteFrame.xml
 UI\VoteFrame.lua
