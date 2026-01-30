@@ -1,5 +1,4 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
-..\FrameXML\UI.xsd">
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
 
     <Frame name="DTC_WindowTemplate" inherits="BasicFrameTemplate" virtual="true" toplevel="true" movable="true" enableMouse="true" clampedToScreen="true">
         <Layers>
@@ -15,7 +14,8 @@
         <Frames>
             <Frame parentKey="Inset" inherits="InsetFrameTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" x="4" y="-24"/> <Anchor point="BOTTOMRIGHT" x="-6" y="26"/>
+                    <Anchor point="TOPLEFT" x="4" y="-24"/> 
+                    <Anchor point="BOTTOMRIGHT" x="-6" y="26"/>
                 </Anchors>
             </Frame>
         </Frames>
