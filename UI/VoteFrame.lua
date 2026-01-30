@@ -4,10 +4,8 @@ local frame, rows, headers = nil, {}, {}
 
 function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
-    
     frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
     frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
-    
     if frame.SetTitle then frame:SetTitle("Voting Window") end
 end
 
@@ -19,8 +17,7 @@ end
 function DTC.VoteFrame:UpdateHeader()
     if not frame then return end
     local titleText = DTC.Vote and DTC.Vote.currentBoss or "Unknown Boss"
-    if DTC.Vote and DTC.Vote.isTestMode then
-        titleText = "(Test) " .. titleText
+    if DTC.Vote and DTC.Vote.isTestMode then titleText = "(Test) " .. titleText
     else
         local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
         if diffName and diffName ~= "" then titleText = "(" .. diffName .. ") " .. titleText end
@@ -30,10 +27,8 @@ end
 
 function DTC.VoteFrame:UpdateList()
     if not frame or not frame:IsShown() then return end
-    
     for _, row in ipairs(rows) do row:Hide() end
     for _, hdr in ipairs(headers) do hdr:Hide() end
-    
     if not DTC.Vote then return end
     
     local content = frame.ListScroll.Content
@@ -71,77 +66,54 @@ function DTC.VoteFrame:UpdateList()
 end
 
 function DTC.VoteFrame:GetHeader(parent)
-    for _, h in ipairs(headers) do
-        if not h:IsShown() then return h end
-    end
+    for _, h in ipairs(headers) do if not h:IsShown() then return h end end
     local h = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    h:SetJustifyH("LEFT")
-    h:SetTextColor(1, 0.82, 0)
+    h:SetJustifyH("LEFT"); h:SetTextColor(1, 0.82, 0)
     table.insert(headers, h)
     return h
 end
 
 function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
     if #list == 0 then return yOffset end
-    
     if title ~= "" then
         local hdr = self:GetHeader(parent)
-        hdr:SetPoint("TOPLEFT", 5, yOffset)
-        hdr:SetText(title)
-        hdr:Show()
+        hdr:SetPoint("TOPLEFT", 5, yOffset); hdr:SetText(title); hdr:Show()
         yOffset = yOffset - 20
     end
-    
     table.sort(list, function(a,b) return a.name < b.name end)
-    
     for i, p in ipairs(list) do
         local row = rows[#rows + 1]
         if not row then
             row = CreateFrame("Frame", nil, parent)
             row:SetSize(330, 24)
-            
-            row.StatusIcon = row:CreateTexture(nil, "OVERLAY")
-            row.StatusIcon:SetSize(16, 16)
-            row.StatusIcon:SetPoint("LEFT", 0, 0)
-            
-            row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            row.Name:SetPoint("LEFT", 20, 0)
-            
-            row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
-            
-            row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            row.Count:SetPoint("RIGHT", -60, 0)
-            
+            row.StatusIcon = row:CreateTexture(nil, "OVERLAY"); row.StatusIcon:SetSize(16, 16); row.StatusIcon:SetPoint("LEFT", 0, 0)
+            row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); row.Name:SetPoint("LEFT", 20, 0)
+            row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate"); row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
+            row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal"); row.Count:SetPoint("RIGHT", -60, 0)
             table.insert(rows, row)
         end
-        
-        row:SetPoint("TOPLEFT", 5, yOffset)
-        row:Show()
-        
+        row:SetPoint("TOPLEFT", 5, yOffset); row:Show()
         local color = RAID_CLASS_COLORS[p.class] or {r=1,g=1,b=1}
         row.Name:SetTextColor(color.r, color.g, color.b)
         row.Name:SetText(p.nick and (p.name.." ("..p.nick..")") or p.name)
         
-        -- UPDATED STATUS LOGIC
-        if p.hasVoted then
-            -- Voted (Green Check)
-            row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Ready")
-        elseif not p.hasAddon then
-            -- No Addon (Red X)
-            row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
-        elseif p.versionMismatch then
-            -- Has Addon, Wrong Version (Yellow Alert)
-            row.StatusIcon:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
-        else
-            -- Has Addon, Waiting (Gray Question)
-            row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Waiting")
-        end
+        if p.hasVoted then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Ready")
+        elseif not p.hasAddon then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
+        elseif p.versionMismatch then row.StatusIcon:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
+        else row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Waiting") end
         
         row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(p.name) end end)
+        
+        -- LOGIC UPDATE: Disable button if it's ME
         local canVote = DTC.Vote and DTC.Vote.isOpen and (DTC.Vote.myVotesLeft > 0)
         local already = DTC.Vote and DTC.Vote:HasVotedFor(p.name)
-        if canVote and not already then row.VoteBtn:Enable() else row.VoteBtn:Disable() end
+        local isMe = (p.name == UnitName("player")) -- New Check
+        
+        if canVote and not already and not isMe then 
+            row.VoteBtn:Enable() 
+        else 
+            row.VoteBtn:Disable() 
+        end
         
         row.Count:SetText((DTC.Vote and DTC.Vote:GetVoteCount(p.name)) or 0)
         yOffset = yOffset - 24
