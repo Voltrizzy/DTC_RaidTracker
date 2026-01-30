@@ -35,6 +35,22 @@ function DTC.BribeUI:Init()
     self.TrackerFrame = DTC_BribeTrackerFrame
     if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("Bribe History") end
     self.TrackerFrame.ClearBtn:SetScript("OnClick", function() DTCRaidDB.bribes = {}; self:UpdateTracker() end)
+    
+    -- NEW: 6. Lobby Input
+    self.LobbyInputFrame = DTC_LobbyInputPopup
+    self.LobbyInputFrame.ConfirmBtn:SetScript("OnClick", function()
+        local amt = self.LobbyInputFrame.AmountBox:GetText()
+        local cand = self.LobbyInputFrame.candidate
+        DTC.Bribe:SendLobby(cand, amt)
+        self.LobbyInputFrame:Hide()
+    end)
+    self.LobbyInputFrame.CancelBtn:SetScript("OnClick", function() self.LobbyInputFrame:Hide() end)
+    if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle("Lobbying") end
+    
+    -- NEW: 7. Lobby List
+    self.LobbyListFrame = DTC_LobbyListFrame
+    if self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("Lobbying Offers") end
+    
 end
 
 -- --- OPENERS ---
@@ -95,6 +111,34 @@ function DTC.BribeUI:UpdatePropositionList()
     end
 end
 
+-- NEW
+function DTC.BribeUI:UpdateLobbyList()
+    if not self.LobbyListFrame then self:Init() end
+    local list = DTC.Bribe.LobbyQueue
+    if #list > 0 then self.LobbyListFrame:Show() else self.LobbyListFrame:Hide() end
+    
+    local content = self.LobbyListFrame.ListScroll.Content
+    local kids = {content:GetChildren()}; for _, k in ipairs(kids) do k:Hide(); k:SetParent(nil) end
+    
+    local yOffset = 0
+    for _, lobby in ipairs(list) do
+        local row = CreateFrame("Frame", nil, content, "DTC_LobbyRowTemplate")
+        row:SetPoint("TOPLEFT", 0, yOffset)
+        
+        -- Text: "[Lobbyist] pays [Amt] for [Candidate]"
+        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%dg|r for |cFF00FF00%s|r", lobby.lobbyist, lobby.amount, lobby.candidate)
+        row.Text:SetText(txt)
+        
+        row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptLobby(lobby.id) end)
+        row.DeclineBtn:SetScript("OnClick", function() DTC.Bribe:ExpireLobby(lobby.id) end)
+        
+        -- Logic: Disable if I have no votes
+        if DTC.Vote and DTC.Vote.myVotesLeft > 0 then row.AcceptBtn:Enable() else row.AcceptBtn:Disable() end
+        
+        yOffset = yOffset - 25
+    end
+end
+
 function DTC.BribeUI:ToggleTracker()
     if not self.TrackerFrame then self:Init() end
     if self.TrackerFrame:IsShown() then self.TrackerFrame:Hide() else self.TrackerFrame:Show(); self:UpdateTracker() end
@@ -104,12 +148,10 @@ function DTC.BribeUI:UpdateTracker()
     if not self.TrackerFrame or not self.TrackerFrame:IsShown() then return end
     local content = self.TrackerFrame.ListScroll.Content
     local kids = {content:GetChildren()}; for _, k in ipairs(kids) do k:Hide(); k:SetParent(nil) end
-    
     local yOffset = 0
     local data = DTCRaidDB.bribes or {}
     local sorted = {}; for i, e in ipairs(data) do e.originalIndex=i; table.insert(sorted, e) end
     table.sort(sorted, function(a,b) return a.timestamp > b.timestamp end)
-    
     for _, entry in ipairs(sorted) do
         local row = CreateFrame("Frame", nil, content, "DTC_BribeRowTemplate")
         row:SetPoint("TOPLEFT", 0, yOffset)
@@ -117,7 +159,6 @@ function DTC.BribeUI:UpdateTracker()
         row.Text:SetText(txt)
         local status = entry.paid and "|cFF00FF00PAID|r" or "|cFFFF0000OWED|r"
         row.Amount:SetText(entry.amount .. "g  " .. status)
-        
         row.TradeBtn:SetScript("OnClick", function()
             if entry.offerer == UnitName("player") then DTC.Bribe:InitiateTrade(entry.recipient, entry.amount, entry.originalIndex)
             elseif entry.recipient == UnitName("player") then DTC.Bribe:InitiateTrade(entry.offerer, 0, nil) 
