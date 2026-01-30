@@ -303,14 +303,14 @@ function DTC.Config:BuildVotingTab(frame)
 
     -- NEW: Bribe Configuration Tab
 function DTC.Config:BuildBribeTab(frame)
-    local box = CreateGroupBox(frame, "Timer Settings", 580, 150)
+    local box = CreateGroupBox(frame, "Timer Settings", 580, 200) -- Increased height
     box:SetPoint("TOPLEFT", 0, 0)
     
     local function AddSlider(title, key, minVal, maxVal, y)
         local s = CreateFrame("Slider", nil, box, "OptionsSliderTemplate")
         s:SetPoint("TOPLEFT", 20, y)
         s:SetMinMaxValues(minVal, maxVal)
-        s:SetValueStep(1)
+        s:SetValueStep(5)
         s:SetObeyStepOnDrag(true)
         s:SetWidth(200)
         _G[s:GetName() .. "Text"]:SetText(title)
@@ -327,13 +327,16 @@ function DTC.Config:BuildBribeTab(frame)
         end)
         
         s:SetScript("OnShow", function(self)
-            local val = DTCRaidDB.settings[key] or 90
+            local val = DTCRaidDB.settings[key] or 90 -- Default fallback
+            if key == "lobbyTimer" then val = DTCRaidDB.settings[key] or 120 end
             self:SetValue(val)
             valLabel:SetText(val .. " seconds")
         end)
     end
     
     AddSlider("Bribe Offer Expiration", "bribeTimer", 30, 300, -40)
-    AddSlider("Proposition Expiration", "propTimer", 30, 300, -100)
+    AddSlider("Proposition Expiration", "propTimer", 30, 300, -90)
+    AddSlider("Lobbying Expiration", "lobbyTimer", 30, 300, -140) -- NEW
 end
+
 
