@@ -6,6 +6,7 @@ function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
     frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
     frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
+    frame.PropBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenPropInput() end end)
     if frame.SetTitle then frame:SetTitle("Voting Window") end
 end
 
@@ -37,6 +38,9 @@ function DTC.VoteFrame:UpdateList()
     
     frame.FinalizeBtn:SetShown(isLeader and DTC.Vote.isOpen)
     frame.AnnounceBtn:SetShown(isLeader)
+    -- Anyone with votes left can proposition, doesn't need to be leader
+    local canProp = DTC.Vote.isOpen and (DTC.Vote.myVotesLeft > 0)
+    frame.PropBtn:SetShown(canProp)
     
     local roster = DTC.Vote:GetRosterData()
     local sortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
@@ -141,3 +145,4 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
     end
     return yOffset - 5
 end
+
