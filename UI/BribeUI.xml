@@ -5,36 +5,41 @@
         <Anchors><Anchor point="CENTER"/></Anchors>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Offer Bribe">
-                    <Anchors><Anchor point="TOP" y="-10"/></Anchors>
-                </FontString>
-                <FontString parentKey="Label" inherits="GameFontHighlight" text="Enter Amount (Gold):">
-                    <Anchors><Anchor point="TOP" y="-40"/></Anchors>
-                </FontString>
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Offer Bribe"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+                <FontString parentKey="Label" inherits="GameFontHighlight" text="Enter Amount (Gold):"><Anchors><Anchor point="TOP" y="-40"/></Anchors></FontString>
             </Layer>
         </Layers>
         <Frames>
-            <EditBox parentKey="AmountBox" inherits="InputBoxTemplate" numeric="true">
-                <Size x="120" y="30"/>
-                <Anchors><Anchor point="TOP" y="-60"/></Anchors>
-                <Layers>
-                    <Layer level="ARTWORK">
-                        <Texture file="Interface\MoneyFrame\UI-GoldIcon">
-                            <Size x="16" y="16"/>
-                            <Anchors><Anchor point="RIGHT" x="-5" y="0"/></Anchors>
-                        </Texture>
-                    </Layer>
-                </Layers>
-            </EditBox>
-            
-            <Button parentKey="ConfirmBtn" inherits="UIPanelButtonTemplate" text="Offer">
-                <Size x="80" y="24"/>
-                <Anchors><Anchor point="BOTTOMLEFT" x="40" y="20"/></Anchors>
-            </Button>
-            <Button parentKey="CancelBtn" inherits="UIPanelButtonTemplate" text="Cancel">
-                <Size x="80" y="24"/>
-                <Anchors><Anchor point="BOTTOMRIGHT" x="-40" y="20"/></Anchors>
-            </Button>
+            <EditBox parentKey="AmountBox" inherits="InputBoxTemplate" numeric="true"><Size x="120" y="30"/><Anchors><Anchor point="TOP" y="-60"/></Anchors><Layers><Layer level="ARTWORK"><Texture file="Interface\MoneyFrame\UI-GoldIcon"><Size x="16" y="16"/><Anchors><Anchor point="RIGHT" x="-5" y="0"/></Anchors></Texture></Layer></Layers></EditBox>
+            <Button parentKey="ConfirmBtn" inherits="UIPanelButtonTemplate" text="Offer"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="40" y="20"/></Anchors></Button>
+            <Button parentKey="CancelBtn" inherits="UIPanelButtonTemplate" text="Cancel"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-40" y="20"/></Anchors></Button>
+        </Frames>
+    </Frame>
+    
+    <Frame name="DTC_PropositionInputPopup" inherits="DTC_WindowTemplate" parent="UIParent" hidden="true" frameStrata="DIALOG">
+        <Size x="300" y="150"/>
+        <Anchors><Anchor point="CENTER"/></Anchors>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Proposition Bribe"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+                <FontString parentKey="Label" inherits="GameFontHighlight" text="Price for your Vote (Gold):"><Anchors><Anchor point="TOP" y="-40"/></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <EditBox parentKey="AmountBox" inherits="InputBoxTemplate" numeric="true"><Size x="120" y="30"/><Anchors><Anchor point="TOP" y="-60"/></Anchors><Layers><Layer level="ARTWORK"><Texture file="Interface\MoneyFrame\UI-GoldIcon"><Size x="16" y="16"/><Anchors><Anchor point="RIGHT" x="-5" y="0"/></Anchors></Texture></Layer></Layers></EditBox>
+            <Button parentKey="ConfirmBtn" inherits="UIPanelButtonTemplate" text="Confirm"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="40" y="20"/></Anchors></Button>
+            <Button parentKey="CancelBtn" inherits="UIPanelButtonTemplate" text="Cancel"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-40" y="20"/></Anchors></Button>
+        </Frames>
+    </Frame>
+
+    <Frame name="DTC_PropositionListFrame" inherits="DTC_WindowTemplate" parent="UIParent" hidden="true">
+        <Size x="400" y="300"/>
+        <Anchors><Anchor point="CENTER" x="300" y="0"/></Anchors>
+        <Frames>
+            <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate">
+                <Anchors><Anchor point="TOPLEFT" x="15" y="-30"/><Anchor point="BOTTOMRIGHT" x="-35" y="10"/></Anchors>
+                <ScrollChild><Frame parentKey="Content"><Size x="350" y="1"/></Frame></ScrollChild>
+            </ScrollFrame>
         </Frames>
     </Frame>
 
@@ -43,27 +48,14 @@
         <Anchors><Anchor point="CENTER" y="100"/></Anchors>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Bribe Offered!">
-                    <Anchors><Anchor point="TOP" y="-12"/></Anchors>
-                </FontString>
-                <FontString parentKey="Desc" inherits="GameFontHighlightLarge" justifyH="CENTER">
-                    <Size x="300" y="40"/>
-                    <Anchors><Anchor point="TOP" y="-45"/></Anchors>
-                </FontString>
-                <FontString parentKey="Timer" inherits="GameFontNormalSmall" text="Expires in 90s">
-                    <Anchors><Anchor point="BOTTOM" y="50"/></Anchors>
-                </FontString>
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Bribe Offered!"><Anchors><Anchor point="TOP" y="-12"/></Anchors></FontString>
+                <FontString parentKey="Desc" inherits="GameFontHighlightLarge" justifyH="CENTER"><Size x="300" y="40"/><Anchors><Anchor point="TOP" y="-45"/></Anchors></FontString>
+                <FontString parentKey="Timer" inherits="GameFontNormalSmall" text="Expires in 90s"><Anchors><Anchor point="BOTTOM" y="50"/></Anchors></FontString>
             </Layer>
         </Layers>
         <Frames>
-            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept">
-                <Size x="100" y="24"/>
-                <Anchors><Anchor point="BOTTOMLEFT" x="30" y="20"/></Anchors>
-            </Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline">
-                <Size x="100" y="24"/>
-                <Anchors><Anchor point="BOTTOMRIGHT" x="-30" y="20"/></Anchors>
-            </Button>
+            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="30" y="20"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-30" y="20"/></Anchors></Button>
         </Frames>
     </Frame>
 
@@ -71,35 +63,23 @@
         <Size x="500" y="400"/>
         <Anchors><Anchor point="CENTER"/></Anchors>
         <Frames>
-            <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate">
-                <Anchors>
-                    <Anchor point="TOPLEFT" x="15" y="-30"/>
-                    <Anchor point="BOTTOMRIGHT" x="-35" y="10"/>
-                </Anchors>
-                <ScrollChild>
-                    <Frame parentKey="Content"><Size x="450" y="1"/></Frame>
-                </ScrollChild>
-            </ScrollFrame>
-            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear">
-                <Size x="60" y="20"/>
-                <Anchors><Anchor point="TOPRIGHT" x="-10" y="-5"/></Anchors>
-            </Button>
+            <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate"><Anchors><Anchor point="TOPLEFT" x="15" y="-30"/><Anchor point="BOTTOMRIGHT" x="-35" y="10"/></Anchors><ScrollChild><Frame parentKey="Content"><Size x="450" y="1"/></Frame></ScrollChild></ScrollFrame>
+            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear"><Size x="60" y="20"/><Anchors><Anchor point="TOPRIGHT" x="-10" y="-5"/></Anchors></Button>
         </Frames>
     </Frame>
     
     <Frame name="DTC_BribeRowTemplate" virtual="true">
         <Size x="450" y="24"/>
-        <Layers>
-            <Layer level="OVERLAY">
-                <FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString>
-                <FontString parentKey="Amount" inherits="GameFontNormal" justifyH="RIGHT"><Anchors><Anchor point="RIGHT" x="-90"/></Anchors></FontString>
-            </Layer>
-        </Layers>
+        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString><FontString parentKey="Amount" inherits="GameFontNormal" justifyH="RIGHT"><Anchors><Anchor point="RIGHT" x="-90"/></Anchors></FontString></Layer></Layers>
+        <Frames><Button parentKey="TradeBtn" inherits="UIPanelButtonTemplate" text="Trade"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button></Frames>
+    </Frame>
+    
+    <Frame name="DTC_PropRowTemplate" virtual="true">
+        <Size x="350" y="24"/>
+        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
         <Frames>
-            <Button parentKey="TradeBtn" inherits="UIPanelButtonTemplate" text="Trade">
-                <Size x="60" y="20"/>
-                <Anchors><Anchor point="RIGHT" x="-5"/></Anchors>
-            </Button>
+            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-70"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
         </Frames>
     </Frame>
 </Ui>
