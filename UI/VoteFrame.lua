@@ -103,7 +103,6 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
             
             -- VOTE COUNT LABEL
             row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            -- Adjusted anchor to sit to the left of the Bribe button
             row.Count:SetPoint("RIGHT", row.BribeBtn, "LEFT", -10, 0)
             
             table.insert(rows, row)
@@ -136,8 +135,12 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
             if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(p.name) end 
         end)
         
-        -- Disable bribe button if it's ME (Can't bribe yourself)
-        if isMe then
+        -- CHECK: Has this player used all 3 votes?
+        local votesCast = DTC.Vote:GetVotesCastBy(p.name)
+        local hasVotesRemaining = (votesCast < 3)
+
+        -- Disable bribe button if it's ME OR if target has no votes left
+        if isMe or not hasVotesRemaining then
             row.BribeBtn:Disable()
         else
             row.BribeBtn:Enable()
