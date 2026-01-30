@@ -40,5 +40,5 @@ UI\Leaderboard.xml
 UI\Leaderboard.lua
 
 UI\History.xml
-
 UI\History.lua
+
