@@ -50,7 +50,7 @@ function DTC.Config:Init()
     CreateTabButton(3, "Leaderboard", panel.Tabs[2])
     CreateTabButton(4, "History", panel.Tabs[3])
     CreateTabButton(5, "Voting", panel.Tabs[4])
-    CreateTabButton(6, "Bribes", panel.Tabs[5]) -- NEW TAB
+    CreateTabButton(6, "Bribes", panel.Tabs[5]) 
     
     self:BuildGeneralTab(panel.SubFrames[1])
     self:BuildNicknamesTab(panel.SubFrames[2])
@@ -85,7 +85,6 @@ function DTC.Config:BuildGeneralTab(frame)
     btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check")
     btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VER_QUERY", "RAID") end)
     
-    -- NEW: Test Bribes Button
     local btnBribe = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnBribe:SetSize(140, 24); btnBribe:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnBribe:SetText("Test Incoming Bribe")
     btnBribe:SetScript("OnClick", function() 
@@ -291,21 +290,34 @@ function DTC.Config:BuildBribeTab(frame)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local function AddSlider(title, key, minVal, maxVal, y)
+        -- We give the slider a nil name, but we can access sub-regions by key directly 
+        -- because 'OptionsSliderTemplate' creates keys .Text, .Low, .High on the object.
         local s = CreateFrame("Slider", nil, box, "OptionsSliderTemplate")
         s:SetPoint("TOPLEFT", 20, y)
         s:SetMinMaxValues(minVal, maxVal)
         s:SetValueStep(5)
         s:SetObeyStepOnDrag(true)
         s:SetWidth(200)
-        _G[s:GetName() .. "Text"]:SetText(title)
-        _G[s:GetName() .. "Low"]:SetText(minVal.."s")
-        _G[s:GetName() .. "High"]:SetText(maxVal.."s")
-        local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
-        s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings[key] = value; valLabel:SetText(value .. " seconds") end)
+        
+        -- Use direct references instead of _G lookups
+        if s.Text then s.Text:SetText(title) end
+        if s.Low then s.Low:SetText(minVal.."s") end
+        if s.High then s.High:SetText(maxVal.."s") end
+        
+        local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
+        
+        s:SetScript("OnValueChanged", function(self, value) 
+            value = math.floor(value)
+            DTCRaidDB.settings[key] = value
+            valLabel:SetText(value .. " seconds")
+        end)
+        
         s:SetScript("OnShow", function(self) 
             local val = DTCRaidDB.settings[key] or 90
             if key == "lobbyTimer" then val = DTCRaidDB.settings[key] or 120 end
-            self:SetValue(val); valLabel:SetText(val .. " seconds") 
+            self:SetValue(val)
+            valLabel:SetText(val .. " seconds") 
         end)
     end
     
