@@ -50,12 +50,14 @@ function DTC.Config:Init()
     CreateTabButton(3, "Leaderboard", panel.Tabs[2])
     CreateTabButton(4, "History", panel.Tabs[3])
     CreateTabButton(5, "Voting", panel.Tabs[4])
+    CreateTabButton(6, "Bribes", panel.Tabs[5]) -- NEW TAB
     
     self:BuildGeneralTab(panel.SubFrames[1])
     self:BuildNicknamesTab(panel.SubFrames[2])
     self:BuildLeaderboardTab(panel.SubFrames[3])
     self:BuildHistoryTab(panel.SubFrames[4])
     self:BuildVotingTab(panel.SubFrames[5])
+    self:BuildBribeTab(panel.SubFrames[6]) -- NEW BUILDER
     
     local cat = Settings.RegisterCanvasLayoutCategory(panel, "DTC Raid Tracker")
     Settings.RegisterAddOnCategory(cat)
@@ -298,4 +300,40 @@ function DTC.Config:BuildVotingTab(frame)
     AddEdit("Winner Message:", "voteWinMsg", -20)
     AddEdit("Runner Up Message:", "voteRunnerUpMsg", -65)
     AddEdit("Lowest Vote Message:", "voteLowMsg", -110)
+
+    -- NEW: Bribe Configuration Tab
+function DTC.Config:BuildBribeTab(frame)
+    local box = CreateGroupBox(frame, "Timer Settings", 580, 150)
+    box:SetPoint("TOPLEFT", 0, 0)
+    
+    local function AddSlider(title, key, minVal, maxVal, y)
+        local s = CreateFrame("Slider", nil, box, "OptionsSliderTemplate")
+        s:SetPoint("TOPLEFT", 20, y)
+        s:SetMinMaxValues(minVal, maxVal)
+        s:SetValueStep(1)
+        s:SetObeyStepOnDrag(true)
+        s:SetWidth(200)
+        _G[s:GetName() .. "Text"]:SetText(title)
+        _G[s:GetName() .. "Low"]:SetText(minVal.."s")
+        _G[s:GetName() .. "High"]:SetText(maxVal.."s")
+        
+        local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
+        
+        s:SetScript("OnValueChanged", function(self, value)
+            value = math.floor(value)
+            DTCRaidDB.settings[key] = value
+            valLabel:SetText(value .. " seconds")
+        end)
+        
+        s:SetScript("OnShow", function(self)
+            local val = DTCRaidDB.settings[key] or 90
+            self:SetValue(val)
+            valLabel:SetText(val .. " seconds")
+        end)
+    end
+    
+    AddSlider("Bribe Offer Expiration", "bribeTimer", 30, 300, -40)
+    AddSlider("Proposition Expiration", "propTimer", 30, 300, -100)
 end
+
