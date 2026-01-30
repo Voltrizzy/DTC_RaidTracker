@@ -63,6 +63,11 @@ function DTC:InitDatabase()
     
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
+    -- NEW: Timer Defaults
+    if DTCRaidDB.settings.bribeTimer == nil then DTCRaidDB.settings.bribeTimer = 90 end
+    if DTCRaidDB.settings.propTimer == nil then DTCRaidDB.settings.propTimer = 90 end
+    
+    C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
@@ -129,3 +134,4 @@ SlashCmdList["DTC"] = function(msg)
         print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
     end
 end
+
