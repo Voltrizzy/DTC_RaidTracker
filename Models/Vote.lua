@@ -71,11 +71,6 @@ function DTC.Vote:CastVote(targetName)
         DTC.Bribe:DeclineAll()
     end
     
-    -- AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
-    if self.myVotesLeft <= 0 and DTC.Bribe then
-        DTC.Bribe:DeclineAll()
-    end
-    
     if not self.isTestMode then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..targetName, "RAID")
     end
@@ -108,30 +103,11 @@ end
 
 -- 5. Announcement Logic
 function DTC.Vote:Announce()
-    local function GetRealNameByNick(targetNick)
-        if not DTCRaidDB.identities then return nil end
-        for i = 1, GetNumGroupMembers() do
-            local name = GetRaidRosterInfo(i)
-            if name and DTCRaidDB.identities[name] == targetNick then return name end
-        end
-        for name, _ in pairs(self.votes) do
-            if DTCRaidDB.identities[name] == targetNick then return name end
-        end
-        return nil
-    end
-
-    local pinkRealName = GetRealNameByNick("Pink")
-    local macRealName = GetRealNameByNick("Mac")
     local sorted = {}
     
     -- Gather and Sort (Standard)
     for n, v in pairs(self.votes) do
-        local effectiveVotes = v
-        if pinkRealName and n == macRealName then
-            local pinkVotes = self.votes[pinkRealName] or 0
-            if effectiveVotes >= pinkVotes then effectiveVotes = pinkVotes - 1 end
-        end
-        table.insert(sorted, {name=n, val=effectiveVotes}) 
+        table.insert(sorted, {name=n, val=v}) 
     end
     
     table.sort(sorted, function(a,b) return a.val > b.val end)
@@ -142,10 +118,6 @@ function DTC.Vote:Announce()
     
     local header = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
     SendChatMessage(header:format(bossDisplay), "RAID")
-    
-    if pinkRealName and macRealName and self.votes[macRealName] and (self.votes[macRealName] >= (self.votes[pinkRealName] or 0)) then
-        SendChatMessage("(Mac Penalty Rule Active: Mac votes capped below Pink)", "RAID")
-    end
     
     for i=1, math.min(3, #sorted) do
         local dName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[i].name) or sorted[i].name
@@ -198,7 +170,6 @@ end
 
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
-function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
 -- NEW HELPER: Get number of votes cast by a specific player
 function DTC.Vote:GetVotesCastBy(name)
