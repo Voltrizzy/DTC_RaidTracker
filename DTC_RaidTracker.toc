@@ -19,7 +19,6 @@ Models\Bribe.lua
 Models\Vote.lua
 Models\Leaderboard.lua
 Models\History.lua
-Models\Bribe.lua
 
 # 3. Configuration
 Config.lua
@@ -33,12 +32,8 @@ UI\BribeUI.lua
 UI\VoteFrame.xml
 UI\VoteFrame.lua
 
-UI\BribeUI.xml
-UI\BribeUI.lua
-
 UI\Leaderboard.xml
 UI\Leaderboard.lua
 
 UI\History.xml
 UI\History.lua
-
