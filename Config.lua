@@ -118,6 +118,8 @@ function DTC.Config:RefreshNicknames(content)
             table.insert(roster[guild], name)
         end
     end
+    local sortedGuilds = {}; for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end
+    table.sort(sortedGuilds, function(a,b) if a == "No Guild" then return false end; if b == "No Guild" then return true end; return a < b end)
     
     local sortedGuilds = {}
     for g, _ in pairs(roster) do table.insert(sortedGuilds, g) end

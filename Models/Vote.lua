@@ -71,6 +71,11 @@ function DTC.Vote:CastVote(targetName)
         DTC.Bribe:DeclineAll()
     end
     
+    -- AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
+    if self.myVotesLeft <= 0 and DTC.Bribe then
+        DTC.Bribe:DeclineAll()
+    end
+    
     if not self.isTestMode then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..targetName, "RAID")
     end
@@ -119,6 +124,7 @@ function DTC.Vote:Announce()
     local macRealName = GetRealNameByNick("Mac")
     local sorted = {}
     
+    -- Gather and Sort (Standard)
     for n, v in pairs(self.votes) do
         local effectiveVotes = v
         if pinkRealName and n == macRealName then
@@ -192,6 +198,7 @@ end
 
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
+function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
 -- NEW HELPER: Get number of votes cast by a specific player
 function DTC.Vote:GetVotesCastBy(name)

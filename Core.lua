@@ -1,7 +1,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC 
 
-DTC.VERSION = "7.0.0-Alpha"
+DTC.VERSION = "7.1.0"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
