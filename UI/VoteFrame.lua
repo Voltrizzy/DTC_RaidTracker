@@ -5,14 +5,31 @@ local frame, rows, headers = nil, {}, {}
 function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
     
-    -- Bottom Buttons
     frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
     frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
     
-    -- Proposition Button (Bottom Row)
     if frame.PropBtn then
         frame.PropBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenPropInput() end end)
     end
+    
+    -- TIMER ANIMATION
+    frame.TimerBar:SetScript("OnUpdate", function(self, elapsed)
+        if not DTC.Vote or not DTC.Vote.isOpen then 
+            self:SetValue(0)
+            return 
+        end
+        
+        local start = DTC.Vote.sessionStartTime or 0
+        local duration = DTC.Vote.sessionDuration or 180
+        local now = GetTime()
+        local remaining = duration - (now - start)
+        
+        if remaining < 0 then remaining = 0 end
+        
+        self:SetMinMaxValues(0, duration)
+        self:SetValue(remaining)
+        self:SetStatusBarColor(0.5, 0.05, 0.05) -- Dark Red
+    end)
     
     if frame.SetTitle then frame:SetTitle("Voting Window") end
 end
@@ -42,26 +59,27 @@ function DTC.VoteFrame:UpdateList()
     local content = frame.ListScroll.Content
     local yOffset = -5
     local isLeader = UnitIsGroupLeader("player") or (DTC.Vote and DTC.Vote.isTestMode)
+    local isOpen = DTC.Vote.isOpen
     
-    -- Update Footer Buttons
-    frame.FinalizeBtn:SetShown(isLeader and DTC.Vote.isOpen)
+    -- UPDATE FOOTER BUTTONS
+    -- Aligned to y=32 as requested (handled in XML, shown/hidden here)
+    frame.FinalizeBtn:SetShown(isLeader and isOpen)
     frame.AnnounceBtn:SetShown(isLeader)
     
-    -- "Proposition" button is available to anyone with votes left (if button exists in XML)
     if frame.PropBtn then
-        local canProp = DTC.Vote.isOpen and (DTC.Vote.myVotesLeft > 0)
+        local canProp = isOpen and (DTC.Vote.myVotesLeft > 0)
         frame.PropBtn:SetShown(canProp)
     end
     
-    if DTC.Vote.isOpen then
+    if isOpen then
         frame.VotesLeft:SetText("Votes: " .. (DTC.Vote.myVotesLeft or 0))
         frame.VotesLeft:SetTextColor(1, 1, 1)
     else
-        frame.VotesLeft:SetText("LOCKED")
+        frame.VotesLeft:SetText("CLOSED")
         frame.VotesLeft:SetTextColor(1, 0, 0)
     end
 
-    -- Sorting and Rendering
+    -- RENDER ROWS
     local roster = DTC.Vote:GetRosterData()
     local sortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
     
@@ -79,6 +97,10 @@ function DTC.VoteFrame:UpdateList()
         yOffset = self:RenderSection(content, "HEALERS", h, yOffset)
         yOffset = self:RenderSection(content, "DPS / OTHERS", d, yOffset)
     end
+
+    -- CRITICAL FIX: Resize the content frame so scrolling works and items aren't clipped!
+    local totalHeight = math.abs(yOffset) + 20
+    content:SetHeight(totalHeight)
 end
 
 function DTC.VoteFrame:GetHeader(parent)
@@ -91,8 +113,6 @@ end
 
 function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
     if #list == 0 then return yOffset end
-    
-    -- Section Header
     if title ~= "" then
         local hdr = self:GetHeader(parent)
         hdr:SetPoint("TOPLEFT", 5, yOffset); hdr:SetText(title); hdr:Show()
@@ -101,94 +121,74 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
     
     table.sort(list, function(a,b) return a.name < b.name end)
     
-    -- Check Global Status for current player
     local hasDebt = DTC.Bribe and DTC.Bribe:HasUnpaidDebt()
+    local isOpen = DTC.Vote and DTC.Vote.isOpen
     local myVotesRemaining = DTC.Vote.myVotesLeft > 0
-    local isMe = nil -- calculated per row
+    local isMe = nil
 
     for i, p in ipairs(list) do
         local row = rows[#rows + 1]
         
-        -- CREATE ROW FRAMES IF MISSING
         if not row then
             row = CreateFrame("Frame", nil, parent)
             row:SetSize(330, 24)
             row.StatusIcon = row:CreateTexture(nil, "OVERLAY"); row.StatusIcon:SetSize(16, 16); row.StatusIcon:SetPoint("LEFT", 0, 0)
             row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); row.Name:SetPoint("LEFT", 20, 0)
             
-            -- 1. VOTE BUTTON (Far Right)
             row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.VoteBtn:SetSize(50, 20)
-            row.VoteBtn:SetPoint("RIGHT", -5, 0)
-            row.VoteBtn:SetText("Vote")
+            row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
 
-            -- 2. BRIBE BUTTON (Left of Vote)
             row.BribeBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.BribeBtn:SetSize(50, 20)
-            row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0)
-            row.BribeBtn:SetText("Bribe")
+            row.BribeBtn:SetSize(50, 20); row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0); row.BribeBtn:SetText("Bribe")
 
-            -- 3. LOBBY BUTTON (Left of Bribe) <-- NEW
             row.LobbyBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.LobbyBtn:SetSize(50, 20)
-            row.LobbyBtn:SetPoint("RIGHT", row.BribeBtn, "LEFT", -5, 0)
-            row.LobbyBtn:SetText("Lobby")
+            row.LobbyBtn:SetSize(50, 20); row.LobbyBtn:SetPoint("RIGHT", row.BribeBtn, "LEFT", -5, 0); row.LobbyBtn:SetText("Lobby")
             
-            -- 4. VOTE COUNT (Left of Lobby)
             row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             row.Count:SetPoint("RIGHT", row.LobbyBtn, "LEFT", -10, 0)
             
             table.insert(rows, row)
         end
         
-        -- SETUP ROW
         row:SetPoint("TOPLEFT", 5, yOffset); row:Show()
         local color = RAID_CLASS_COLORS[p.class] or {r=1,g=1,b=1}
         row.Name:SetTextColor(color.r, color.g, color.b)
         row.Name:SetText(p.nick and (p.name.." ("..p.nick..")") or p.name)
         
-        -- STATUS ICON
         if p.hasVoted then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Ready")
         elseif not p.hasAddon then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
         elseif p.versionMismatch then row.StatusIcon:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
         else row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Waiting") end
         
-        -- LOGIC
         isMe = (p.name == UnitName("player"))
         local alreadyVotedFor = DTC.Vote and DTC.Vote:HasVotedFor(p.name)
         local targetVotesCast = DTC.Vote:GetVotesCastBy(p.name)
         local targetHasVotesLeft = (targetVotesCast < 3)
 
-        -- A. VOTE BUTTON LOGIC
-        -- Enabled if: I have votes left AND I haven't voted for them yet AND it's not me
+        -- VOTE
         row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(p.name) end end)
-        if DTC.Vote.isOpen and myVotesRemaining and not alreadyVotedFor and not isMe then 
+        if isOpen and myVotesRemaining and not alreadyVotedFor and not isMe then 
             row.VoteBtn:Enable() 
         else 
             row.VoteBtn:Disable() 
         end
 
-        -- B. BRIBE BUTTON LOGIC
-        -- Enabled if: Not me AND Target has votes left AND I have no debt
+        -- BRIBE
         row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(p.name) end end)
-        if not isMe and targetHasVotesLeft and not hasDebt then
+        if isOpen and not isMe and targetHasVotesLeft and not hasDebt then
             row.BribeBtn:Enable()
         else
             row.BribeBtn:Disable()
         end
 
-        -- C. LOBBY BUTTON LOGIC (NEW)
-        -- Enabled if: I have no debt. 
-        -- Note: You CAN lobby for yourself (paying others to vote for you).
-        -- You CAN lobby even if you have no votes left (because you are paying money, not voting).
+        -- LOBBY
         row.LobbyBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenLobbyInput(p.name) end end)
-        if not hasDebt then
+        if isOpen and not hasDebt then
             row.LobbyBtn:Enable()
         else
             row.LobbyBtn:Disable()
         end
         
-        -- COUNT
         row.Count:SetText((DTC.Vote and DTC.Vote:GetVoteCount(p.name)) or 0)
         yOffset = yOffset - 24
     end
