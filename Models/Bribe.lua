@@ -4,7 +4,7 @@ DTC.Bribe = {}
 -- State
 DTC.Bribe.IncomingQueue = {} 
 DTC.Bribe.PropositionQueue = {} 
-DTC.Bribe.LobbyQueue = {} -- NEW: {id, lobbyist, candidate, amount, timer}
+DTC.Bribe.LobbyQueue = {} 
 DTC.Bribe.ActiveTrade = nil  
 DTC.Bribe.PlayerMoneyStart = 0
 
@@ -30,7 +30,7 @@ function DTC.Bribe:OfferBribe(targetPlayer, amount)
 end
 
 function DTC.Bribe:ReceiveOffer(sender, amount)
-    if DTC.Vote and DTC.Vote.myVotesLeft <= 0 then return end
+    if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
     local duration = DTCRaidDB.settings.bribeTimer or 90
     local offer = { id = GetTime(), sender = sender, amount = tonumber(amount), timer = nil }
     offer.timer = C_Timer.NewTimer(duration, function() DTC.Bribe:ExpireOffer(offer.id) end)
@@ -41,6 +41,14 @@ end
 function DTC.Bribe:AcceptOffer(offerID)
     local offer, index = self:GetOffer(offerID)
     if not offer then return end
+    
+    -- SAFETY CHECK: Is voting still open?
+    if not DTC.Vote.isOpen then 
+        print("|cFFFF0000DTC:|r Voting has ended. Offer expired.")
+        self:RemoveOffer(index)
+        return
+    end
+
     if DTC.Vote and DTC.Vote.myVotesLeft > 0 then
         DTC.Vote:CastVote(offer.sender)
         local boss = DTC.Vote.currentBoss or "Unknown"
@@ -57,6 +65,7 @@ end
 -- =========================================================
 function DTC.Bribe:SendProposition(amount)
     if not amount or tonumber(amount) <= 0 then return end
+    if not DTC.Vote.isOpen then print("Voting is closed."); return end
     if DTC.Vote.myVotesLeft <= 0 then print("No votes left to sell!"); return end
     local payload = string.format("%d", amount)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_OFFER:"..payload, "RAID")
@@ -64,6 +73,7 @@ function DTC.Bribe:SendProposition(amount)
 end
 
 function DTC.Bribe:ReceiveProposition(offerer, amount)
+    if not DTC.Vote.isOpen then return end
     if offerer == UnitName("player") then return end
     local votesUsed = DTC.Vote:GetVotesCastBy(offerer)
     if votesUsed >= 3 then return end
@@ -77,10 +87,12 @@ end
 function DTC.Bribe:AcceptProposition(propID)
     local prop = self:GetProposition(propID)
     if not prop then return end
+    if not DTC.Vote.isOpen then print("Voting is closed."); return end
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_ACCEPT", "WHISPER", prop.offerer)
 end
 
 function DTC.Bribe:OnPropositionAcceptedByMe(buyerName)
+    if not DTC.Vote.isOpen then return end
     if DTC.Vote.myVotesLeft > 0 then
         DTC.Vote:CastVote(buyerName)
         local price = self.MyCurrentPropPrice or 0 
@@ -92,13 +104,12 @@ function DTC.Bribe:OnPropositionAcceptedByMe(buyerName)
 end
 
 -- =========================================================
--- 3. LOBBYING LOGIC (NEW)
+-- 3. LOBBYING LOGIC
 -- =========================================================
 function DTC.Bribe:SendLobby(candidate, amount)
     if not candidate or not amount or tonumber(amount) <= 0 then return end
+    if not DTC.Vote.isOpen then print("Voting is closed."); return end
     if self:HasUnpaidDebt() then print("|cFFFF0000DTC:|r Unpaid debts exist!"); return end
-    
-    -- "I (Lobbyist) pay X gold for votes on Candidate"
     local payload = string.format("%s,%d", candidate, amount)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "LOBBY_OFFER:"..payload, "RAID")
     print("|cFF00FF00DTC:|r Lobbying for " .. candidate .. " (" .. amount .. "g) broadcast to raid.")
@@ -106,7 +117,7 @@ end
 
 function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount)
     if lobbyist == UnitName("player") then return end
-    if DTC.Vote and DTC.Vote.myVotesLeft <= 0 then return end -- No votes, ignore
+    if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
     
     local duration = DTCRaidDB.settings.lobbyTimer or 120
     local lobby = { 
@@ -116,11 +127,7 @@ function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount)
         amount = tonumber(amount), 
         timer = nil 
     }
-    
-    lobby.timer = C_Timer.NewTimer(duration, function() 
-        DTC.Bribe:ExpireLobby(lobby.id) 
-    end)
-    
+    lobby.timer = C_Timer.NewTimer(duration, function() DTC.Bribe:ExpireLobby(lobby.id) end)
     table.insert(self.LobbyQueue, lobby)
     if DTC.BribeUI then DTC.BribeUI:UpdateLobbyList() end
 end
@@ -129,18 +136,18 @@ function DTC.Bribe:AcceptLobby(lobbyID)
     local lobby, index = self:GetLobby(lobbyID)
     if not lobby then return end
     
+    if not DTC.Vote.isOpen then 
+        print("|cFFFF0000DTC:|r Voting has ended.")
+        self:RemoveLobby(index)
+        return
+    end
+    
     if DTC.Vote and DTC.Vote.myVotesLeft > 0 then
-        -- 1. Cast Vote for CANDIDATE
         DTC.Vote:CastVote(lobby.candidate)
-        
-        -- 2. Record Debt: LOBBYIST owes ME (Recipient)
-        -- Format: Offerer,Amount,Boss. Sender is Recipient.
         local boss = DTC.Vote.currentBoss or "Unknown"
         local payload = string.format("%s,%d,%s", lobby.lobbyist, lobby.amount, boss)
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID")
-        
         print("|cFF00FF00DTC:|r Accepted Lobby from " .. lobby.lobbyist .. " to vote for " .. lobby.candidate)
-        
         if DTC.Vote.myVotesLeft <= 0 then self:DeclineAll() end
     end
     self:RemoveLobby(index)
@@ -168,7 +175,7 @@ function DTC.Bribe:RemoveLobby(index)
 end
 
 -- =========================================================
--- 4. HELPERS & COMMS
+-- 4. HELPERS
 -- =========================================================
 function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss)
     local entry = { offerer = offerer, recipient = recipient, amount = tonumber(amount), boss = boss or "Unknown", paid = false, timestamp = date("%H:%M:%S") }
@@ -177,12 +184,10 @@ function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss)
 end
 
 function DTC.Bribe:DeclineAll()
-    -- Clear Standard Bribes
     for _, offer in ipairs(self.IncomingQueue) do if offer.timer then offer.timer:Cancel() end end
     self.IncomingQueue = {}
     if DTC.BribeUI then DTC.BribeUI:ShowNextOffer() end
     
-    -- Clear Lobby Offers
     for _, lobby in ipairs(self.LobbyQueue) do if lobby.timer then lobby.timer:Cancel() end end
     self.LobbyQueue = {}
     if DTC.BribeUI then DTC.BribeUI:UpdateLobbyList() end
@@ -207,7 +212,6 @@ function DTC.Bribe:GetProposition(id)
     return nil, nil
 end
 
--- Trade Logic (Unchanged but included for completeness)
 function DTC.Bribe:InitiateTrade(player, amount, dbIndex)
     self.ActiveTrade = { target = player, amount = amount, index = dbIndex }
     if UnitExists("target") and UnitName("target") == player then InitiateTrade("target")
