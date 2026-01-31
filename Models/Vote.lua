@@ -5,11 +5,12 @@ DTC.Vote = {}
 DTC.Vote.isOpen = false
 DTC.Vote.currentBoss = "Unknown"
 DTC.Vote.myVotesLeft = 3
-DTC.Vote.votes = {}      -- [Name] = Count (Votes received)
-DTC.Vote.voters = {}     -- [Name] = Count (Votes cast by this person)
-DTC.Vote.versions = {}   -- [Name] = "x.y.z"
-DTC.Vote.myHistory = {}  -- [Name] = true (Who I voted for)
+DTC.Vote.votes = {}     
+DTC.Vote.voters = {}    
+DTC.Vote.versions = {} 
+DTC.Vote.myHistory = {}
 DTC.Vote.isTestMode = false
+DTC.Vote.sessionTimer = nil -- NEW: Timer reference
 
 -- 1. Initialization
 function DTC.Vote:Init()
@@ -34,10 +35,18 @@ function DTC.Vote:StartSession(bossName, isTest)
     self.currentBoss = bossName
     self.myVotesLeft = 3
     self.votes = {}
-    self.voters = {}      -- Reset to empty
+    self.voters = {}
     self.versions = {} 
     self.myHistory = {}
     self.isTestMode = isTest or false
+    
+    if self.sessionTimer then self.sessionTimer:Cancel() end
+    
+    self.sessionDuration = DTCRaidDB.settings.voteTimer or 180
+    self.sessionStartTime = GetTime()
+    self.sessionTimer = C_Timer.NewTimer(self.sessionDuration, function()
+        self:Finalize()
+    end)
     
     if not isTest then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
@@ -48,6 +57,7 @@ end
 
 function DTC.Vote:EndSession()
     self.isOpen = false
+    if self.sessionTimer then self.sessionTimer:Cancel() end
     if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
 end
 
@@ -60,13 +70,10 @@ function DTC.Vote:CastVote(targetName)
     self.myVotesLeft = self.myVotesLeft - 1
     self.myHistory[targetName] = true
     
-    -- Track that *I* cast a vote (Increment count)
     local myName = UnitName("player")
     self.voters[myName] = (self.voters[myName] or 0) + 1
-    
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
 
-    -- NEW: AUTO-DECLINE BRIBES IF VOTES EXHAUSTED
     if self.myVotesLeft <= 0 and DTC.Bribe then
         DTC.Bribe:DeclineAll()
     end
@@ -79,6 +86,13 @@ end
 
 function DTC.Vote:Finalize()
     if not self.isOpen then return end
+    
+    -- CANCEL TIMER
+    if self.sessionTimer then self.sessionTimer:Cancel() end
+    
+    -- KILL ALL ACTIVE BRIBES/LOBBIES
+    if DTC.Bribe then DTC.Bribe:DeclineAll() end
+    
     local raidInfo = GetInstanceInfo()
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
     local dateStr = date("%Y-%m-%d")
@@ -104,12 +118,9 @@ end
 -- 5. Announcement Logic
 function DTC.Vote:Announce()
     local sorted = {}
-    
-    -- Gather and Sort (Standard)
     for n, v in pairs(self.votes) do
         table.insert(sorted, {name=n, val=v}) 
     end
-    
     table.sort(sorted, function(a,b) return a.val > b.val end)
     
     local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
@@ -150,18 +161,12 @@ function DTC.Vote:GetRosterData()
             local mismatch = false
             if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
             
-            -- Check "hasVoted" (True if count > 0)
             local voteCount = self.voters[name] or 0
             local hasVotedBool = (voteCount > 0)
 
             table.insert(roster, {
-                name = name,
-                class = classFile,
-                role = role,
-                nick = nick,
-                hasVoted = hasVotedBool,
-                hasAddon = hasAddon,
-                versionMismatch = mismatch
+                name = name, class = classFile, role = role, nick = nick,
+                hasVoted = hasVotedBool, hasAddon = hasAddon, versionMismatch = mismatch
             })
         end
     end
@@ -170,11 +175,7 @@ end
 
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
-
--- NEW HELPER: Get number of votes cast by a specific player
-function DTC.Vote:GetVotesCastBy(name)
-    return self.voters[name] or 0
-end
+function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
 -- 7. Comms
 function DTC.Vote:OnComm(action, data, sender)
@@ -182,16 +183,11 @@ function DTC.Vote:OnComm(action, data, sender)
         if sender ~= UnitName("player") then
             local target = data
             self.votes[target] = (self.votes[target] or 0) + 1
-            
-            -- Increment Voter Count
             self.voters[sender] = (self.voters[sender] or 0) + 1
-            
             if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
         end
-        
     elseif action == "PING_ADDON" then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PONG_ADDON:"..DTC.VERSION, "RAID")
-        
     elseif action == "PONG_ADDON" then
         self.versions[sender] = data or "Unknown"
         if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
