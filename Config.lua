@@ -261,8 +261,9 @@ function DTC.Config:BuildHistoryTab(frame)
 end
 
 function DTC.Config:BuildVotingTab(frame)
-    local b1 = CreateGroupBox(frame, "Voting Options", 580, 80)
+    local b1 = CreateGroupBox(frame, "Voting Options", 580, 150) -- Increased Height
     b1:SetPoint("TOPLEFT", 0, 0)
+    
     local lbl = b1:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("TOPLEFT", 15, -30); lbl:SetText("List Format:")
     local dd = CreateFrame("Frame", "DTC_ConfigVoteSortDD", b1, "UIDropDownMenuTemplate"); dd:SetPoint("LEFT", lbl, "RIGHT", 0, -2); UIDropDownMenu_SetWidth(dd, 200)
     local function InitMenu(self, level)
@@ -273,6 +274,21 @@ function DTC.Config:BuildVotingTab(frame)
     end
     UIDropDownMenu_Initialize(dd, InitMenu)
     UIDropDownMenu_SetText(dd, (DTCRaidDB.settings.voteSortMode == "ALPHA") and "Show Only Players" or "Show Players and Roles")
+
+    -- NEW: Voting Timer Slider
+    local s = CreateFrame("Slider", "DTC_VoteTimerSlider", b1, "OptionsSliderTemplate")
+    s:SetPoint("TOPLEFT", 20, -70)
+    s:SetMinMaxValues(30, 600)
+    s:SetValueStep(10)
+    s:SetObeyStepOnDrag(true)
+    s:SetWidth(200)
+    _G[s:GetName() .. "Text"]:SetText("Voting Window Duration")
+    _G[s:GetName() .. "Low"]:SetText("30s")
+    _G[s:GetName() .. "High"]:SetText("10m")
+    local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
+    s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings.voteTimer = value; valLabel:SetText(value .. " seconds") end)
+    s:SetScript("OnShow", function(self) local val = DTCRaidDB.settings.voteTimer or 180; self:SetValue(val); valLabel:SetText(val .. " seconds") end)
+
     local b2 = CreateGroupBox(frame, "Announce Messages", 580, 200)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     local function AddEdit(title, key, y)
