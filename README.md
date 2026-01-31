@@ -10,7 +10,7 @@
 * **Smart Validation:** Blocks self-voting and prevents voting if a player has disconnected or has an outdated addon version.
 * **Tie-Breakers:** Standardized sorting (highest vote count wins).
 
-### 2. "Game Theory" & Commerce (New in v7.1)
+### 2. "Game Theory" & Commerce
 Turn your raid into a marketplace! Players can now leverage their gold to influence the outcome.
 * **💰 Bribes:** Offer gold to a specific player to secure one of their votes.
 * **📜 Propositions:** Selling your own vote? Broadcast a "Proposition" to the raid, setting a price for your support.
@@ -95,5 +95,6 @@ Author: Voltrizzy
 Version: 7.1.0
 
 Project ID: 1442970 (CurseForge) / 56ndd5G9 (Wago)
+
 
 
