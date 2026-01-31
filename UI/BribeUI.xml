@@ -48,14 +48,32 @@
         <Anchors><Anchor point="CENTER" y="100"/></Anchors>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Bribe Offered!"><Anchors><Anchor point="TOP" y="-12"/></Anchors></FontString>
-                <FontString parentKey="Desc" inherits="GameFontHighlightLarge" justifyH="CENTER"><Size x="300" y="40"/><Anchors><Anchor point="TOP" y="-45"/></Anchors></FontString>
-                <FontString parentKey="Timer" inherits="GameFontNormalSmall" text="Expires in 90s"><Anchors><Anchor point="BOTTOM" y="50"/></Anchors></FontString>
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Bribe Offered!"><Anchors><Anchor point="TOP" y="-30"/></Anchors></FontString>
+                <FontString parentKey="Desc" inherits="GameFontHighlightLarge" justifyH="CENTER"><Size x="300" y="40"/><Anchors><Anchor point="TOP" y="-60"/></Anchors></FontString>
             </Layer>
         </Layers>
         <Frames>
-            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="30" y="20"/></Anchors></Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-30" y="20"/></Anchors></Button>
+            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="7" y="30"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="100" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-10" y="30"/></Anchors></Button>
+
+            <StatusBar parentKey="TimerBar">
+                <Size x="340" y="5"/>
+                <Anchors><Anchor point="BOTTOM" x="0" y="5"/></Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture setAllPoints="true"><Color r="0.2" g="0.2" b="0.2" a="0.8"/></Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <Texture parentKey="BarTexture" setAllPoints="true">
+                            <Color r="1" g="1" b="1"/> </Texture>
+                    </Layer>
+                </Layers>
+                <Scripts>
+                    <OnLoad>
+                        self:SetStatusBarTexture(self.BarTexture)
+                    </OnLoad>
+                </Scripts>
+            </StatusBar>
         </Frames>
     </Frame>
 
@@ -106,8 +124,8 @@
         <Size x="350" y="24"/>
         <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
         <Frames>
-            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-70"/></Anchors></Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
+            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-20"/></Anchors></Button>
         </Frames>
     </Frame>
     
@@ -115,8 +133,8 @@
         <Size x="400" y="24"/>
         <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
         <Frames>
-            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-70"/></Anchors></Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
+            <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-20"/></Anchors></Button>
         </Frames>
     </Frame>
 </Ui>
