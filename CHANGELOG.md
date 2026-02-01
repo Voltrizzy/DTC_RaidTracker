@@ -1,5 +1,13 @@
 # DTC Raid Tracker
 
+## [v7.3.9](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.9) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.7...v7.3.9)
+
+### Fixes & Improvements
+- **Testing:** Enabled Bribe/Debt module functionality when Solo (not in a group) to facilitate testing.
+- **UX:** Closing the Incoming Bribe popup via the 'X' button now correctly declines the offer.
+- **UI:** Fixed title display on the Incoming Bribe window.
+
 ## [v7.3.7](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.7) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.6...v7.3.7)
 

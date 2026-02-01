@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.8"
+DTC.VERSION = "7.3.9"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
