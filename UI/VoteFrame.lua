@@ -196,7 +196,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
 
         -- LOBBY
         row.LobbyBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenLobbyInput(p.name) end end)
-        if isOpen and not hasDebt then
+        if isOpen and not isMe and not hasDebt then
             row.LobbyBtn:Enable()
         else
             row.LobbyBtn:Disable()

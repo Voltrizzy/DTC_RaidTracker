@@ -169,6 +169,10 @@ end
 -- =========================================================
 function DTC.Bribe:SendLobby(candidate, amount)
     if not candidate or not amount or tonumber(amount) <= 0 then return end
+    
+    if candidate and string.find(candidate, "-") then candidate = strsplit("-", candidate) end
+    if candidate == UnitName("player") then print("|cFFFF0000DTC:|r You cannot lobby for yourself."); return end
+    
     if not DTC.Vote or not DTC.Vote.isOpen then print("Voting is closed."); return end
     if self:HasUnpaidDebt() then print("|cFFFF0000DTC:|r Unpaid debts exist! Cannot incur debt/tax."); return end
     
@@ -184,6 +188,7 @@ end
 
 function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount)
     if lobbyist == UnitName("player") then return end
+    if candidate == UnitName("player") then return end
     if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
     
     local duration = DTCRaidDB.settings.lobbyTimer or 120
@@ -471,6 +476,7 @@ function DTC.Bribe:OnComm(action, data, sender)
     elseif action == "PROP_ACCEPT" then DTC.Bribe:OnPropositionAcceptedByMe(sender)
     elseif action == "LOBBY_OFFER" then 
         local cand, amt = strsplit(",", data)
+        if cand and string.find(cand, "-") then cand = strsplit("-", cand) end
         DTC.Bribe:ReceiveLobby(sender, cand, amt)
     elseif action == "BRIBE_FINAL" then 
         local offerer, amount, boss, bType = strsplit(",", data)
@@ -485,6 +491,10 @@ function DTC.Bribe:OnComm(action, data, sender)
                 break
             end
         end
+    elseif action == "SYNC_LIMIT" then
+        DTCRaidDB.settings.debtLimit = tonumber(data) or 0
+    elseif action == "SYNC_FEE" then
+        DTCRaidDB.settings.corruptionFee = tonumber(data) or 10
     elseif action == "VOTE" then C_Timer.After(0.5, function() DTC.Bribe:CheckPropositionValidity() end) end
 end
 

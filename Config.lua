@@ -75,11 +75,25 @@ function DTC.Config:BuildGeneralTab(frame)
     
     local btnLB = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnLB:SetSize(140, 24); btnLB:SetPoint("LEFT", btnVote, "RIGHT", 10, 0); btnLB:SetText("Test Leaderboard")
-    btnLB:SetScript("OnClick", function() DTC.isTestModeLB = true; if DTC.LeaderboardUI then DTC.Leaderboard:Toggle(); DTC.LeaderboardUI:UpdateList() end end)
+    btnLB:SetScript("OnClick", function() 
+        DTC.isTestModeLB = true 
+        if DTC.LeaderboardUI then 
+            DTC.Leaderboard:Toggle()
+            if DTC_LeaderboardFrame and DTC_LeaderboardFrame.SetTitle then DTC_LeaderboardFrame:SetTitle("DTC Tracker - Leaderboard") end
+            DTC.LeaderboardUI:UpdateList() 
+        end 
+    end)
     
     local btnHist = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnHist:SetSize(140, 24); btnHist:SetPoint("LEFT", btnLB, "RIGHT", 10, 0); btnHist:SetText("Test History")
-    btnHist:SetScript("OnClick", function() DTC.isTestModeHist = true; if DTC.HistoryUI then DTC.History:Toggle(); DTC.HistoryUI:UpdateList() end end)
+    btnHist:SetScript("OnClick", function() 
+        DTC.isTestModeHist = true
+        if DTC.HistoryUI then 
+            DTC.History:Toggle()
+            if DTC_HistoryFrame and DTC_HistoryFrame.SetTitle then DTC_HistoryFrame:SetTitle("DTC Tracker - History") end
+            DTC.HistoryUI:UpdateList() 
+        end 
+    end)
     
     local btnVer = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check")
@@ -238,7 +252,12 @@ function DTC.Config:BuildHistoryTab(frame)
     
     local btnBribeHist = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate")
     btnBribeHist:SetSize(140, 24); btnBribeHist:SetPoint("LEFT", btnReset, "RIGHT", 10, 0); btnBribeHist:SetText("Open Bribe Ledger")
-    btnBribeHist:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:ToggleTracker() end end)
+    btnBribeHist:SetScript("OnClick", function() 
+        if DTC.BribeUI then 
+            DTC.BribeUI:ToggleTracker() 
+            if DTC_BribeTrackerFrame and DTC_BribeTrackerFrame.SetTitle then DTC_BribeTrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
+        end 
+    end)
     
     local function CreateFilterSet(parent, prefix)
         local filters = { exp="ALL", raid="ALL", diff="ALL", date="ALL" }
@@ -330,17 +349,21 @@ function DTC.Config:BuildVotingTab(frame)
     s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings.voteTimer = value; valLabel:SetText(value .. " seconds") end)
     s:SetScript("OnShow", function(self) local val = DTCRaidDB.settings.voteTimer or 180; self:SetValue(val); valLabel:SetText(val .. " seconds") end)
 
-    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 450)
+    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 400)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     
-    local sCount = CreateFrame("Slider", "DTC_VoteMsgCountSlider", b2, "OptionsSliderTemplate")
-    sCount:SetPoint("TOPLEFT", 20, -30)
+    local sf = CreateFrame("ScrollFrame", "DTC_ConfigVoteMsgScroll", b2, "UIPanelScrollFrameTemplate")
+    sf:SetPoint("TOPLEFT", 10, -10); sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 450); sf:SetScrollChild(content)
+    
+    local sCount = CreateFrame("Slider", "DTC_VoteMsgCountSlider", content, "OptionsSliderTemplate")
+    sCount:SetPoint("TOPLEFT", 20, -35)
     sCount:SetMinMaxValues(1, 10); sCount:SetValueStep(1); sCount:SetObeyStepOnDrag(true); sCount:SetWidth(200)
     _G[sCount:GetName() .. "Text"]:SetText("Active Message Count")
     _G[sCount:GetName() .. "Low"]:SetText("1"); _G[sCount:GetName() .. "High"]:SetText("10")
     local valLabel = sCount:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", sCount, "BOTTOM", 0, 0)
     
-    local btnTest = CreateFrame("Button", nil, b2, "UIPanelButtonTemplate")
+    local btnTest = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
     btnTest:SetSize(140, 20); btnTest:SetPoint("LEFT", sCount, "RIGHT", 20, 0); btnTest:SetText("Test Announcement")
     btnTest:SetScript("OnClick", function()
         local count = DTCRaidDB.settings.voteWinCount or 1
@@ -352,10 +375,10 @@ function DTC.Config:BuildVotingTab(frame)
 
     local msgBoxes = {}
     for i = 1, 10 do
-        local row = CreateFrame("Frame", nil, b2)
-        row:SetSize(540, 20); row:SetPoint("TOPLEFT", 15, -60 - ((i-1)*25))
+        local row = CreateFrame("Frame", nil, content)
+        row:SetSize(520, 20); row:SetPoint("TOPLEFT", 15, -60 - ((i-1)*25))
         local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("LEFT", 0, 0); lbl:SetWidth(20); lbl:SetText(i..".")
-        local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate"); eb:SetSize(500, 20); eb:SetPoint("LEFT", lbl, "RIGHT", 5, 0); eb:SetAutoFocus(false)
+        local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate"); eb:SetSize(480, 20); eb:SetPoint("LEFT", lbl, "RIGHT", 5, 0); eb:SetAutoFocus(false)
         local key = "voteWinMsg_" .. i
         eb:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end)
         eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
@@ -371,15 +394,15 @@ function DTC.Config:BuildVotingTab(frame)
     sCount:SetScript("OnShow", function(self) local v = DTCRaidDB.settings.voteWinCount or 1; self:SetValue(v); UpdateVis(v) end)
 
     local function AddEdit(title, key, y, toggleKey)
-        local l = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 15, y); l:SetText(title)
+        local l = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 15, y); l:SetText(title)
         if toggleKey then
-            local cb = CreateFrame("CheckButton", nil, b2, "UICheckButtonTemplate")
+            local cb = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
             cb:SetSize(20, 20); cb:SetPoint("LEFT", l, "RIGHT", 10, 0)
             cb:SetScript("OnShow", function(self) self:SetChecked(DTCRaidDB.settings[toggleKey] ~= false) end)
             cb:SetScript("OnClick", function(self) DTCRaidDB.settings[toggleKey] = self:GetChecked() end)
-            local t = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); t:SetPoint("LEFT", cb, "RIGHT", 0, 0); t:SetText("Enable")
+            local t = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); t:SetPoint("LEFT", cb, "RIGHT", 0, 0); t:SetText("Enable")
         end
-        local e = CreateFrame("EditBox", nil, b2, "InputBoxTemplate"); e:SetSize(540, 20); e:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -5); e:SetAutoFocus(false)
+        local e = CreateFrame("EditBox", nil, content, "InputBoxTemplate"); e:SetSize(510, 20); e:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -5); e:SetAutoFocus(false)
         e:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end); e:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
     end
     AddEdit("Runner Up Message:", "voteRunnerUpMsg", -330, "voteRunnerUpEnabled")
@@ -413,6 +436,11 @@ function DTC.Config:BuildBribeTab(frame)
             value = math.floor(value)
             DTCRaidDB.settings[key] = value
             valLabel:SetText(value .. suffix)
+            
+            -- Sync Corruption Fee on change (if leader)
+            if key == "corruptionFee" and IsInRaid() and UnitIsGroupLeader("player") then
+                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..value, "RAID")
+            end
         end)
         
         s:SetScript("OnShow", function(self) 
@@ -421,6 +449,15 @@ function DTC.Config:BuildBribeTab(frame)
             if key == "corruptionFee" then val = DTCRaidDB.settings[key] or 10 end
             self:SetValue(val)
             valLabel:SetText(val .. suffix) 
+            
+            -- Lock Corruption Fee for non-leaders
+            if key == "corruptionFee" then
+                if UnitIsGroupLeader("player") or not IsInGroup() then
+                    self:Enable(); s.Low:SetTextColor(1,1,1); s.High:SetTextColor(1,1,1); s.Text:SetTextColor(1,0.82,0)
+                else
+                    self:Disable(); s.Low:SetTextColor(0.5,0.5,0.5); s.High:SetTextColor(0.5,0.5,0.5); s.Text:SetTextColor(0.5,0.5,0.5)
+                end
+            end
         end)
     end
     
@@ -440,7 +477,22 @@ function DTC.Config:BuildBribeTab(frame)
     
     local l = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 20, -70); l:SetText("Debt Limit (Gold, 0 = No Limit):")
     local e = CreateFrame("EditBox", nil, b2, "InputBoxTemplate"); e:SetSize(100, 20); e:SetPoint("LEFT", l, "RIGHT", 10, 0); e:SetAutoFocus(false)
-    e:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings.debtLimit or "0") end)
-    e:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings.debtLimit = tonumber(self:GetText()) or 0 end)
-    e:SetScript("OnEnterPressed", function(self) DTCRaidDB.settings.debtLimit = tonumber(self:GetText()) or 0; self:ClearFocus() end)
+    
+    local function UpdateLimit(self)
+        local val = tonumber(self:GetText()) or 0
+        DTCRaidDB.settings.debtLimit = val
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_LIMIT:"..val, "RAID") end
+    end
+
+    e:SetScript("OnShow", function(self) 
+        self:SetText(DTCRaidDB.settings.debtLimit or "0")
+        if UnitIsGroupLeader("player") or not IsInGroup() then
+            self:Enable(); self:SetTextColor(1, 1, 1)
+        else
+            self:Disable(); self:SetTextColor(0.5, 0.5, 0.5)
+        end
+    end)
+    
+    e:SetScript("OnEditFocusLost", function(self) if UnitIsGroupLeader("player") or not IsInGroup() then UpdateLimit(self) end end)
+    e:SetScript("OnEnterPressed", function(self) if UnitIsGroupLeader("player") or not IsInGroup() then UpdateLimit(self); self:ClearFocus() end end)
 end

@@ -5,7 +5,7 @@ local frame, rows = nil, {}
 function DTC.LeaderboardUI:Init()
     frame = DTC_LeaderboardFrame
     
-    if frame.SetTitle then frame:SetTitle("DTC Leaderboard") end
+    if frame.SetTitle then frame:SetTitle("DTC Tracker - Leaderboard") end
     
     frame.AwardBtn:SetScript("OnClick", function() self:OnAwardClick() end)
     

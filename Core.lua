@@ -1,7 +1,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC 
 
-DTC.VERSION = "7.3"
+DTC.VERSION = "7.3.1"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -156,11 +156,22 @@ SlashCmdList["DTC"] = function(msg)
     if cmd == "vote" then 
         if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
     elseif cmd == "lb" then 
-        DTC.isTestModeLB = false; if DTC.Leaderboard then DTC.Leaderboard:Toggle() end
+        DTC.isTestModeLB = false
+        if DTC.Leaderboard then 
+            DTC.Leaderboard:Toggle() 
+            if DTC_LeaderboardFrame and DTC_LeaderboardFrame.SetTitle then DTC_LeaderboardFrame:SetTitle("DTC Tracker - Leaderboard") end
+        end
     elseif cmd == "history" then 
-        DTC.isTestModeHist = false; if DTC.History then DTC.History:Toggle() end
+        DTC.isTestModeHist = false
+        if DTC.History then 
+            DTC.History:Toggle() 
+            if DTC_HistoryFrame and DTC_HistoryFrame.SetTitle then DTC_HistoryFrame:SetTitle("DTC Tracker - History") end
+        end
     elseif cmd == "awards" or cmd == "bribes" then
-        if DTC.BribeUI then DTC.BribeUI:ToggleTracker() end
+        if DTC.BribeUI then 
+            DTC.BribeUI:ToggleTracker() 
+            if DTC_BribeTrackerFrame and DTC_BribeTrackerFrame.SetTitle then DTC_BribeTrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
+        end
     elseif cmd == "config" then
         if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) 
         else InterfaceOptionsFrame_OpenToCategory("DTC Raid Tracker") end

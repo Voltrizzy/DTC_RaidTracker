@@ -9,7 +9,7 @@ function DTC.BribeUI:Init()
         self.OfferFrame:Hide()
     end)
     self.OfferFrame.CancelBtn:SetScript("OnClick", function() self.OfferFrame:Hide() end)
-    if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle("Commerce") end
+    if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle("DTC Tracker - Bribe Offer") end
 
     -- 2. Proposition Input
     self.PropInputFrame = DTC_PropositionInputPopup
@@ -24,22 +24,21 @@ function DTC.BribeUI:Init()
 
     -- 3. Proposition List
     self.PropListFrame = DTC_PropositionListFrame
-    if self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("Active Propositions") end
+    if self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("DTC Tracker - Proposition") end
 
     -- 4. Incoming Bribe
     self.IncomingFrame = DTC_BribeIncomingPopup
     self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
     self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
     
-    self.IncomingFrame.TimerBar = CreateFrame("StatusBar", nil, self.IncomingFrame)
-    self.IncomingFrame.TimerBar:SetSize(180, 10)
-    self.IncomingFrame.TimerBar:SetPoint("BOTTOM", 0, 45)
-    self.IncomingFrame.TimerBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    self.IncomingFrame.TimerBar:SetStatusBarColor(0.5, 0.05, 0.05)
+    if self.IncomingFrame.TimerBar then
+        self.IncomingFrame.TimerBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+        self.IncomingFrame.TimerBar:SetStatusBarColor(0.5, 0.05, 0.05)
+    end
 
     -- 5. Tracker
     self.TrackerFrame = DTC_BribeTrackerFrame
-    if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("Bribe History") end
+    if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
     self.TrackerFrame.ClearBtn:SetScript("OnClick", function() DTCRaidDB.bribes = {}; self:UpdateTracker() end)
     
     -- NEW: Filter Dropdown
@@ -89,36 +88,70 @@ function DTC.BribeUI:Init()
     
     self.TrackerFrame.ExportBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
     self.TrackerFrame.ExportBtn:SetSize(80, 20)
-    self.TrackerFrame.ExportBtn:SetPoint("TOPRIGHT", self.TrackerFrame.TotalDebt, "BOTTOMRIGHT", 0, -5)
+    self.TrackerFrame.ExportBtn:SetPoint("BOTTOMRIGHT", -20, 17)
     self.TrackerFrame.ExportBtn:SetText("Export CSV")
     self.TrackerFrame.ExportBtn:SetScript("OnClick", function() self:ShowExportPopup() end)
     
     self.TrackerFrame.AnnounceBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
     self.TrackerFrame.AnnounceBtn:SetSize(120, 22)
-    self.TrackerFrame.AnnounceBtn:SetPoint("BOTTOMRIGHT", self.TrackerFrame, "BOTTOM", -5, 15)
+    self.TrackerFrame.AnnounceBtn:SetPoint("BOTTOM", 0, 17)
     self.TrackerFrame.AnnounceBtn:SetText("Announce Debts")
     self.TrackerFrame.AnnounceBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:AnnounceDebts() end end)
     
     self.TrackerFrame.PayTaxBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
     self.TrackerFrame.PayTaxBtn:SetSize(120, 22)
-    self.TrackerFrame.PayTaxBtn:SetPoint("BOTTOMLEFT", self.TrackerFrame, "BOTTOM", 5, 15)
+    self.TrackerFrame.PayTaxBtn:SetPoint("BOTTOMLEFT", 20, 17)
     self.TrackerFrame.PayTaxBtn:SetText("Pay All Taxes")
     self.TrackerFrame.PayTaxBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:PayAllTaxes() end end)
     
     -- NEW: 6. Lobby Input
     self.LobbyInputFrame = DTC_LobbyInputPopup
+    
+    UIDropDownMenu_SetWidth(self.LobbyInputFrame.CandidateDD, 140)
+    UIDropDownMenu_Initialize(self.LobbyInputFrame.CandidateDD, function(frame, level)
+        local info = UIDropDownMenu_CreateInfo()
+        info.func = function(s) 
+            self.LobbyInputFrame.candidate = s.value
+            UIDropDownMenu_SetText(frame, s.value) 
+        end
+        
+        local myName = UnitName("player")
+        local candidates = {}
+        if IsInGroup() then
+            for i = 1, GetNumGroupMembers() do
+                local name = GetRaidRosterInfo(i)
+                if name then
+                    if string.find(name, "-") then name = strsplit("-", name) end
+                    if name ~= myName then table.insert(candidates, name) end
+                end
+            end
+        else
+            table.insert(candidates, "Mickey"); table.insert(candidates, "Donald"); table.insert(candidates, "Goofy")
+        end
+        table.sort(candidates)
+        
+        for _, name in ipairs(candidates) do
+            info.text = name; info.value = name; info.checked = (self.LobbyInputFrame.candidate == name)
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end)
+
     self.LobbyInputFrame.ConfirmBtn:SetScript("OnClick", function()
         local amt = self.LobbyInputFrame.AmountBox:GetText()
         local cand = self.LobbyInputFrame.candidate
-        DTC.Bribe:SendLobby(cand, amt)
-        self.LobbyInputFrame:Hide()
+        if cand then
+            DTC.Bribe:SendLobby(cand, amt)
+            self.LobbyInputFrame:Hide()
+        else
+            print("|cFFFF0000DTC:|r Select a candidate.")
+        end
     end)
     self.LobbyInputFrame.CancelBtn:SetScript("OnClick", function() self.LobbyInputFrame:Hide() end)
     if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle("Lobbying") end
     
     -- NEW: 7. Lobby List
     self.LobbyListFrame = DTC_LobbyListFrame
-    if self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("Lobbying Offers") end
+    if self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("DTC Tracker - Lobby") end
     
 end
 
@@ -127,7 +160,8 @@ function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then self:Init() end
     self.OfferFrame.target = targetName
     self.OfferFrame.AmountBox:SetText(""); self.OfferFrame.AmountBox:SetFocus()
-    self.OfferFrame.Title:SetText("Bribe: " .. targetName)
+    self.OfferFrame.Title:SetText("DTC Tracker - Bribe Offer")
+    if self.OfferFrame.Label then self.OfferFrame.Label:SetText("Enter Amount for " .. targetName .. " (Gold):") end
     self.OfferFrame:Show()
 end
 
@@ -135,6 +169,14 @@ function DTC.BribeUI:OpenPropInput()
     if not self.PropInputFrame then self:Init() end
     self.PropInputFrame.AmountBox:SetText(""); self.PropInputFrame.AmountBox:SetFocus()
     self.PropInputFrame:Show()
+end
+
+function DTC.BribeUI:OpenLobbyInput(targetName)
+    if not self.LobbyInputFrame then self:Init() end
+    self.LobbyInputFrame.AmountBox:SetText(""); self.LobbyInputFrame.AmountBox:SetFocus()
+    self.LobbyInputFrame.candidate = targetName
+    UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName or "Select Candidate")
+    self.LobbyInputFrame:Show()
 end
 
 function DTC.BribeUI:ShowNextOffer()
@@ -173,12 +215,6 @@ function DTC.BribeUI:UpdatePropositionList()
         local row = self.propRows[i]
         if not row then
             row = CreateFrame("Frame", nil, content, "DTC_PropRowTemplate")
-            row.Timer = CreateFrame("StatusBar", nil, row)
-            row.Timer:SetSize(60, 10)
-            -- Anchor to DeclineBtn now that XML is fixed to prevent overlap
-            row.Timer:SetPoint("RIGHT", row.DeclineBtn, "LEFT", -10, 0)
-            row.Timer:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-            row.Timer:SetStatusBarColor(0.5, 0.05, 0.05)
             table.insert(self.propRows, row)
         end
         row:SetParent(content)
@@ -232,12 +268,6 @@ function DTC.BribeUI:UpdateLobbyList()
         local row = self.lobbyRows[i]
         if not row then
             row = CreateFrame("Frame", nil, content, "DTC_LobbyRowTemplate")
-            row.Timer = CreateFrame("StatusBar", nil, row)
-            row.Timer:SetSize(60, 10)
-            -- Anchor to DeclineBtn now that XML is fixed to prevent overlap
-            row.Timer:SetPoint("RIGHT", row.DeclineBtn, "LEFT", -10, 0)
-            row.Timer:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-            row.Timer:SetStatusBarColor(0.5, 0.05, 0.05)
             table.insert(self.lobbyRows, row)
         end
         row:SetParent(content)

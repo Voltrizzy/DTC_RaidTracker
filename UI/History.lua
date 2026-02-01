@@ -10,7 +10,14 @@ function DTC.HistoryUI:Init()
     
     -- Set Title
     if frame.SetTitle then
-        frame:SetTitle("DTC Voting History")
+        frame:SetTitle("DTC Tracker - History")
+    end
+    
+    -- Adjust ScrollFrame to fit within header/footer
+    if frame.ListScroll then
+        frame.ListScroll:ClearAllPoints()
+        frame.ListScroll:SetPoint("TOPLEFT", 15, -85)
+        frame.ListScroll:SetPoint("BOTTOMRIGHT", -35, 45)
     end
     
     -- Handle Window Closing (Reset Test Mode when closed)
@@ -60,7 +67,7 @@ function DTC.History:Toggle()
     if frame:IsShown() then
         frame:Hide()
     else
-        local title = "DTC Voting History"
+        local title = "DTC Tracker - History"
         if DTC.isTestModeHist then title = "(Test) " .. title end
         if frame.SetTitle then frame:SetTitle(title) end
         

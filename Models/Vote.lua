@@ -63,6 +63,9 @@ end
 -- 4. Actions
 function DTC.Vote:CastVote(targetName)
     if not self.isOpen or self.myVotesLeft <= 0 then return end
+    
+    if targetName and string.find(targetName, "-") then targetName = strsplit("-", targetName) end
+    
     if targetName == UnitName("player") then print("|cFFFF0000DTC:|r You cannot vote for yourself."); return end
     if self.myHistory[targetName] then return end
     
