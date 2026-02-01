@@ -1,7 +1,14 @@
+-- ============================================================================
+-- DTC Raid Tracker - Config.lua
+-- ============================================================================
+-- This file builds the Interface Options panel for the addon. It handles the
+-- layout and logic for all configuration tabs (General, Nicknames, etc.).
+
 local folderName, DTC = ...
 DTC.Config = {}
 DTC.Config.nicknamePool = { rows = {}, headers = {} }
 
+-- Helper to create a bordered group box.
 local function CreateGroupBox(parent, title, width, height)
     local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     frame:SetSize(width, height)
@@ -12,6 +19,7 @@ local function CreateGroupBox(parent, title, width, height)
     return frame
 end
 
+-- Initializes the main configuration panel and tabs.
 function DTC.Config:Init()
     DTCRaidDB = DTCRaidDB or {}
     DTCRaidDB.settings = DTCRaidDB.settings or {}
@@ -66,6 +74,7 @@ function DTC.Config:Init()
     SelectTab(1)
 end
 
+-- Builds the "General" configuration tab.
 function DTC.Config:BuildGeneralTab(frame)
     local box = CreateGroupBox(frame, "General Options", 580, 170)
     box:SetPoint("TOPLEFT", 0, 0)
@@ -160,6 +169,7 @@ function DTC.Config:BuildGeneralTab(frame)
     btnReset:SetScript("OnClick", function() StaticPopup_Show("DTC_RESET_SETTINGS_CONFIRM") end)
 end
 
+-- Builds the "Nicknames" configuration tab.
 function DTC.Config:BuildNicknamesTab(frame)
     local box = CreateGroupBox(frame, "Roster Configuration", 580, 400)
     box:SetPoint("TOPLEFT", 0, 0)
@@ -196,6 +206,7 @@ function DTC.Config:BuildNicknamesTab(frame)
     end)
 end
 
+-- Refreshes the list of nicknames in the configuration tab.
 function DTC.Config:RefreshNicknames(content)
     for _, r in ipairs(self.nicknamePool.rows) do r:Hide() end
     for _, h in ipairs(self.nicknamePool.headers) do h:Hide() end
@@ -277,6 +288,7 @@ function DTC.Config:RefreshNicknames(content)
     content:SetHeight(math.abs(yOffset) + 20)
 end
 
+-- Builds the "Leaderboard" configuration tab.
 function DTC.Config:BuildLeaderboardTab(frame)
     local b1 = CreateGroupBox(frame, "Leaderboard Options", 580, 80)
     b1:SetPoint("TOPLEFT", 0, 0)
@@ -300,6 +312,7 @@ function DTC.Config:BuildLeaderboardTab(frame)
     e2:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings.awardMsg = self:GetText() end)
 end
 
+-- Builds the "History" configuration tab.
 function DTC.Config:BuildHistoryTab(frame)
     local b1 = CreateGroupBox(frame, "Database Maintenance", 580, 80)
     b1:SetPoint("TOPLEFT", 0, 0)
@@ -379,6 +392,7 @@ function DTC.Config:BuildHistoryTab(frame)
     end)
 end
 
+-- Builds the "Voting" configuration tab.
 function DTC.Config:BuildVotingTab(frame)
     local b1 = CreateGroupBox(frame, "Voting Options", 580, 130)
     b1:SetPoint("TOPLEFT", 0, 0)
@@ -482,6 +496,7 @@ function DTC.Config:BuildVotingTab(frame)
     AddEdit("Lowest Vote Message:", "voteLowMsg", -375, "voteLowEnabled")
 end
 
+-- Builds the "Bribes" configuration tab.
 function DTC.Config:BuildBribeTab(frame)
     local box = CreateGroupBox(frame, "Timer Settings", 580, 250)
     box:SetPoint("TOPLEFT", 0, 0)

@@ -1,7 +1,14 @@
+-- ============================================================================
+-- DTC Raid Tracker - UI/Leaderboard.lua
+-- ============================================================================
+-- This file manages the Leaderboard UI. It handles displaying rankings, filtering
+-- data by expansion/raid/boss, and awarding trips to winners.
+
 local folderName, DTC = ...
 DTC.LeaderboardUI = {}
 local frame, rows = nil, {}
 
+-- Initializes the Leaderboard Frame UI elements and dropdowns.
 function DTC.LeaderboardUI:Init()
     frame = DTC_LeaderboardFrame
     
@@ -34,11 +41,13 @@ function DTC.LeaderboardUI:Init()
     UIDropDownMenu_DisableDropDown(frame.DiffDD)
 end
 
+-- Toggles the visibility of the Leaderboard Frame.
 function DTC.LeaderboardUI:Toggle()
     if not frame then DTC.LeaderboardUI:Init() end
     if frame:IsShown() then frame:Hide() else frame:Show(); DTC.LeaderboardUI:UpdateList() end
 end
 
+-- Updates the list of rankings based on current filters.
 function DTC.LeaderboardUI:UpdateList()
     if not frame or not frame:IsShown() then return end
     for _, r in ipairs(rows) do r:Hide() end
@@ -76,6 +85,7 @@ function DTC.LeaderboardUI:UpdateList()
     content:SetHeight(math.abs(yOffset) + 20)
 end
 
+-- Retrieves or creates a row frame from the pool.
 function DTC.LeaderboardUI:GetRow(parent)
     for _, r in ipairs(rows) do if not r:IsShown() then return r end end
     local r = CreateFrame("Frame", nil, parent, "DTC_ListRowTemplate")
@@ -86,6 +96,8 @@ end
 -- ============================================================================
 -- DROPDOWN LOGIC
 -- ============================================================================
+
+-- Initializes the Time Filter dropdown (All Time vs Trips Won).
 function DTC.LeaderboardUI:InitTimeMenu(menu, level)
     local info = UIDropDownMenu_CreateInfo()
     
@@ -110,6 +122,7 @@ function DTC.LeaderboardUI:InitTimeMenu(menu, level)
     UIDropDownMenu_AddButton(info, level)
 end
 
+-- Initializes the Expansion Filter dropdown.
 function DTC.LeaderboardUI:InitExpMenu(menu, level)
     local info = UIDropDownMenu_CreateInfo()
     
@@ -150,6 +163,7 @@ function DTC.LeaderboardUI:InitExpMenu(menu, level)
     end
 end
 
+-- Initializes the Raid Filter dropdown based on selected Expansion.
 function DTC.LeaderboardUI:InitRaidMenu(menu, level)
     local info = UIDropDownMenu_CreateInfo()
     
@@ -186,6 +200,7 @@ function DTC.LeaderboardUI:InitRaidMenu(menu, level)
     end
 end
 
+-- Initializes the Boss Filter dropdown based on selected Raid.
 function DTC.LeaderboardUI:InitBossMenu(menu, level)
     local info = UIDropDownMenu_CreateInfo()
     
@@ -214,6 +229,7 @@ function DTC.LeaderboardUI:InitBossMenu(menu, level)
     end
 end
 
+-- Initializes the Difficulty Filter dropdown.
 function DTC.LeaderboardUI:InitDiffMenu(menu, level)
     local info = UIDropDownMenu_CreateInfo()
     
@@ -244,6 +260,7 @@ function DTC.LeaderboardUI:InitDiffMenu(menu, level)
     end
 end
 
+-- Handles the "Award Trip" button click.
 function DTC.LeaderboardUI:OnAwardClick()
     if DTC.isTestModeLB then print("|cFFFF0000DTC:|r Cannot award in Test Mode."); return end
     local data = DTC.Leaderboard:GetSortedData(false)
@@ -251,7 +268,7 @@ function DTC.LeaderboardUI:OnAwardClick()
         local winner = data[1].n
         DTC.Leaderboard:AwardTrip(winner)
         
-        local channel = IsInRaid() and "RAID" or "PRINT"
+        local channel = IsInRaid() and "RAID_WARNING" or "PRINT"
         local msg = DTCRaidDB.settings.awardMsg or "Congrats %s!"
         if channel == "PRINT" then
             print("--- DTC TRIP AWARDED ---"); print(msg:format(winner))

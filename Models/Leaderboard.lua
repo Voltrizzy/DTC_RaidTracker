@@ -1,3 +1,9 @@
+-- ============================================================================
+-- DTC Raid Tracker - Models/Leaderboard.lua
+-- ============================================================================
+-- This file contains the logic for calculating leaderboard statistics,
+-- aggregating vote data, and managing trip awards.
+
 local folderName, DTC = ...
 DTC.Leaderboard = {}
 
@@ -9,6 +15,7 @@ DTC.Leaderboard.Filters = {
     Diff = "ALL"  
 }
 
+-- Retrieves sorted leaderboard data based on current filters.
 function DTC.Leaderboard:GetSortedData(isTestMode)
     if isTestMode then
         return {
@@ -69,6 +76,7 @@ function DTC.Leaderboard:GetSortedData(isTestMode)
     return sorted
 end
 
+-- Helper to get the list of bosses for a specific raid.
 function DTC.Leaderboard:GetBossList(raidName)
     -- Pull from Static Data
     if DTC.Static and DTC.Static.GetBossList then
@@ -77,6 +85,7 @@ function DTC.Leaderboard:GetBossList(raidName)
     return {}
 end
 
+-- Awards a trip to a winner and syncs the data to the raid.
 function DTC.Leaderboard:AwardTrip(winnerNickname)
     DTCRaidDB.trips = DTCRaidDB.trips or {}
     DTCRaidDB.trips[winnerNickname] = (DTCRaidDB.trips[winnerNickname] or 0) + 1
@@ -86,6 +95,7 @@ function DTC.Leaderboard:AwardTrip(winnerNickname)
     return DTCRaidDB.trips[winnerNickname]
 end
 
+-- Handles incoming leaderboard synchronization messages.
 function DTC.Leaderboard:OnComm(action, data, sender)
     if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
     if action == "SYNC_DATA" then

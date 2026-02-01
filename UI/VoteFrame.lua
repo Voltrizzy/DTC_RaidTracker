@@ -1,7 +1,14 @@
+-- ============================================================================
+-- DTC Raid Tracker - UI/VoteFrame.lua
+-- ============================================================================
+-- This file manages the main Voting Window UI. It handles rendering the roster,
+-- updating vote counts, and providing interaction buttons for Voting, Bribing, and Lobbying.
+
 local folderName, DTC = ...
 DTC.VoteFrame = {}
 local frame, rows, headers = nil, {}, {}
 
+-- Initializes the Vote Frame UI elements and scripts.
 function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
     
@@ -40,11 +47,13 @@ function DTC.VoteFrame:Init()
     frame:SetTitle("DTC Tracker - Vote")
 end
 
+-- Toggles the visibility of the Vote Frame.
 function DTC.VoteFrame:Toggle()
     if not frame then self:Init() end
     if frame:IsShown() then frame:Hide() else self:UpdateHeader(); frame:Show(); self:UpdateList() end
 end
 
+-- Updates the window title with the current boss name and difficulty.
 function DTC.VoteFrame:UpdateHeader()
     if not frame then return end
     local titleText = DTC.Vote and DTC.Vote.currentBoss or "Unknown Boss"
@@ -56,6 +65,7 @@ function DTC.VoteFrame:UpdateHeader()
     frame:SetTitle("DTC Tracker - Vote: " .. titleText)
 end
 
+-- Refreshes the list of players in the voting window.
 function DTC.VoteFrame:UpdateList()
     if not frame or not frame:IsShown() then return end
     for _, row in ipairs(rows) do row:Hide() end
@@ -110,6 +120,7 @@ function DTC.VoteFrame:UpdateList()
     content:SetHeight(totalHeight)
 end
 
+-- Retrieves or creates a header font string from the pool.
 function DTC.VoteFrame:GetHeader(parent)
     for _, h in ipairs(headers) do if not h:IsShown() then return h end end
     local h = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -118,6 +129,7 @@ function DTC.VoteFrame:GetHeader(parent)
     return h
 end
 
+-- Renders a section of the player list (e.g., "TANKS", "HEALERS").
 function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
     if #list == 0 then return rowIndex, yOffset end
     if title ~= "" then

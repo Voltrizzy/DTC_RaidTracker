@@ -1,3 +1,9 @@
+-- ============================================================================
+-- DTC Raid Tracker - Models/History.lua
+-- ============================================================================
+-- This file contains the logic for managing history data, including fetching,
+-- filtering, purging, and synchronizing records between players.
+
 local folderName, DTC = ...
 DTC.History = {}
 
@@ -12,6 +18,7 @@ local MOCK_DATA = {
 DTC.History.Filters = { Date = "ALL", Name = "ALL" }
 
 -- 2. Fetch Data
+-- Retrieves history data, applying current filters.
 function DTC.History:GetData(isTestMode)
     if isTestMode then return MOCK_DATA end
     
@@ -31,6 +38,7 @@ function DTC.History:GetData(isTestMode)
 end
 
 -- 3. Shared Filter Logic (Used by Purge and Sync)
+-- Checks if a history entry matches a given set of filters.
 function DTC.History:MatchesFilter(h, f)
     -- Date Filter
     if f.date and f.date ~= "ALL" and h.d ~= f.date then return false end
@@ -60,6 +68,7 @@ function DTC.History:MatchesFilter(h, f)
 end
 
 -- 4. Purge Logic
+-- Permanently deletes history entries that match the given filters.
 function DTC.History:PurgeMatching(filters)
     local kept = {}
     local count = 0
@@ -81,6 +90,7 @@ function DTC.History:PurgeMatching(filters)
 end
 
 -- 5. Sync Push Logic
+-- Sends matching history entries to a target player via addon message.
 function DTC.History:PushSync(target, filters)
     if not target or target == "" then print("Invalid target."); return end
     
@@ -104,6 +114,7 @@ function DTC.History:PushSync(target, filters)
 end
 
 -- 6. Receiver Logic (OnComm)
+-- Handles incoming history data synchronization messages.
 function DTC.History:OnComm(action, data, sender)
     if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
     if action == "SYNC_PUSH" then
@@ -167,6 +178,7 @@ function DTC.History:OnComm(action, data, sender)
 end
 
 -- 7. Helpers
+-- Returns unique lists of dates and winner names for dropdown menus.
 function DTC.History:GetUniqueMenus()
     local dates, names = {}, {}
     local seenD, seenN = {}, {}
@@ -179,6 +191,7 @@ function DTC.History:GetUniqueMenus()
     return dates, names
 end
 
+-- Generates a CSV string of the current history data.
 function DTC.History:GetCSV()
     local data = self:GetData(false)
     local buffer = { "Date,Raid,Diff,Boss,Winner,Points,Voters" }

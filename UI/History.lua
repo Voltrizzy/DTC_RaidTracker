@@ -1,3 +1,9 @@
+-- ============================================================================
+-- DTC Raid Tracker - UI/History.lua
+-- ============================================================================
+-- This file manages the History UI. It handles displaying past vote records,
+-- filtering, and exporting data.
+
 local folderName, DTC = ...
 DTC.HistoryUI = {}
 

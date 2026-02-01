@@ -1,13 +1,21 @@
+-- ============================================================================
+-- DTC Raid Tracker - Models/Bribe.lua
+-- ============================================================================
+-- This file contains the logic for the "Game Theory" module, including Bribes,
+-- Propositions, Lobbying, and Debt Tracking. It handles the state of offers,
+-- trade interactions, and communication synchronization.
+
 local folderName, DTC = ...
 DTC.Bribe = {}
 
--- State
-DTC.Bribe.IncomingQueue = {} 
-DTC.Bribe.PropositionQueue = {} 
-DTC.Bribe.LobbyQueue = {} 
-DTC.Bribe.ActiveTrade = nil  
-DTC.Bribe.PlayerMoneyStart = 0
+-- State Variables
+DTC.Bribe.IncomingQueue = {}      -- Queue for incoming direct bribe offers
+DTC.Bribe.PropositionQueue = {}   -- Queue for active propositions (selling votes)
+DTC.Bribe.LobbyQueue = {}         -- Queue for active lobby offers (paying for votes)
+DTC.Bribe.ActiveTrade = nil       -- Stores details of the currently active trade
+DTC.Bribe.PlayerMoneyStart = 0    -- Snapshot of player money before trade opens
 
+-- Initialize event listeners for trade window interactions
 function DTC.Bribe:Init()
     local f = CreateFrame("Frame")
     f:RegisterEvent("TRADE_SHOW")
@@ -21,6 +29,8 @@ end
 -- =========================================================
 -- 1. STANDARD BRIBE LOGIC
 -- =========================================================
+
+-- Sends a direct bribe offer to a target player via addon message.
 function DTC.Bribe:OfferBribe(targetPlayer, amount)
     if not targetPlayer or not amount or tonumber(amount) <= 0 then return end
     if not IsInRaid() then print("|cFFFF0000DTC:|r Bribes are only available in a raid group."); return end
@@ -37,6 +47,7 @@ function DTC.Bribe:OfferBribe(targetPlayer, amount)
     print("|cFF00FF00DTC:|r Offered " .. amount .. "g to " .. targetPlayer)
 end
 
+-- Handles receiving a bribe offer. Adds it to the incoming queue and starts a timer.
 function DTC.Bribe:ReceiveOffer(sender, amount, isTest)
     if not IsInRaid() and not isTest then return end
     if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
@@ -47,6 +58,7 @@ function DTC.Bribe:ReceiveOffer(sender, amount, isTest)
     if DTC.BribeUI then DTC.BribeUI:ShowNextOffer() end
 end
 
+-- Accepts a specific bribe offer, casts the vote, and records the transaction.
 function DTC.Bribe:AcceptOffer(offerID)
     local offer, index = self:GetOffer(offerID)
     if not offer then return end
@@ -76,16 +88,19 @@ function DTC.Bribe:AcceptOffer(offerID)
     self:RemoveOffer(index)
 end
 
+-- Declines a bribe offer, removing it from the queue.
 function DTC.Bribe:DeclineOffer(offerID)
     local _, index = self:GetOffer(offerID)
     if index then self:RemoveOffer(index) end
 end
 
+-- Callback for when a bribe offer timer expires.
 function DTC.Bribe:ExpireOffer(id)
     local _, index = self:GetOffer(id)
     if index then self:RemoveOffer(index) end
 end
 
+-- Helper to find an offer in the queue by ID.
 function DTC.Bribe:GetOffer(id)
     for i, v in ipairs(self.IncomingQueue) do if v.id == id then return v, i end end
     return nil, nil
@@ -102,6 +117,8 @@ end
 -- =========================================================
 -- 2. PROPOSITION LOGIC
 -- =========================================================
+
+-- Broadcasts a proposition (selling own vote) to the raid.
 function DTC.Bribe:SendProposition(amount)
     if not amount or tonumber(amount) <= 0 then return end
     if not IsInRaid() then print("|cFFFF0000DTC:|r Propositions are only available in a raid group."); return end
@@ -120,6 +137,7 @@ function DTC.Bribe:SendProposition(amount)
     print("|cFF00FF00DTC:|r Proposition broadcast: My vote for " .. amount .. "g.")
 end
 
+-- Handles receiving a proposition broadcast. Adds it to the proposition queue.
 function DTC.Bribe:ReceiveProposition(offerer, amount, isTest)
     if not IsInRaid() and not isTest then return end
     if not DTC.Vote or not DTC.Vote.isOpen then return end
@@ -140,6 +158,7 @@ function DTC.Bribe:ReceiveProposition(offerer, amount, isTest)
     if DTC.BribeUI then DTC.BribeUI:UpdatePropositionList() end
 end
 
+-- Accepts a proposition, sending a whisper to the offerer to confirm.
 function DTC.Bribe:AcceptProposition(propID)
     local prop = self:GetProposition(propID)
     if not prop then return end
@@ -155,6 +174,7 @@ function DTC.Bribe:AcceptProposition(propID)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_ACCEPT", "WHISPER", fullTarget)
 end
 
+-- Handles the confirmation from a buyer that they accepted your proposition.
 function DTC.Bribe:OnPropositionAcceptedByMe(buyerName)
     if not DTC.Vote or not DTC.Vote.isOpen then return end
     if DTC.Vote.myVotesLeft > 0 then
@@ -171,6 +191,8 @@ end
 -- =========================================================
 -- 3. LOBBYING LOGIC
 -- =========================================================
+
+-- Broadcasts a lobby offer (paying others to vote for a candidate) to the raid.
 function DTC.Bribe:SendLobby(candidate, amount)
     if not candidate or not amount or tonumber(amount) <= 0 then return end
     if not IsInRaid() then print("|cFFFF0000DTC:|r Lobbying is only available in a raid group."); return end
@@ -191,6 +213,7 @@ function DTC.Bribe:SendLobby(candidate, amount)
     print("|cFF00FF00DTC:|r Lobbying for " .. candidate .. " (" .. amount .. "g) broadcast to raid.")
 end
 
+-- Handles receiving a lobby offer. Adds it to the lobby queue.
 function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount, isTest)
     if not IsInRaid() and not isTest then return end
     if lobbyist == UnitName("player") then return end
@@ -212,6 +235,7 @@ function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount, isTest)
     if DTC.BribeUI then DTC.BribeUI:UpdateLobbyList() end
 end
 
+-- Accepts a lobby offer, casting the vote for the candidate and recording the transaction.
 function DTC.Bribe:AcceptLobby(lobbyID)
     local lobby, index = self:GetLobby(lobbyID)
     if not lobby then return end
@@ -234,6 +258,7 @@ function DTC.Bribe:AcceptLobby(lobbyID)
     self:RemoveLobby(index)
 end
 
+-- Callback for when a lobby offer timer expires.
 function DTC.Bribe:ExpireLobby(id)
     local _, index = self:GetLobby(id)
     if index then
@@ -258,9 +283,13 @@ end
 -- =========================================================
 -- 4. HELPERS
 -- =========================================================
+
+-- Records a bribe transaction in the database and handles corruption fee logic.
 function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss, bType)
     boss = (boss or "Unknown"):gsub(",", "")
-    local amt = tonumber(amount) or 0
+    offerer = (offerer or "Unknown"):gsub(",", "")
+    recipient = (recipient or "Unknown"):gsub(",", "")
+    local amt = math.floor(tonumber(amount) or 0)
     local ts = date("%Y-%m-%d %H:%M:%S")
     local entry = { offerer = offerer, recipient = recipient, amount = amt, boss = boss, paid = false, timestamp = ts }
     table.insert(DTCRaidDB.bribes, entry)
@@ -284,6 +313,7 @@ function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss, bType)
     if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
 end
 
+-- Clears all active queues (Incoming, Lobby) and cancels timers.
 function DTC.Bribe:DeclineAll()
     for _, offer in ipairs(self.IncomingQueue) do if offer.timer then offer.timer:Cancel() end end
     self.IncomingQueue = {}
@@ -294,6 +324,7 @@ function DTC.Bribe:DeclineAll()
     if DTC.BribeUI then DTC.BribeUI:UpdateLobbyList() end
 end
 
+-- Checks if a player has any unpaid debts for previous bosses.
 function DTC.Bribe:HasUnpaidDebt(target)
     local myName = target or UnitName("player")
     local currentBoss = DTC.Vote and DTC.Vote.currentBoss or "Unknown"
@@ -303,6 +334,7 @@ function DTC.Bribe:HasUnpaidDebt(target)
     return false
 end
 
+-- Calculates the total amount of unpaid debt for the player.
 function DTC.Bribe:GetTotalDebt()
     local myName = UnitName("player")
     local total = 0
@@ -322,6 +354,7 @@ function DTC.Bribe:GetProposition(id)
     return nil, nil
 end
 
+-- Initiates a trade with a player to pay off a debt.
 function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
     if InCombatLockdown() then print("|cFFFF0000DTC:|r Cannot initiate trade in combat."); return end
     if UnitIsDeadOrGhost("player") then print("|cFFFF0000DTC:|r Cannot initiate trade while dead."); return end
@@ -346,6 +379,8 @@ function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
 
     if unitID then InitiateTrade(unitID) else TargetUnit(player); InitiateTrade("target") end
 end
+
+-- Event handler for TRADE_SHOW. Auto-fills gold if paying.
 function DTC.Bribe:OnTradeShow()
     self.PlayerMoneyStart = GetMoney()
     if self.ActiveTrade then
@@ -364,6 +399,8 @@ function DTC.Bribe:OnTradeShow()
         end
     end
 end
+
+-- Event handler for TRADE_CLOSED. Verifies if the trade was successful.
 function DTC.Bribe:OnTradeClosed()
     if self.ActiveTrade and self.ActiveTrade.index then
         local moneyEnd = GetMoney()
@@ -392,6 +429,7 @@ function DTC.Bribe:OnTradeClosed()
     self.ActiveTrade = nil
 end
 
+-- Checks active propositions to see if the offerer has run out of votes.
 function DTC.Bribe:CheckPropositionValidity()
     if not DTC.Vote then return end
     local changed = false
@@ -403,6 +441,7 @@ function DTC.Bribe:CheckPropositionValidity()
     if changed and DTC.BribeUI then DTC.BribeUI:UpdatePropositionList() end
 end
 
+-- Announces all outstanding debts to the raid chat (or print if solo).
 function DTC.Bribe:AnnounceDebts()
     local debts = {}
     for _, entry in ipairs(DTCRaidDB.bribes or {}) do
@@ -424,6 +463,7 @@ function DTC.Bribe:AnnounceDebts()
     end
 end
 
+-- Marks all tax debts owed to the player as paid.
 function DTC.Bribe:PayAllTaxes()
     if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark taxes as paid (to ensure sync)."); return end
     local count = 0
@@ -446,6 +486,7 @@ function DTC.Bribe:PayAllTaxes()
     end
 end
 
+-- Forgives a specific debt entry.
 function DTC.Bribe:ForgiveDebt(index)
     if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to forgive debts."); return end
     local entry = DTCRaidDB.bribes[index]
@@ -462,6 +503,7 @@ function DTC.Bribe:ForgiveDebt(index)
     end
 end
 
+-- Manually marks a debt as paid without a trade.
 function DTC.Bribe:MarkDebtPaid(index)
     if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."); return end
     local entry = DTCRaidDB.bribes[index]
@@ -478,6 +520,7 @@ function DTC.Bribe:MarkDebtPaid(index)
     end
 end
 
+-- Helper to find the name of the raid leader (Rank 2).
 function DTC.Bribe:GetLeaderName()
     if not IsInRaid() then return UnitName("player") end
     for i = 1, GetNumGroupMembers() do
@@ -490,6 +533,7 @@ function DTC.Bribe:GetLeaderName()
     return UnitName("player")
 end
 
+-- Handles incoming addon communication messages for the Bribe module.
 function DTC.Bribe:OnComm(action, data, sender)
     -- Sender sanitization handled by Core or passed raw? Core passes raw.
     if sender and string.find(sender, "-") then sender = strsplit("-", sender) end

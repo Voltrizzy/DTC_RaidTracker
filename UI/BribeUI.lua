@@ -1,6 +1,13 @@
+-- ============================================================================
+-- DTC Raid Tracker - UI/BribeUI.lua
+-- ============================================================================
+-- This file manages the various UI components for the Bribe module, including
+-- offer popups, the Bribe Ledger (Tracker), and Lobby/Proposition lists.
+
 local folderName, DTC = ...
 DTC.BribeUI = {}
 
+-- Initializes all Bribe UI frames and scripts.
 function DTC.BribeUI:Init()
     -- 1. Send Bribe
     self.OfferFrame = DTC_BribeOfferPopup
@@ -194,6 +201,7 @@ function DTC.BribeUI:Init()
     
 end
 
+-- Opens the Bribe Offer window for a specific target.
 -- --- OPENERS ---
 function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then self:Init() end
@@ -204,12 +212,14 @@ function DTC.BribeUI:OpenOfferWindow(targetName)
     self.OfferFrame:Show()
 end
 
+-- Opens the Proposition Input window.
 function DTC.BribeUI:OpenPropInput()
     if not self.PropInputFrame then self:Init() end
     self.PropInputFrame.AmountBox:SetText(""); self.PropInputFrame.AmountBox:SetFocus()
     self.PropInputFrame:Show()
 end
 
+-- Opens the Lobby Input window for a specific target.
 function DTC.BribeUI:OpenLobbyInput(targetName)
     if not self.LobbyInputFrame then self:Init() end
     self.LobbyInputFrame.AmountBox:SetText(""); self.LobbyInputFrame.AmountBox:SetFocus()
@@ -218,6 +228,7 @@ function DTC.BribeUI:OpenLobbyInput(targetName)
     self.LobbyInputFrame:Show()
 end
 
+-- Displays the next incoming bribe offer in the queue.
 function DTC.BribeUI:ShowNextOffer()
     if not self.IncomingFrame then self:Init() end
     if #DTC.Bribe.IncomingQueue == 0 then self.IncomingFrame:Hide(); self.CurrentOfferID = nil; return end
@@ -237,6 +248,7 @@ function DTC.BribeUI:ShowNextOffer()
     end)
 end
 
+-- Updates the list of active propositions.
 -- --- LIST UPDATES ---
 function DTC.BribeUI:UpdatePropositionList()
     if not self.PropListFrame then self:Init() end
@@ -293,7 +305,7 @@ function DTC.BribeUI:UpdatePropositionList()
     content:SetHeight(math.abs(yOffset) + 20)
 end
 
--- NEW
+-- Updates the list of active lobby offers.
 function DTC.BribeUI:UpdateLobbyList()
     if not self.LobbyListFrame then self:Init() end
     local list = DTC.Bribe.LobbyQueue
@@ -338,6 +350,7 @@ function DTC.BribeUI:UpdateLobbyList()
     content:SetHeight(math.abs(yOffset) + 20)
 end
 
+-- Shows the CSV Export popup for the Bribe Ledger.
 function DTC.BribeUI:ShowExportPopup()
     local data = DTCRaidDB.bribes or {}
     local buffer = { "Timestamp,Offerer,Recipient,Amount,Boss,Paid" }
@@ -384,11 +397,13 @@ function DTC.BribeUI:ShowExportPopup()
     p:Show()
 end
 
+-- Toggles the Bribe Ledger (Tracker) window.
 function DTC.BribeUI:ToggleTracker()
     if not self.TrackerFrame then self:Init() end
     if self.TrackerFrame:IsShown() then self.TrackerFrame:Hide() else self.TrackerFrame:Show(); self:UpdateTracker() end
 end
 
+-- Updates the Bribe Ledger list based on current filters and sort settings.
 function DTC.BribeUI:UpdateTracker()
     if not self.TrackerFrame or not self.TrackerFrame:IsShown() then return end
     local isLeader = UnitIsGroupLeader("player") and IsInRaid()

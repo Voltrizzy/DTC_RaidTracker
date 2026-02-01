@@ -1,11 +1,22 @@
-local folderName, DTC = ...
-_G["DTC_Global"] = DTC 
+-- ============================================================================
+-- DTC Raid Tracker - Core.lua
+-- ============================================================================
+-- This file handles the addon initialization, event handling, database setup,
+-- and core utility functions. It serves as the entry point for the addon.
 
-DTC.VERSION = "7.3.1"
+local folderName, DTC = ...
+_G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
+
+DTC.VERSION = "7.3.3"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
 DTC.isTestModeHist = false
+
+-- ============================================================================
+-- STATIC POPUPS
+-- ============================================================================
+-- Definitions for confirmation dialogs used throughout the addon.
 
 StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
     text = "Reset ALL data? This cannot be undone.",
@@ -62,6 +73,10 @@ StaticPopupDialogs["DTC_CLEAR_BRIBES_CONFIRM"] = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+-- ============================================================================
+-- EVENT HANDLING
+-- ============================================================================
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED"); 
 f:RegisterEvent("PLAYER_LOGOUT"); 
@@ -70,6 +85,7 @@ f:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 
 f:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" and ... == folderName then
+        -- Initialize database and modules when the addon is loaded
         DTC:InitDatabase()
         if DTC.Config and DTC.Config.Init then DTC.Config:Init() end
         C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
@@ -77,6 +93,7 @@ f:SetScript("OnEvent", function(self, event, ...)
         print("|cFFFFD700DTC Tracker|r " .. DTC.VERSION .. " loaded.")
         
     elseif event == "CHAT_MSG_ADDON" then
+        -- Handle incoming addon communication messages
         local prefix, msg, _, sender = ...
         if prefix == DTC.PREFIX then 
             local action, data = strsplit(":", msg, 2)
@@ -87,6 +104,7 @@ f:SetScript("OnEvent", function(self, event, ...)
         end
         
     elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
+        -- Update roster data and UI lists when group composition or zone changes
         DTC:CheckRosterForNicknames()
         if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
         if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
@@ -94,6 +112,11 @@ f:SetScript("OnEvent", function(self, event, ...)
     end
 end)
 
+-- ============================================================================
+-- DATABASE INITIALIZATION
+-- ============================================================================
+
+-- Initializes the SavedVariables table (DTCRaidDB) with default values.
 function DTC:InitDatabase()
     DTCRaidDB = DTCRaidDB or {}
     DTCRaidDB.global = DTCRaidDB.global or {}
@@ -108,6 +131,7 @@ function DTC:InitDatabase()
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
     
+    -- Default voting win messages
     if DTCRaidDB.settings.voteWinCount == nil then
         DTCRaidDB.settings.voteWinCount = 10
         DTCRaidDB.settings.voteWinMsg_1 = "Congrats to %s for winning the vote!"
@@ -138,6 +162,12 @@ function DTC:InitDatabase()
     C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
+-- ============================================================================
+-- UTILITY FUNCTIONS
+-- ============================================================================
+
+-- Returns a string formatted with the class color of the given player name.
+-- @param name: The name of the player.
 function DTC:GetColoredName(name)
     if not name then return "" end
     local lookup = name
@@ -149,6 +179,8 @@ function DTC:GetColoredName(name)
     return name
 end
 
+-- Returns the full name (Name-Realm) of a player if they are in the raid group.
+-- Useful for whispering players cross-realm.
 function DTC:GetFullName(shortName)
     if not IsInRaid() then return shortName end
     for i=1, GetNumGroupMembers() do
@@ -162,8 +194,11 @@ function DTC:GetFullName(shortName)
     return shortName
 end
 
+-- Triggers the database reset confirmation popup.
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
 
+-- Checks if the player is currently in a valid raid instance for tracking.
+-- Excludes LFR (7, 17) and Timewalking (33).
 function DTC:IsValidRaid()
     local name, instanceType, difficultyID = GetInstanceInfo()
     if instanceType ~= "raid" then return false end 
@@ -181,6 +216,8 @@ function DTC:IsValidRaid()
     return isValidRaid
 end
 
+-- Scans the raid roster and populates the identities, classes, and guilds tables.
+-- Only runs if in a valid raid.
 function DTC:CheckRosterForNicknames()
     if not IsInRaid() then return end
     if not self:IsValidRaid() then return end
@@ -199,6 +236,10 @@ function DTC:CheckRosterForNicknames()
         end
     end
 end
+
+-- ============================================================================
+-- SLASH COMMANDS
+-- ============================================================================
 
 SLASH_DTC1 = "/dtc"
 SlashCmdList["DTC"] = function(msg)
