@@ -44,7 +44,7 @@ function DTC.VoteFrame:UpdateHeader()
     local titleText = DTC.Vote and DTC.Vote.currentBoss or "Unknown Boss"
     if DTC.Vote and DTC.Vote.isTestMode then titleText = "(Test) " .. titleText
     else
-        local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
+        local _, _, _, diffName = GetInstanceInfo()
         if diffName and diffName ~= "" then titleText = "(" .. diffName .. ") " .. titleText end
     end
     if frame.SetTitle then frame:SetTitle("Voting: " .. titleText) end
@@ -82,10 +82,11 @@ function DTC.VoteFrame:UpdateList()
     -- RENDER ROWS
     local roster = DTC.Vote:GetRosterData()
     local sortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
+    local rowIndex = 1
     
     if sortMode == "ALPHA" then
         table.sort(roster, function(a,b) return a.name < b.name end)
-        yOffset = self:RenderSection(content, "", roster, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, "", roster, rowIndex, yOffset)
     else
         local t, h, d = {}, {}, {}
         for _, p in ipairs(roster) do
@@ -93,9 +94,9 @@ function DTC.VoteFrame:UpdateList()
             elseif p.role == "HEALER" then table.insert(h, p)
             else table.insert(d, p) end
         end
-        yOffset = self:RenderSection(content, "TANKS", t, yOffset)
-        yOffset = self:RenderSection(content, "HEALERS", h, yOffset)
-        yOffset = self:RenderSection(content, "DPS / OTHERS", d, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, "TANKS", t, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, "HEALERS", h, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, "DPS / OTHERS", d, rowIndex, yOffset)
     end
 
     -- CRITICAL FIX: Resize the content frame so scrolling works and items aren't clipped!
@@ -111,8 +112,8 @@ function DTC.VoteFrame:GetHeader(parent)
     return h
 end
 
-function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
-    if #list == 0 then return yOffset end
+function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
+    if #list == 0 then return rowIndex, yOffset end
     if title ~= "" then
         local hdr = self:GetHeader(parent)
         hdr:SetPoint("TOPLEFT", 5, yOffset); hdr:SetText(title); hdr:Show()
@@ -127,7 +128,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
     local isMe = nil
 
     for i, p in ipairs(list) do
-        local row = rows[#rows + 1]
+        local row = rows[rowIndex]
         
         if not row then
             row = CreateFrame("Frame", nil, parent)
@@ -135,6 +136,12 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
             row.StatusIcon = row:CreateTexture(nil, "OVERLAY"); row.StatusIcon:SetSize(16, 16); row.StatusIcon:SetPoint("LEFT", 0, 0)
             row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); row.Name:SetPoint("LEFT", 20, 0)
             
+            row.DeadbeatIcon = row:CreateTexture(nil, "OVERLAY")
+            row.DeadbeatIcon:SetSize(12, 12)
+            row.DeadbeatIcon:SetPoint("LEFT", row.Name, "RIGHT", 5, 0)
+            row.DeadbeatIcon:SetTexture("Interface\\GroupFrame\\UI-Group-MasterLooter")
+            row.DeadbeatIcon:SetVertexColor(1, 0.2, 0.2)
+
             row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
             row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
 
@@ -154,6 +161,12 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
         local color = RAID_CLASS_COLORS[p.class] or {r=1,g=1,b=1}
         row.Name:SetTextColor(color.r, color.g, color.b)
         row.Name:SetText(p.nick and (p.name.." ("..p.nick..")") or p.name)
+        
+        if DTC.Bribe and DTC.Bribe:HasUnpaidDebt(p.name) then
+            row.DeadbeatIcon:Show()
+        else
+            row.DeadbeatIcon:Hide()
+        end
         
         if p.hasVoted then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-Ready")
         elseif not p.hasAddon then row.StatusIcon:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
@@ -191,6 +204,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, yOffset)
         
         row.Count:SetText((DTC.Vote and DTC.Vote:GetVoteCount(p.name)) or 0)
         yOffset = yOffset - 24
+        rowIndex = rowIndex + 1
     end
-    return yOffset - 5
+    return rowIndex, yOffset - 5
 end

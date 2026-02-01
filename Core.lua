@@ -1,7 +1,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC 
 
-DTC.VERSION = "7.2"
+DTC.VERSION = "7.3"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -17,6 +17,24 @@ StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
         if DTC.LeaderboardUI then DTC.LeaderboardUI:UpdateList() end
         if DTC.HistoryUI then DTC.HistoryUI:UpdateList() end
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_FORGIVE_CONFIRM"] = {
+    text = "Are you sure you want to forgive this debt?",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function(self, data)
+        if DTC.Bribe then DTC.Bribe:ForgiveDebt(data) end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_MARKPAID_CONFIRM"] = {
+    text = "Mark this debt as PAID? (No gold will be traded)",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function(self, data)
+        if DTC.Bribe then DTC.Bribe:MarkDebtPaid(data) end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -41,6 +59,8 @@ f:SetScript("OnEvent", function(self, event, ...)
             local action, data = strsplit(":", msg, 2)
             if DTC.Vote then DTC.Vote:OnComm(action, data, sender) end
             if DTC.History then DTC.History:OnComm(action, data, sender) end
+            if DTC.Leaderboard then DTC.Leaderboard:OnComm(action, data, sender) end
+            if DTC.Bribe then DTC.Bribe:OnComm(action, data, sender) end
         end
         
     elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
@@ -62,24 +82,43 @@ function DTC:InitDatabase()
     if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
     if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
     
+    if DTCRaidDB.settings.voteWinCount == nil then
+        DTCRaidDB.settings.voteWinCount = 10
+        DTCRaidDB.settings.voteWinMsg_1 = "Congrats to %s for winning the vote!"
+        DTCRaidDB.settings.voteWinMsg_2 = "And the winner is... %s!"    
+        DTCRaidDB.settings.voteWinMsg_3 = "STOP THE COUNT! %s has taken the lead!"
+        DTCRaidDB.settings.voteWinMsg_4 = "The tribe has spoken. %s is the winner!"
+        DTCRaidDB.settings.voteWinMsg_5 = "Democracy manifests! %s wins the vote."
+        DTCRaidDB.settings.voteWinMsg_6 = "By popular demand, %s takes the crown."
+        DTCRaidDB.settings.voteWinMsg_7 = "The people have chosen... wisely? %s wins!"
+        DTCRaidDB.settings.voteWinMsg_8 = "Victory! %s is the chosen one."
+        DTCRaidDB.settings.voteWinMsg_9 = "Against all odds, %s secures the win."
+        DTCRaidDB.settings.voteWinMsg_10 = "Look at me. %s is the captain now."
+    end
+    
+    if DTCRaidDB.settings.voteRunnerUpMsg == nil then DTCRaidDB.settings.voteRunnerUpMsg = "Honorable mention goes to %s." end
+    if DTCRaidDB.settings.voteLowMsg == nil then DTCRaidDB.settings.voteLowMsg = "Don't worry %s, there's always next time." end
+    
     -- Timer Defaults
     if DTCRaidDB.settings.voteTimer == nil then DTCRaidDB.settings.voteTimer = 180 end -- NEW: Voting Window
+    if DTCRaidDB.settings.voteRunnerUpEnabled == nil then DTCRaidDB.settings.voteRunnerUpEnabled = true end
+    if DTCRaidDB.settings.voteLowEnabled == nil then DTCRaidDB.settings.voteLowEnabled = true end
     if DTCRaidDB.settings.bribeTimer == nil then DTCRaidDB.settings.bribeTimer = 90 end
     if DTCRaidDB.settings.propTimer == nil then DTCRaidDB.settings.propTimer = 90 end
     if DTCRaidDB.settings.lobbyTimer == nil then DTCRaidDB.settings.lobbyTimer = 120 end 
+    if DTCRaidDB.settings.corruptionFee == nil then DTCRaidDB.settings.corruptionFee = 10 end
+    if DTCRaidDB.settings.debtLimit == nil then DTCRaidDB.settings.debtLimit = 0 end
     
     C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
 
-function DTC:CheckRosterForNicknames()
-    if not IsInRaid() then return end
-    
+function DTC:IsValidRaid()
     local name, instanceType, difficultyID = GetInstanceInfo()
-    if instanceType ~= "raid" then return end 
-    if difficultyID == 7 or difficultyID == 17 then return end 
-
+    if instanceType ~= "raid" then return false end 
+    if difficultyID == 7 or difficultyID == 17 then return false end 
+    
     local isValidRaid = false
     if DTC.Static and DTC.Static.RAID_DATA then
         for expID, raidList in pairs(DTC.Static.RAID_DATA) do
@@ -89,7 +128,12 @@ function DTC:CheckRosterForNicknames()
             if isValidRaid then break end
         end
     end
-    if not isValidRaid then return end
+    return isValidRaid
+end
+
+function DTC:CheckRosterForNicknames()
+    if not IsInRaid() then return end
+    if not self:IsValidRaid() then return end
 
     for i = 1, GetNumGroupMembers() do
         local unitID = "raid"..i

@@ -80,3 +80,15 @@ function DTC.Leaderboard:AwardTrip(winnerNickname)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_DATA:TRIP,"..winnerNickname..","..DTCRaidDB.trips[winnerNickname], "RAID")
     return DTCRaidDB.trips[winnerNickname]
 end
+
+function DTC.Leaderboard:OnComm(action, data, sender)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
+    if action == "SYNC_DATA" then
+        local subType, name, count = strsplit(",", data)
+        if subType == "TRIP" and name and count then
+            DTCRaidDB.trips = DTCRaidDB.trips or {}
+            DTCRaidDB.trips[name] = tonumber(count)
+            if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
+        end
+    end
+end

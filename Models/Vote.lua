@@ -24,8 +24,7 @@ end
 -- 2. Event Handlers
 function DTC.Vote:OnEncounterEnd(encounterID, encounterName, difficultyID, raidSize, endStatus)
     if endStatus ~= 1 then return end
-    local _, instanceType = GetInstanceInfo()
-    if instanceType ~= "raid" then return end
+    if not DTC:IsValidRaid() then return end
     self:StartSession(encounterName) 
 end
 
@@ -94,13 +93,13 @@ function DTC.Vote:Finalize()
     if DTC.Bribe then DTC.Bribe:DeclineAll() end
     
     local raidInfo = GetInstanceInfo()
-    local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
+    local _, _, _, diffName = GetInstanceInfo()
     local dateStr = date("%Y-%m-%d")
     
     for name, count in pairs(self.votes) do
         if count > 0 then
             local payload = string.format("%s,%d,%s,%s,%s,%s", 
-                name, count, self.currentBoss, raidInfo, dateStr, diffName or "Normal")
+                name, count, (self.currentBoss:gsub(",", "")), (raidInfo:gsub(",", "")), dateStr, diffName or "Normal")
             if not self.isTestMode then
                 C_ChatInfo.SendAddonMessage(DTC.PREFIX, "FINALIZE:"..payload, "RAID")
             end
@@ -117,6 +116,7 @@ end
 
 -- 5. Announcement Logic
 function DTC.Vote:Announce()
+    math.randomseed(GetTime())
     local sorted = {}
     for n, v in pairs(self.votes) do
         table.insert(sorted, {name=n, val=v}) 
@@ -136,9 +136,33 @@ function DTC.Vote:Announce()
     end
     
     if sorted[1] then
-        local winMsg = DTCRaidDB.settings.voteWinMsg or "Congrats %s!"
+        local count = DTCRaidDB.settings.voteWinCount or 1
+        if count < 1 then count = 1 end
+        local idx = math.random(1, count)
+        local winMsg = DTCRaidDB.settings["voteWinMsg_"..idx]
+        if not winMsg or winMsg == "" then winMsg = "Congrats %s!" end
+        
         local wName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[1].name) or sorted[1].name
         SendChatMessage(winMsg:format(wName), "RAID")
+    end
+    
+    if sorted[2] and DTCRaidDB.settings.voteRunnerUpEnabled then
+        local msg = DTCRaidDB.settings.voteRunnerUpMsg
+        if msg and msg ~= "" then
+            local name = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[2].name) or sorted[2].name
+            SendChatMessage(msg:format(name), "RAID")
+        end
+    end
+    
+    if #sorted > 0 and DTCRaidDB.settings.voteLowEnabled then
+        local last = sorted[#sorted]
+        if last.name ~= sorted[1].name then
+            local msg = DTCRaidDB.settings.voteLowMsg
+            if msg and msg ~= "" then
+                local name = DTC.Utils and DTC.Utils:GetAnnounceName(last.name) or last.name
+                SendChatMessage(msg:format(name), "RAID")
+            end
+        end
     end
 end
 
@@ -156,6 +180,7 @@ function DTC.Vote:GetRosterData()
     for i = 1, GetNumGroupMembers() do
         local name, _, _, _, _, classFile, _, _, _, role = GetRaidRosterInfo(i)
         if name then
+            if string.find(name, "-") then name = strsplit("-", name) end
             local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
             local hasAddon = (self.versions[name] ~= nil)
             local mismatch = false
@@ -179,6 +204,7 @@ function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
 -- 7. Comms
 function DTC.Vote:OnComm(action, data, sender)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
     if action == "VOTE" then
         if sender ~= UnitName("player") then
             local target = data

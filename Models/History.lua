@@ -93,9 +93,10 @@ function DTC.History:PushSync(target, filters)
         if self:MatchesFilter(h, filters) then
             -- Format: Boss,Winner,Points,Date,Raid,Diff,Voters
             local payload = string.format("%s,%s,%d,%s,%s,%s,%s", 
-                h.b or "?", h.w or "?", h.p or 0, h.d or "?", h.r or "?", h.diff or "", h.v or "")
+                (h.b or "?"):gsub(",", ""), h.w or "?", h.p or 0, h.d or "?", (h.r or "?"):gsub(",", ""), h.diff or "", h.v or "")
             
-            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_PUSH:"..payload, "WHISPER", target)
+            local fullTarget = self:GetFullName(target)
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_PUSH:"..payload, "WHISPER", fullTarget)
             count = count + 1
         end
     end
@@ -104,6 +105,7 @@ end
 
 -- 6. Receiver Logic (OnComm)
 function DTC.History:OnComm(action, data, sender)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
     if action == "SYNC_PUSH" then
         -- Parse CSV: Boss,Winner,Points,Date,Raid,Diff,Voters
         local boss, winner, pts, dateStr, raid, diff, voters = strsplit(",", data)
@@ -136,7 +138,45 @@ function DTC.History:OnComm(action, data, sender)
                 if DTC.HistoryUI and DTC.HistoryUI.UpdateList then DTC.HistoryUI:UpdateList() end
             end
         end
+    elseif action == "FINALIZE" then
+        -- payload: name(Winner), count(Points), boss, raid, date, diff
+        local winner, pts, boss, raid, dateStr, diff = strsplit(",", data)
+        if winner and boss and dateStr then
+            local newEntry = {
+                b = boss,
+                w = winner,
+                p = tonumber(pts) or 0,
+                d = dateStr,
+                r = raid,
+                diff = diff,
+                v = "?"
+            }
+            
+            local isDup = false
+            for _, h in ipairs(DTCRaidDB.history) do
+                if h.d == newEntry.d and h.b == newEntry.b and h.w == newEntry.w and h.r == newEntry.r then isDup = true; break end
+            end
+            
+            if not isDup then
+                table.insert(DTCRaidDB.history, newEntry)
+                if DTC.HistoryUI and DTC.HistoryUI.UpdateList then DTC.HistoryUI:UpdateList() end
+                if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
+            end
+        end
     end
+end
+
+function DTC.History:GetFullName(shortName)
+    if not IsInRaid() then return shortName end
+    for i=1, GetNumGroupMembers() do
+        local name = GetRaidRosterInfo(i)
+        if name then
+            local sName = name
+            if string.find(sName, "-") then sName = strsplit("-", sName) end
+            if sName == shortName then return name end
+        end
+    end
+    return shortName
 end
 
 -- 7. Helpers

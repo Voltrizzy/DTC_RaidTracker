@@ -66,7 +66,7 @@ function DTC.Config:Init()
 end
 
 function DTC.Config:BuildGeneralTab(frame)
-    local box = CreateGroupBox(frame, "General Options", 580, 100)
+    local box = CreateGroupBox(frame, "General Options", 580, 140)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local btnVote = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
@@ -92,6 +92,47 @@ function DTC.Config:BuildGeneralTab(frame)
             print("Simulating incoming bribe from Mickey...")
             DTC.Bribe:ReceiveOffer("Mickey", 5000) 
         end 
+    end)
+    
+    local btnProp = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnProp:SetSize(140, 24); btnProp:SetPoint("LEFT", btnBribe, "RIGHT", 10, 0); btnProp:SetText("Test Proposition")
+    btnProp:SetScript("OnClick", function() 
+        if DTC.Bribe then 
+            if DTC.Vote and not DTC.Vote.isOpen then print("|cFFFF0000DTC:|r Start a vote session first to test propositions."); return end
+            print("Simulating incoming proposition from Donald...")
+            DTC.Bribe:ReceiveProposition("Donald", 2500) 
+        end 
+    end)
+    
+    local btnLobby = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnLobby:SetSize(140, 24); btnLobby:SetPoint("TOPLEFT", 15, -100); btnLobby:SetText("Test Lobbying")
+    btnLobby:SetScript("OnClick", function() 
+        if DTC.Bribe then 
+            if DTC.Vote and not DTC.Vote.isOpen then print("|cFFFF0000DTC:|r Start a vote session first to test lobbying."); return end
+            print("Simulating incoming lobby offer from Goofy...")
+            DTC.Bribe:ReceiveLobby("Goofy", "Mickey", 1000) 
+        end 
+    end)
+    
+    local btnDebts = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnDebts:SetSize(140, 24); btnDebts:SetPoint("LEFT", btnLobby, "RIGHT", 10, 0); btnDebts:SetText("Test Debts")
+    btnDebts:SetScript("OnClick", function()
+        if DTC.Bribe then
+            local me = UnitName("player")
+            local target = UnitName("target") or "TestRecipient"
+            if target == me then target = "TestRecipient" end
+            
+            -- Create dummy debts for testing trade window functionality
+            DTC.Bribe:TrackBribe(me, target, 100, "Test Boss", "BRIBE")
+            DTC.Bribe:TrackBribe(me, target, 200, "Test Boss", "PROP")
+            DTC.Bribe:TrackBribe(me, target, 300, "Test Boss", "LOBBY")
+            
+            local feeEntry = { offerer = me, recipient = target, amount = 50, boss = "Test Boss (Tax)", paid = false, timestamp = date("%Y-%m-%d %H:%M:%S") }
+            table.insert(DTCRaidDB.bribes, feeEntry)
+            
+            if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
+            print("Created dummy debts to " .. target .. ".")
+        end
     end)
 end
 
@@ -149,8 +190,8 @@ function DTC.Config:RefreshNicknames(content)
             local val = DTCRaidDB.identities[name]
             if not val or val == "" then val = name end
             eb:SetText(val)
-            eb:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText(); self:ClearFocus() end)
-            eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText() end)
+            eb:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", ""); self:ClearFocus() end)
+            eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", "") end)
             local delBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
             delBtn:SetSize(20, 20); delBtn:SetPoint("LEFT", eb, "RIGHT", 5, 0); delBtn:SetText("X")
             delBtn:SetScript("OnClick", function() 
@@ -289,23 +330,68 @@ function DTC.Config:BuildVotingTab(frame)
     s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings.voteTimer = value; valLabel:SetText(value .. " seconds") end)
     s:SetScript("OnShow", function(self) local val = DTCRaidDB.settings.voteTimer or 180; self:SetValue(val); valLabel:SetText(val .. " seconds") end)
 
-    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 200)
+    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 450)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
-    local function AddEdit(title, key, y)
+    
+    local sCount = CreateFrame("Slider", "DTC_VoteMsgCountSlider", b2, "OptionsSliderTemplate")
+    sCount:SetPoint("TOPLEFT", 20, -30)
+    sCount:SetMinMaxValues(1, 10); sCount:SetValueStep(1); sCount:SetObeyStepOnDrag(true); sCount:SetWidth(200)
+    _G[sCount:GetName() .. "Text"]:SetText("Active Message Count")
+    _G[sCount:GetName() .. "Low"]:SetText("1"); _G[sCount:GetName() .. "High"]:SetText("10")
+    local valLabel = sCount:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", sCount, "BOTTOM", 0, 0)
+    
+    local btnTest = CreateFrame("Button", nil, b2, "UIPanelButtonTemplate")
+    btnTest:SetSize(140, 20); btnTest:SetPoint("LEFT", sCount, "RIGHT", 20, 0); btnTest:SetText("Test Announcement")
+    btnTest:SetScript("OnClick", function()
+        local count = DTCRaidDB.settings.voteWinCount or 1
+        local idx = math.random(1, count)
+        local msg = DTCRaidDB.settings["voteWinMsg_"..idx]
+        if not msg or msg == "" then msg = "Test Message %s" end
+        print("|cFFFFD700DTC Test:|r " .. msg:format(UnitName("player")))
+    end)
+
+    local msgBoxes = {}
+    for i = 1, 10 do
+        local row = CreateFrame("Frame", nil, b2)
+        row:SetSize(540, 20); row:SetPoint("TOPLEFT", 15, -60 - ((i-1)*25))
+        local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("LEFT", 0, 0); lbl:SetWidth(20); lbl:SetText(i..".")
+        local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate"); eb:SetSize(500, 20); eb:SetPoint("LEFT", lbl, "RIGHT", 5, 0); eb:SetAutoFocus(false)
+        local key = "voteWinMsg_" .. i
+        eb:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end)
+        eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
+        msgBoxes[i] = row
+    end
+
+    local function UpdateVis(val)
+        DTCRaidDB.settings.voteWinCount = val
+        valLabel:SetText(val)
+        for i=1,10 do if i<=val then msgBoxes[i]:Show() else msgBoxes[i]:Hide() end end
+    end
+    sCount:SetScript("OnValueChanged", function(self, v) v=math.floor(v); UpdateVis(v) end)
+    sCount:SetScript("OnShow", function(self) local v = DTCRaidDB.settings.voteWinCount or 1; self:SetValue(v); UpdateVis(v) end)
+
+    local function AddEdit(title, key, y, toggleKey)
         local l = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 15, y); l:SetText(title)
+        if toggleKey then
+            local cb = CreateFrame("CheckButton", nil, b2, "UICheckButtonTemplate")
+            cb:SetSize(20, 20); cb:SetPoint("LEFT", l, "RIGHT", 10, 0)
+            cb:SetScript("OnShow", function(self) self:SetChecked(DTCRaidDB.settings[toggleKey] ~= false) end)
+            cb:SetScript("OnClick", function(self) DTCRaidDB.settings[toggleKey] = self:GetChecked() end)
+            local t = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); t:SetPoint("LEFT", cb, "RIGHT", 0, 0); t:SetText("Enable")
+        end
         local e = CreateFrame("EditBox", nil, b2, "InputBoxTemplate"); e:SetSize(540, 20); e:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -5); e:SetAutoFocus(false)
         e:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end); e:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
     end
-    AddEdit("Winner Message:", "voteWinMsg", -20)
-    AddEdit("Runner Up Message:", "voteRunnerUpMsg", -65)
-    AddEdit("Lowest Vote Message:", "voteLowMsg", -110)
+    AddEdit("Runner Up Message:", "voteRunnerUpMsg", -330, "voteRunnerUpEnabled")
+    AddEdit("Lowest Vote Message:", "voteLowMsg", -375, "voteLowEnabled")
 end
 
 function DTC.Config:BuildBribeTab(frame)
-    local box = CreateGroupBox(frame, "Timer Settings", 580, 200)
+    local box = CreateGroupBox(frame, "Timer Settings", 580, 250)
     box:SetPoint("TOPLEFT", 0, 0)
     
-    local function AddSlider(title, key, minVal, maxVal, y)
+    local function AddSlider(title, key, minVal, maxVal, y, suffix)
+        suffix = suffix or " seconds"
         -- We give the slider a nil name, but we can access sub-regions by key directly 
         -- because 'OptionsSliderTemplate' creates keys .Text, .Low, .High on the object.
         local s = CreateFrame("Slider", nil, box, "OptionsSliderTemplate")
@@ -317,8 +403,8 @@ function DTC.Config:BuildBribeTab(frame)
         
         -- Use direct references instead of _G lookups
         if s.Text then s.Text:SetText(title) end
-        if s.Low then s.Low:SetText(minVal.."s") end
-        if s.High then s.High:SetText(maxVal.."s") end
+        if s.Low then s.Low:SetText(minVal .. (suffix == "%" and "%" or "s")) end
+        if s.High then s.High:SetText(maxVal .. (suffix == "%" and "%" or "s")) end
         
         local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
@@ -326,18 +412,35 @@ function DTC.Config:BuildBribeTab(frame)
         s:SetScript("OnValueChanged", function(self, value) 
             value = math.floor(value)
             DTCRaidDB.settings[key] = value
-            valLabel:SetText(value .. " seconds")
+            valLabel:SetText(value .. suffix)
         end)
         
         s:SetScript("OnShow", function(self) 
             local val = DTCRaidDB.settings[key] or 90
             if key == "lobbyTimer" then val = DTCRaidDB.settings[key] or 120 end
+            if key == "corruptionFee" then val = DTCRaidDB.settings[key] or 10 end
             self:SetValue(val)
-            valLabel:SetText(val .. " seconds") 
+            valLabel:SetText(val .. suffix) 
         end)
     end
     
     AddSlider("Bribe Offer Expiration", "bribeTimer", 30, 300, -40)
     AddSlider("Proposition Expiration", "propTimer", 30, 300, -90)
     AddSlider("Lobbying Expiration", "lobbyTimer", 30, 300, -140)
+    AddSlider("State Corruption Fee (%)", "corruptionFee", 0, 100, -190, "%")
+
+    local b2 = CreateGroupBox(frame, "Debt Management", 580, 100)
+    b2:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -10)
+    
+    local btnAnnounce = CreateFrame("Button", nil, b2, "UIPanelButtonTemplate")
+    btnAnnounce:SetSize(160, 24); btnAnnounce:SetPoint("TOPLEFT", 20, -40); btnAnnounce:SetText("Announce Debts")
+    btnAnnounce:SetScript("OnClick", function() 
+        if DTC.Bribe then DTC.Bribe:AnnounceDebts() end 
+    end)
+    
+    local l = b2:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 20, -70); l:SetText("Debt Limit (Gold, 0 = No Limit):")
+    local e = CreateFrame("EditBox", nil, b2, "InputBoxTemplate"); e:SetSize(100, 20); e:SetPoint("LEFT", l, "RIGHT", 10, 0); e:SetAutoFocus(false)
+    e:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings.debtLimit or "0") end)
+    e:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings.debtLimit = tonumber(self:GetText()) or 0 end)
+    e:SetScript("OnEnterPressed", function(self) DTCRaidDB.settings.debtLimit = tonumber(self:GetText()) or 0; self:ClearFocus() end)
 end

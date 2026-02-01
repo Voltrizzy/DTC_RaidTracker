@@ -82,7 +82,7 @@
         <Anchors><Anchor point="CENTER"/></Anchors>
         <Frames>
             <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate"><Anchors><Anchor point="TOPLEFT" x="15" y="-30"/><Anchor point="BOTTOMRIGHT" x="-35" y="10"/></Anchors><ScrollChild><Frame parentKey="Content"><Size x="450" y="1"/></Frame></ScrollChild></ScrollFrame>
-            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear"><Size x="60" y="20"/><Anchors><Anchor point="TOPRIGHT" x="-10" y="-5"/></Anchors></Button>
+            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear"><Size x="60" y="20"/><Anchors><Anchor point="TOPRIGHT" x="-20" y="-2"/></Anchors></Button>
         </Frames>
     </Frame>
     
@@ -125,7 +125,7 @@
         <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
         <Frames>
             <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-20"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" relativeKey="$parent.AcceptBtn" relativePoint="LEFT" x="-5"/></Anchors></Button>
         </Frames>
     </Frame>
     
@@ -134,7 +134,7 @@
         <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
         <Frames>
             <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
-            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-20"/></Anchors></Button>
+            <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" relativeKey="$parent.AcceptBtn" relativePoint="LEFT" x="-5"/></Anchors></Button>
         </Frames>
     </Frame>
 </Ui>
