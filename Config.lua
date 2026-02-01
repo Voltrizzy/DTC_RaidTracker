@@ -1,5 +1,6 @@
 local folderName, DTC = ...
 DTC.Config = {}
+DTC.Config.nicknamePool = { rows = {}, headers = {} }
 
 local function CreateGroupBox(parent, title, width, height)
     local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -66,7 +67,7 @@ function DTC.Config:Init()
 end
 
 function DTC.Config:BuildGeneralTab(frame)
-    local box = CreateGroupBox(frame, "General Options", 580, 140)
+    local box = CreateGroupBox(frame, "General Options", 580, 170)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local btnVote = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
@@ -78,7 +79,7 @@ function DTC.Config:BuildGeneralTab(frame)
     btnLB:SetScript("OnClick", function() 
         DTC.isTestModeLB = true 
         if DTC.LeaderboardUI then 
-            DTC.Leaderboard:Toggle()
+            DTC.LeaderboardUI:Toggle()
             if DTC_LeaderboardFrame and DTC_LeaderboardFrame.SetTitle then DTC_LeaderboardFrame:SetTitle("DTC Tracker - Leaderboard") end
             DTC.LeaderboardUI:UpdateList() 
         end 
@@ -89,22 +90,17 @@ function DTC.Config:BuildGeneralTab(frame)
     btnHist:SetScript("OnClick", function() 
         DTC.isTestModeHist = true
         if DTC.HistoryUI then 
-            DTC.History:Toggle()
-            if DTC_HistoryFrame and DTC_HistoryFrame.SetTitle then DTC_HistoryFrame:SetTitle("DTC Tracker - History") end
+            DTC.HistoryUI:Toggle()
             DTC.HistoryUI:UpdateList() 
         end 
     end)
     
-    local btnVer = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
-    btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -70); btnVer:SetText("Version Check")
-    btnVer:SetScript("OnClick", function() C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VER_QUERY", "RAID") end)
-    
     local btnBribe = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
-    btnBribe:SetSize(140, 24); btnBribe:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnBribe:SetText("Test Incoming Bribe")
+    btnBribe:SetSize(140, 24); btnBribe:SetPoint("TOPLEFT", 15, -70); btnBribe:SetText("Test Incoming Bribe")
     btnBribe:SetScript("OnClick", function() 
         if DTC.Bribe then 
             print("Simulating incoming bribe from Mickey...")
-            DTC.Bribe:ReceiveOffer("Mickey", 5000) 
+            DTC.Bribe:ReceiveOffer("Mickey", 5000, true) 
         end 
     end)
     
@@ -114,22 +110,22 @@ function DTC.Config:BuildGeneralTab(frame)
         if DTC.Bribe then 
             if DTC.Vote and not DTC.Vote.isOpen then print("|cFFFF0000DTC:|r Start a vote session first to test propositions."); return end
             print("Simulating incoming proposition from Donald...")
-            DTC.Bribe:ReceiveProposition("Donald", 2500) 
+            DTC.Bribe:ReceiveProposition("Donald", 2500, true) 
         end 
     end)
     
     local btnLobby = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
-    btnLobby:SetSize(140, 24); btnLobby:SetPoint("TOPLEFT", 15, -100); btnLobby:SetText("Test Lobbying")
+    btnLobby:SetSize(140, 24); btnLobby:SetPoint("LEFT", btnProp, "RIGHT", 10, 0); btnLobby:SetText("Test Lobbying")
     btnLobby:SetScript("OnClick", function() 
         if DTC.Bribe then 
             if DTC.Vote and not DTC.Vote.isOpen then print("|cFFFF0000DTC:|r Start a vote session first to test lobbying."); return end
             print("Simulating incoming lobby offer from Goofy...")
-            DTC.Bribe:ReceiveLobby("Goofy", "Mickey", 1000) 
+            DTC.Bribe:ReceiveLobby("Goofy", "Mickey", 1000, true) 
         end 
     end)
     
     local btnDebts = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
-    btnDebts:SetSize(140, 24); btnDebts:SetPoint("LEFT", btnLobby, "RIGHT", 10, 0); btnDebts:SetText("Test Debts")
+    btnDebts:SetSize(140, 24); btnDebts:SetPoint("TOPLEFT", 15, -100); btnDebts:SetText("Test Debts")
     btnDebts:SetScript("OnClick", function()
         if DTC.Bribe then
             local me = UnitName("player")
@@ -141,13 +137,27 @@ function DTC.Config:BuildGeneralTab(frame)
             DTC.Bribe:TrackBribe(me, target, 200, "Test Boss", "PROP")
             DTC.Bribe:TrackBribe(me, target, 300, "Test Boss", "LOBBY")
             
-            local feeEntry = { offerer = me, recipient = target, amount = 50, boss = "Test Boss (Tax)", paid = false, timestamp = date("%Y-%m-%d %H:%M:%S") }
+            local feeEntry = { offerer = target, recipient = me, amount = 50, boss = "Test Boss (Tax)", paid = false, timestamp = date("%Y-%m-%d %H:%M:%S") }
             table.insert(DTCRaidDB.bribes, feeEntry)
             
             if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
             print("Created dummy debts to " .. target .. ".")
         end
     end)
+
+    local btnVer = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnVer:SetSize(140, 24); btnVer:SetPoint("TOPLEFT", 15, -130); btnVer:SetText("Version Check")
+    btnVer:SetScript("OnClick", function() 
+        if IsInRaid() then
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VER_QUERY", "RAID") 
+        else
+            print("|cFFFFD700DTC:|r You must be in a raid group to perform a version check.")
+        end
+    end)
+
+    local btnReset = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnReset:SetSize(140, 24); btnReset:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnReset:SetText("Reset to Defaults")
+    btnReset:SetScript("OnClick", function() StaticPopup_Show("DTC_RESET_SETTINGS_CONFIRM") end)
 end
 
 function DTC.Config:BuildNicknamesTab(frame)
@@ -155,14 +165,40 @@ function DTC.Config:BuildNicknamesTab(frame)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigNickScroll", box, "UIPanelScrollFrameTemplate")
-    sf:SetPoint("TOPLEFT", 10, -35); sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    sf:SetPoint("TOPLEFT", 10, -35); sf:SetPoint("BOTTOMRIGHT", -30, 40)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 1); sf:SetScrollChild(content)
     frame.content = content
+    
+    local btnSelectAll = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnSelectAll:SetSize(100, 24); btnSelectAll:SetPoint("BOTTOMLEFT", 15, 10); btnSelectAll:SetText("Select All")
+    btnSelectAll:SetScript("OnClick", function()
+        for _, r in ipairs(DTC.Config.nicknamePool.rows) do
+            if r:IsShown() and r.Check then r.Check:SetChecked(true) end
+        end
+    end)
+
+    local btnDelSel = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnDelSel:SetSize(120, 24); btnDelSel:SetPoint("LEFT", btnSelectAll, "RIGHT", 10, 0); btnDelSel:SetText("Delete Selected")
+    btnDelSel:SetScript("OnClick", function()
+        local changed = false
+        for _, r in ipairs(DTC.Config.nicknamePool.rows) do
+            if r:IsShown() and r.Check and r.Check:GetChecked() then
+                local name = r.Label:GetText()
+                if name and DTCRaidDB.identities[name] then
+                    DTCRaidDB.identities[name] = nil
+                    if DTCRaidDB.guilds then DTCRaidDB.guilds[name] = nil end
+                    if DTCRaidDB.classes then DTCRaidDB.classes[name] = nil end
+                    changed = true
+                end
+            end
+        end
+        if changed then DTC.Config:RefreshNicknames(frame.content) end
+    end)
 end
 
 function DTC.Config:RefreshNicknames(content)
-    local kids = {content:GetChildren()}
-    for _, child in ipairs(kids) do child:Hide(); child:SetParent(nil) end
+    for _, r in ipairs(self.nicknamePool.rows) do r:Hide() end
+    for _, h in ipairs(self.nicknamePool.headers) do h:Hide() end
     
     local roster = {}
     if DTCRaidDB.identities then
@@ -183,8 +219,18 @@ function DTC.Config:RefreshNicknames(content)
     end)
     
     local yOffset = 0
+    local hIndex = 1
+    local rIndex = 1
+
     for _, guild in ipairs(sortedGuilds) do
-        local hdr = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local hdr = self.nicknamePool.headers[hIndex]
+        if not hdr then
+            hdr = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            table.insert(self.nicknamePool.headers, hdr)
+        end
+        hIndex = hIndex + 1
+        hdr:SetParent(content)
+        hdr:Show()
         hdr:SetPoint("TOPLEFT", 0, yOffset); hdr:SetText(guild); hdr:SetTextColor(1, 0.82, 0)
         yOffset = yOffset - 20
         
@@ -192,23 +238,33 @@ function DTC.Config:RefreshNicknames(content)
         table.sort(players)
         
         for _, name in ipairs(players) do
-            local row = CreateFrame("Frame", nil, content)
+            local row = self.nicknamePool.rows[rIndex]
+            if not row then
+                row = CreateFrame("Frame", nil, content)
+                row:SetSize(520, 24)
+                row.Check = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
+                row.Check:SetSize(24, 24); row.Check:SetPoint("LEFT", 0, 0)
+                row.Label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                row.Label:SetPoint("LEFT", row.Check, "RIGHT", 5, 0); row.Label:SetWidth(150); row.Label:SetJustifyH("LEFT")
+                row.EditBox = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
+                row.EditBox:SetSize(200, 20); row.EditBox:SetPoint("LEFT", row.Label, "RIGHT", 10, 0); row.EditBox:SetAutoFocus(false)
+                row.DelBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+                row.DelBtn:SetSize(20, 20); row.DelBtn:SetPoint("LEFT", row.EditBox, "RIGHT", 5, 0); row.DelBtn:SetText("X")
+                table.insert(self.nicknamePool.rows, row)
+            end
+            rIndex = rIndex + 1
+            row:Show()
+            row.Check:SetChecked(false)
             row:SetSize(520, 24); row:SetPoint("TOPLEFT", 10, yOffset)
             local cFile = (DTCRaidDB.classes and DTCRaidDB.classes[name]) or "PRIEST"
             local color = RAID_CLASS_COLORS[cFile] or {r=0.6,g=0.6,b=0.6}
-            local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            label:SetPoint("LEFT", 5, 0); label:SetWidth(150); label:SetJustifyH("LEFT")
-            label:SetText(name); label:SetTextColor(color.r, color.g, color.b)
-            local eb = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
-            eb:SetSize(200, 20); eb:SetPoint("LEFT", label, "RIGHT", 10, 0); eb:SetAutoFocus(false)
+            row.Label:SetText(name); row.Label:SetTextColor(color.r, color.g, color.b)
             local val = DTCRaidDB.identities[name]
             if not val or val == "" then val = name end
-            eb:SetText(val)
-            eb:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", ""); self:ClearFocus() end)
-            eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", "") end)
-            local delBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            delBtn:SetSize(20, 20); delBtn:SetPoint("LEFT", eb, "RIGHT", 5, 0); delBtn:SetText("X")
-            delBtn:SetScript("OnClick", function() 
+            row.EditBox:SetText(val)
+            row.EditBox:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", ""); self:ClearFocus() end)
+            row.EditBox:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", "") end)
+            row.DelBtn:SetScript("OnClick", function() 
                 DTCRaidDB.identities[name] = nil
                 if DTCRaidDB.guilds then DTCRaidDB.guilds[name] = nil end
                 if DTCRaidDB.classes then DTCRaidDB.classes[name] = nil end
@@ -218,6 +274,7 @@ function DTC.Config:RefreshNicknames(content)
         end
         yOffset = yOffset - 10
     end
+    content:SetHeight(math.abs(yOffset) + 20)
 end
 
 function DTC.Config:BuildLeaderboardTab(frame)
@@ -270,14 +327,16 @@ function DTC.Config:BuildHistoryTab(frame)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.exp = s.arg1; UIDropDownMenu_SetText(ddExp, s.value); filters.raid = "ALL"; UIDropDownMenu_SetText(ddRaid, "All Raids") end
             info.text = "All Exp"; info.arg1 = "ALL"; info.value = "All Exp"; UIDropDownMenu_AddButton(info, level)
-            for i=11,0,-1 do info.text = DTC.Static.EXPANSION_NAMES[i]; info.arg1 = tostring(i); info.value = DTC.Static.EXPANSION_NAMES[i]; UIDropDownMenu_AddButton(info, level) end
+            if DTC.Static and DTC.Static.EXPANSION_NAMES then
+                for i=11,0,-1 do info.text = DTC.Static.EXPANSION_NAMES[i]; info.arg1 = tostring(i); info.value = DTC.Static.EXPANSION_NAMES[i]; UIDropDownMenu_AddButton(info, level) end
+            end
         end)
         UIDropDownMenu_SetText(ddExp, "All Exp")
         UIDropDownMenu_Initialize(ddRaid, function(self, level)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.raid = s.arg1; UIDropDownMenu_SetText(ddRaid, s.value) end
             info.text = "All Raids"; info.arg1 = "ALL"; info.value = "All Raids"; UIDropDownMenu_AddButton(info, level)
-            if filters.exp ~= "ALL" and DTC.Static.RAID_DATA[tonumber(filters.exp)] then
+            if filters.exp ~= "ALL" and DTC.Static and DTC.Static.RAID_DATA and DTC.Static.RAID_DATA[tonumber(filters.exp)] then
                 for _, r in ipairs(DTC.Static.RAID_DATA[tonumber(filters.exp)]) do info.text=r; info.arg1=r; info.value=r; UIDropDownMenu_AddButton(info, level) end
             end
         end)
@@ -286,8 +345,8 @@ function DTC.Config:BuildHistoryTab(frame)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.diff = s.arg1; UIDropDownMenu_SetText(ddDiff, s.value) end
             info.text = "All"; info.arg1 = "ALL"; info.value = "All"; UIDropDownMenu_AddButton(info, level)
-            local dList = DTC.Static.DIFFICULTIES["DEFAULT"]
-            if filters.exp ~= "ALL" and DTC.Static.DIFFICULTIES[tonumber(filters.exp)] then dList = DTC.Static.DIFFICULTIES[tonumber(filters.exp)] end
+            local dList = (DTC.Static and DTC.Static.DIFFICULTIES and DTC.Static.DIFFICULTIES["DEFAULT"]) or {}
+            if filters.exp ~= "ALL" and DTC.Static and DTC.Static.DIFFICULTIES and DTC.Static.DIFFICULTIES[tonumber(filters.exp)] then dList = DTC.Static.DIFFICULTIES[tonumber(filters.exp)] end
             for _, d in ipairs(dList) do info.text=d; info.arg1=d; info.value=d; UIDropDownMenu_AddButton(info, level) end
         end)
         UIDropDownMenu_SetText(ddDiff, "All")
@@ -321,7 +380,7 @@ function DTC.Config:BuildHistoryTab(frame)
 end
 
 function DTC.Config:BuildVotingTab(frame)
-    local b1 = CreateGroupBox(frame, "Voting Options", 580, 150) -- Increased Height
+    local b1 = CreateGroupBox(frame, "Voting Options", 580, 130)
     b1:SetPoint("TOPLEFT", 0, 0)
     
     local lbl = b1:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("TOPLEFT", 15, -30); lbl:SetText("List Format:")
@@ -346,8 +405,15 @@ function DTC.Config:BuildVotingTab(frame)
     _G[s:GetName() .. "Low"]:SetText("30s")
     _G[s:GetName() .. "High"]:SetText("10m")
     local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
-    s:SetScript("OnValueChanged", function(self, value) value = math.floor(value); DTCRaidDB.settings.voteTimer = value; valLabel:SetText(value .. " seconds") end)
-    s:SetScript("OnShow", function(self) local val = DTCRaidDB.settings.voteTimer or 180; self:SetValue(val); valLabel:SetText(val .. " seconds") end)
+    s:SetScript("OnValueChanged", function(self, value) 
+        if self.isSettingUp then return end
+        value = math.floor(value); DTCRaidDB.settings.voteTimer = value; valLabel:SetText(value .. " seconds") 
+    end)
+    s:SetScript("OnShow", function(self) 
+        self.isSettingUp = true
+        local val = DTCRaidDB.settings.voteTimer or 180; self:SetValue(val); valLabel:SetText(val .. " seconds") 
+        self.isSettingUp = false
+    end)
 
     local b2 = CreateGroupBox(frame, "Announce Messages", 580, 400)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
@@ -390,8 +456,15 @@ function DTC.Config:BuildVotingTab(frame)
         valLabel:SetText(val)
         for i=1,10 do if i<=val then msgBoxes[i]:Show() else msgBoxes[i]:Hide() end end
     end
-    sCount:SetScript("OnValueChanged", function(self, v) v=math.floor(v); UpdateVis(v) end)
-    sCount:SetScript("OnShow", function(self) local v = DTCRaidDB.settings.voteWinCount or 1; self:SetValue(v); UpdateVis(v) end)
+    sCount:SetScript("OnValueChanged", function(self, v) 
+        if self.isSettingUp then return end
+        v=math.floor(v); UpdateVis(v) 
+    end)
+    sCount:SetScript("OnShow", function(self) 
+        self.isSettingUp = true
+        local v = DTCRaidDB.settings.voteWinCount or 1; self:SetValue(v); UpdateVis(v) 
+        self.isSettingUp = false
+    end)
 
     local function AddEdit(title, key, y, toggleKey)
         local l = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 15, y); l:SetText(title)
@@ -415,35 +488,40 @@ function DTC.Config:BuildBribeTab(frame)
     
     local function AddSlider(title, key, minVal, maxVal, y, suffix)
         suffix = suffix or " seconds"
-        -- We give the slider a nil name, but we can access sub-regions by key directly 
-        -- because 'OptionsSliderTemplate' creates keys .Text, .Low, .High on the object.
-        local s = CreateFrame("Slider", nil, box, "OptionsSliderTemplate")
+        local name = "DTC_ConfigSlider_" .. key
+        local s = CreateFrame("Slider", name, box, "OptionsSliderTemplate")
         s:SetPoint("TOPLEFT", 20, y)
         s:SetMinMaxValues(minVal, maxVal)
         s:SetValueStep(5)
         s:SetObeyStepOnDrag(true)
         s:SetWidth(200)
         
-        -- Use direct references instead of _G lookups
-        if s.Text then s.Text:SetText(title) end
-        if s.Low then s.Low:SetText(minVal .. (suffix == "%" and "%" or "s")) end
-        if s.High then s.High:SetText(maxVal .. (suffix == "%" and "%" or "s")) end
+        local sText = _G[name.."Text"]
+        local sLow = _G[name.."Low"]
+        local sHigh = _G[name.."High"]
+        
+        if sText then sText:SetText(title) end
+        if sLow then sLow:SetText(minVal .. (suffix == "%" and "%" or "s")) end
+        if sHigh then sHigh:SetText(maxVal .. (suffix == "%" and "%" or "s")) end
         
         local valLabel = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         valLabel:SetPoint("TOP", s, "BOTTOM", 0, 0)
         
         s:SetScript("OnValueChanged", function(self, value) 
+            if self.isSettingUp then return end
             value = math.floor(value)
             DTCRaidDB.settings[key] = value
             valLabel:SetText(value .. suffix)
-            
-            -- Sync Corruption Fee on change (if leader)
+        end)
+        
+        s:SetScript("OnMouseUp", function(self)
             if key == "corruptionFee" and IsInRaid() and UnitIsGroupLeader("player") then
-                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..value, "RAID")
+                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..DTCRaidDB.settings[key], "RAID")
             end
         end)
         
         s:SetScript("OnShow", function(self) 
+            self.isSettingUp = true
             local val = DTCRaidDB.settings[key] or 90
             if key == "lobbyTimer" then val = DTCRaidDB.settings[key] or 120 end
             if key == "corruptionFee" then val = DTCRaidDB.settings[key] or 10 end
@@ -452,12 +530,13 @@ function DTC.Config:BuildBribeTab(frame)
             
             -- Lock Corruption Fee for non-leaders
             if key == "corruptionFee" then
-                if UnitIsGroupLeader("player") or not IsInGroup() then
-                    self:Enable(); s.Low:SetTextColor(1,1,1); s.High:SetTextColor(1,1,1); s.Text:SetTextColor(1,0.82,0)
+                if UnitIsGroupLeader("player") or not IsInRaid() then
+                    self:Enable(); if sLow then sLow:SetTextColor(1,1,1) end; if sHigh then sHigh:SetTextColor(1,1,1) end; if sText then sText:SetTextColor(1,0.82,0) end
                 else
-                    self:Disable(); s.Low:SetTextColor(0.5,0.5,0.5); s.High:SetTextColor(0.5,0.5,0.5); s.Text:SetTextColor(0.5,0.5,0.5)
+                    self:Disable(); if sLow then sLow:SetTextColor(0.5,0.5,0.5) end; if sHigh then sHigh:SetTextColor(0.5,0.5,0.5) end; if sText then sText:SetTextColor(0.5,0.5,0.5) end
                 end
             end
+            self.isSettingUp = false
         end)
     end
     
@@ -480,19 +559,23 @@ function DTC.Config:BuildBribeTab(frame)
     
     local function UpdateLimit(self)
         local val = tonumber(self:GetText()) or 0
-        DTCRaidDB.settings.debtLimit = val
-        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_LIMIT:"..val, "RAID") end
+        if DTCRaidDB.settings.debtLimit ~= val then
+            DTCRaidDB.settings.debtLimit = val
+            if IsInRaid() then 
+                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_LIMIT:"..val, "RAID") 
+            end
+        end
     end
 
     e:SetScript("OnShow", function(self) 
         self:SetText(DTCRaidDB.settings.debtLimit or "0")
-        if UnitIsGroupLeader("player") or not IsInGroup() then
+        if UnitIsGroupLeader("player") or not IsInRaid() then
             self:Enable(); self:SetTextColor(1, 1, 1)
         else
             self:Disable(); self:SetTextColor(0.5, 0.5, 0.5)
         end
     end)
     
-    e:SetScript("OnEditFocusLost", function(self) if UnitIsGroupLeader("player") or not IsInGroup() then UpdateLimit(self) end end)
-    e:SetScript("OnEnterPressed", function(self) if UnitIsGroupLeader("player") or not IsInGroup() then UpdateLimit(self); self:ClearFocus() end end)
+    e:SetScript("OnEditFocusLost", function(self) if UnitIsGroupLeader("player") or not IsInRaid() then UpdateLimit(self) end end)
+    e:SetScript("OnEnterPressed", function(self) if UnitIsGroupLeader("player") or not IsInRaid() then UpdateLimit(self); self:ClearFocus() end end)
 end

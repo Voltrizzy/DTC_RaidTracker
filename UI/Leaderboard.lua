@@ -5,6 +5,12 @@ local frame, rows = nil, {}
 function DTC.LeaderboardUI:Init()
     frame = DTC_LeaderboardFrame
     
+    if not frame.SetTitle then
+        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        frame.TitleText:SetPoint("TOP", 0, -5)
+        frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
+    end
+
     if frame.SetTitle then frame:SetTitle("DTC Tracker - Leaderboard") end
     
     frame.AwardBtn:SetScript("OnClick", function() self:OnAwardClick() end)
@@ -28,7 +34,7 @@ function DTC.LeaderboardUI:Init()
     UIDropDownMenu_DisableDropDown(frame.DiffDD)
 end
 
-function DTC.Leaderboard:Toggle()
+function DTC.LeaderboardUI:Toggle()
     if not frame then DTC.LeaderboardUI:Init() end
     if frame:IsShown() then frame:Hide() else frame:Show(); DTC.LeaderboardUI:UpdateList() end
 end
@@ -45,7 +51,7 @@ function DTC.LeaderboardUI:UpdateList()
     for i, item in ipairs(data) do
         local row = self:GetRow(content)
         row:SetPoint("TOPLEFT", 0, yOffset)
-        row.Text:SetText(i .. ". " .. item.n)
+        row.Text:SetText(i .. ". " .. DTC:GetColoredName(item.n))
         row.Value:SetText(item.v)
         row.Text:SetTextColor(1, 1, 1)
         row:Show()
@@ -55,7 +61,7 @@ function DTC.LeaderboardUI:UpdateList()
             for _, char in ipairs(item.chars) do
                 local subRow = self:GetRow(content)
                 subRow:SetPoint("TOPLEFT", 0, yOffset)
-                subRow.Text:SetText("   - " .. char.n)
+                subRow.Text:SetText("   - " .. DTC:GetColoredName(char.n))
                 subRow.Value:SetText(char.v)
                 subRow.Text:SetTextColor(0.6, 0.6, 0.6)
                 subRow:Show()
@@ -67,6 +73,7 @@ function DTC.LeaderboardUI:UpdateList()
     
     local isLeader = UnitIsGroupLeader("player") or DTC.isTestModeLB
     frame.AwardBtn:SetShown(isLeader)
+    content:SetHeight(math.abs(yOffset) + 20)
 end
 
 function DTC.LeaderboardUI:GetRow(parent)
@@ -123,21 +130,23 @@ function DTC.LeaderboardUI:InitExpMenu(menu, level)
     UIDropDownMenu_AddButton(info, level)
     
     -- Iterate using DTC.Static.EXPANSION_NAMES
-    for i=11,0,-1 do
-        local name = DTC.Static.EXPANSION_NAMES[i]
-        local idStr = tostring(i)
-        info.text = name
-        info.value = name
-        info.checked = (DTC.Leaderboard.Filters.Exp == idStr)
-        info.func = function()
-            DTC.Leaderboard.Filters.Exp = idStr
-            DTC.Leaderboard.Filters.Raid = "ALL"
-            UIDropDownMenu_SetText(menu, name)
-            UIDropDownMenu_EnableDropDown(frame.RaidDD)
-            UIDropDownMenu_SetText(frame.RaidDD, "All Raids")
-            self:UpdateList()
+    if DTC.Static and DTC.Static.EXPANSION_NAMES then
+        for i=11,0,-1 do
+            local name = DTC.Static.EXPANSION_NAMES[i]
+            local idStr = tostring(i)
+            info.text = name
+            info.value = name
+            info.checked = (DTC.Leaderboard.Filters.Exp == idStr)
+            info.func = function()
+                DTC.Leaderboard.Filters.Exp = idStr
+                DTC.Leaderboard.Filters.Raid = "ALL"
+                UIDropDownMenu_SetText(menu, name)
+                UIDropDownMenu_EnableDropDown(frame.RaidDD)
+                UIDropDownMenu_SetText(frame.RaidDD, "All Raids")
+                self:UpdateList()
+            end
+            UIDropDownMenu_AddButton(info, level)
         end
-        UIDropDownMenu_AddButton(info, level)
     end
 end
 
@@ -159,7 +168,7 @@ function DTC.LeaderboardUI:InitRaidMenu(menu, level)
     
     -- Use DTC.Static.RAID_DATA
     local expID = tonumber(DTC.Leaderboard.Filters.Exp)
-    if expID and DTC.Static.RAID_DATA[expID] then
+    if expID and DTC.Static and DTC.Static.RAID_DATA and DTC.Static.RAID_DATA[expID] then
         for _, rName in ipairs(DTC.Static.RAID_DATA[expID]) do
             info.text = rName
             info.value = rName
@@ -220,7 +229,7 @@ function DTC.LeaderboardUI:InitDiffMenu(menu, level)
     
     -- Use DTC.Static.DIFFICULTIES
     local expID = tonumber(DTC.Leaderboard.Filters.Exp)
-    local diffs = DTC.Static.DIFFICULTIES[expID] or DTC.Static.DIFFICULTIES["DEFAULT"]
+    local diffs = (DTC.Static and DTC.Static.DIFFICULTIES and DTC.Static.DIFFICULTIES[expID]) or (DTC.Static and DTC.Static.DIFFICULTIES and DTC.Static.DIFFICULTIES["DEFAULT"]) or {}
     
     for _, dName in ipairs(diffs) do
         info.text = dName
@@ -241,9 +250,15 @@ function DTC.LeaderboardUI:OnAwardClick()
     if #data > 0 then
         local winner = data[1].n
         DTC.Leaderboard:AwardTrip(winner)
-        SendChatMessage("--- DTC TRIP AWARDED ---", "RAID")
+        
+        local channel = IsInRaid() and "RAID" or "PRINT"
         local msg = DTCRaidDB.settings.awardMsg or "Congrats %s!"
-        SendChatMessage(msg:format(winner), "RAID")
+        if channel == "PRINT" then
+            print("--- DTC TRIP AWARDED ---"); print(msg:format(winner))
+        else
+            SendChatMessage("--- DTC TRIP AWARDED ---", channel)
+            SendChatMessage(msg:format(winner), channel)
+        end
         self:UpdateList()
     end
 end

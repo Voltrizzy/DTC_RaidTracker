@@ -5,6 +5,12 @@ local frame, rows, headers = nil, {}, {}
 function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
     
+    if not frame.SetTitle then
+        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        frame.TitleText:SetPoint("TOP", 0, -5)
+        frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
+    end
+
     frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
     frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
     
@@ -31,7 +37,7 @@ function DTC.VoteFrame:Init()
         self:SetStatusBarColor(0.5, 0.05, 0.05) -- Dark Red
     end)
     
-    if frame.SetTitle then frame:SetTitle("Voting Window") end
+    frame:SetTitle("DTC Tracker - Vote")
 end
 
 function DTC.VoteFrame:Toggle()
@@ -47,7 +53,7 @@ function DTC.VoteFrame:UpdateHeader()
         local _, _, _, diffName = GetInstanceInfo()
         if diffName and diffName ~= "" then titleText = "(" .. diffName .. ") " .. titleText end
     end
-    if frame.SetTitle then frame:SetTitle("Voting: " .. titleText) end
+    frame:SetTitle("DTC Tracker - Vote: " .. titleText)
 end
 
 function DTC.VoteFrame:UpdateList()

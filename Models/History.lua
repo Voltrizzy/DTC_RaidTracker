@@ -93,9 +93,9 @@ function DTC.History:PushSync(target, filters)
         if self:MatchesFilter(h, filters) then
             -- Format: Boss,Winner,Points,Date,Raid,Diff,Voters
             local payload = string.format("%s,%s,%d,%s,%s,%s,%s", 
-                (h.b or "?"):gsub(",", ""), h.w or "?", h.p or 0, h.d or "?", (h.r or "?"):gsub(",", ""), h.diff or "", h.v or "")
+                (h.b or "?"):gsub(",", ""), (h.w or "?"):gsub(",", ""), h.p or 0, h.d or "?", (h.r or "?"):gsub(",", ""), h.diff or "", (h.v or ""):gsub(",", ""))
             
-            local fullTarget = self:GetFullName(target)
+            local fullTarget = DTC:GetFullName(target)
             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_PUSH:"..payload, "WHISPER", fullTarget)
             count = count + 1
         end
@@ -166,19 +166,6 @@ function DTC.History:OnComm(action, data, sender)
     end
 end
 
-function DTC.History:GetFullName(shortName)
-    if not IsInRaid() then return shortName end
-    for i=1, GetNumGroupMembers() do
-        local name = GetRaidRosterInfo(i)
-        if name then
-            local sName = name
-            if string.find(sName, "-") then sName = strsplit("-", sName) end
-            if sName == shortName then return name end
-        end
-    end
-    return shortName
-end
-
 -- 7. Helpers
 function DTC.History:GetUniqueMenus()
     local dates, names = {}, {}
@@ -196,7 +183,7 @@ function DTC.History:GetCSV()
     local data = self:GetData(false)
     local buffer = { "Date,Raid,Diff,Boss,Winner,Points,Voters" }
     for _, h in ipairs(data) do
-        table.insert(buffer, string.format("%s,%s,%s,%s,%s,%d,%s", h.d, h.r, h.diff, h.b, h.w, h.p, h.v))
+        table.insert(buffer, string.format("%s,%s,%s,%s,%s,%d,%s", h.d, (h.r or "?"):gsub(",", ""), h.diff, (h.b or "?"):gsub(",", ""), (h.w or "?"):gsub(",", ""), h.p, (h.v or ""):gsub(",", "")))
     end
     return table.concat(buffer, "\n")
 end

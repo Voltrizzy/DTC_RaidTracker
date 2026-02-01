@@ -39,7 +39,7 @@ function DTC.Leaderboard:GetSortedData(isTestMode)
     
     -- Filter Set Setup
     local validRaids = nil
-    if f.Exp ~= "ALL" and DTC.Static.RAID_DATA[tonumber(f.Exp)] then
+    if f.Exp ~= "ALL" and DTC.Static and DTC.Static.RAID_DATA and DTC.Static.RAID_DATA[tonumber(f.Exp)] then
         validRaids = {}
         for _, r in ipairs(DTC.Static.RAID_DATA[tonumber(f.Exp)]) do validRaids[r] = true end
     end
@@ -71,13 +71,18 @@ end
 
 function DTC.Leaderboard:GetBossList(raidName)
     -- Pull from Static Data
-    return DTC.Static:GetBossList(raidName)
+    if DTC.Static and DTC.Static.GetBossList then
+        return DTC.Static:GetBossList(raidName)
+    end
+    return {}
 end
 
 function DTC.Leaderboard:AwardTrip(winnerNickname)
     DTCRaidDB.trips = DTCRaidDB.trips or {}
     DTCRaidDB.trips[winnerNickname] = (DTCRaidDB.trips[winnerNickname] or 0) + 1
-    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_DATA:TRIP,"..winnerNickname..","..DTCRaidDB.trips[winnerNickname], "RAID")
+    if IsInRaid() then
+        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_DATA:TRIP,"..winnerNickname..","..DTCRaidDB.trips[winnerNickname], "RAID")
+    end
     return DTCRaidDB.trips[winnerNickname]
 end
 

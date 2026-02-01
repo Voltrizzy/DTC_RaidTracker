@@ -23,6 +23,7 @@ end
 -- =========================================================
 function DTC.Bribe:OfferBribe(targetPlayer, amount)
     if not targetPlayer or not amount or tonumber(amount) <= 0 then return end
+    if not IsInRaid() then print("|cFFFF0000DTC:|r Bribes are only available in a raid group."); return end
     if self:HasUnpaidDebt() then print("|cFFFF0000DTC:|r Unpaid debts exist!"); return end
     
     local limit = DTCRaidDB.settings.debtLimit or 0
@@ -31,12 +32,13 @@ function DTC.Bribe:OfferBribe(targetPlayer, amount)
     end
     
     local payload = string.format("%d", amount)
-    local fullTarget = self:GetFullName(targetPlayer)
+    local fullTarget = DTC:GetFullName(targetPlayer)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_OFFER:"..payload, "WHISPER", fullTarget)
     print("|cFF00FF00DTC:|r Offered " .. amount .. "g to " .. targetPlayer)
 end
 
-function DTC.Bribe:ReceiveOffer(sender, amount)
+function DTC.Bribe:ReceiveOffer(sender, amount, isTest)
+    if not IsInRaid() and not isTest then return end
     if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
     local duration = DTCRaidDB.settings.bribeTimer or 90
     local offer = { id = GetTime() .. "-" .. sender, sender = sender, amount = tonumber(amount), timer = nil, startTime = GetTime() }
@@ -66,7 +68,7 @@ function DTC.Bribe:AcceptOffer(offerID)
         DTC.Vote:CastVote(offer.sender)
         local boss = DTC.Vote.currentBoss or "Unknown"
         local payload = string.format("%s,%d,%s,BRIBE", offer.sender, offer.amount, (boss:gsub(",", "")))
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID")
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID") end
         print("|cFF00FF00DTC:|r Accepted bribe from " .. offer.sender)
         self:TrackBribe(offer.sender, UnitName("player"), offer.amount, boss, "BRIBE")
         if DTC.Vote.myVotesLeft <= 0 then self:DeclineAll() end
@@ -102,6 +104,7 @@ end
 -- =========================================================
 function DTC.Bribe:SendProposition(amount)
     if not amount or tonumber(amount) <= 0 then return end
+    if not IsInRaid() then print("|cFFFF0000DTC:|r Propositions are only available in a raid group."); return end
     self.MyCurrentPropPrice = tonumber(amount)
     if not DTC.Vote or not DTC.Vote.isOpen then print("Voting is closed."); return end
     if DTC.Vote.myVotesLeft <= 0 then print("No votes left to sell!"); return end
@@ -113,11 +116,12 @@ function DTC.Bribe:SendProposition(amount)
     end
     
     local payload = string.format("%d", amount)
-    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_OFFER:"..payload, "RAID")
+    if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_OFFER:"..payload, "RAID") end
     print("|cFF00FF00DTC:|r Proposition broadcast: My vote for " .. amount .. "g.")
 end
 
-function DTC.Bribe:ReceiveProposition(offerer, amount)
+function DTC.Bribe:ReceiveProposition(offerer, amount, isTest)
+    if not IsInRaid() and not isTest then return end
     if not DTC.Vote or not DTC.Vote.isOpen then return end
     if offerer == UnitName("player") then return end
     local votesUsed = DTC.Vote:GetVotesCastBy(offerer)
@@ -147,7 +151,7 @@ function DTC.Bribe:AcceptProposition(propID)
         print("|cFFFF0000DTC:|r Cannot accept proposition. Total debt exceeds limit ("..limit.."g)."); return
     end
     
-    local fullTarget = self:GetFullName(prop.offerer)
+    local fullTarget = DTC:GetFullName(prop.offerer)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_ACCEPT", "WHISPER", fullTarget)
 end
 
@@ -158,7 +162,7 @@ function DTC.Bribe:OnPropositionAcceptedByMe(buyerName)
         local price = self.MyCurrentPropPrice or 0 
         local boss = DTC.Vote.currentBoss or "Unknown"
         local payload = string.format("%s,%d,%s,PROP", buyerName, price, (boss:gsub(",", "")))
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID")
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID") end
         print("|cFF00FF00DTC:|r Proposition accepted by " .. buyerName .. ". Vote cast!")
         self:TrackBribe(buyerName, UnitName("player"), price, boss, "PROP")
     end
@@ -169,6 +173,7 @@ end
 -- =========================================================
 function DTC.Bribe:SendLobby(candidate, amount)
     if not candidate or not amount or tonumber(amount) <= 0 then return end
+    if not IsInRaid() then print("|cFFFF0000DTC:|r Lobbying is only available in a raid group."); return end
     
     if candidate and string.find(candidate, "-") then candidate = strsplit("-", candidate) end
     if candidate == UnitName("player") then print("|cFFFF0000DTC:|r You cannot lobby for yourself."); return end
@@ -182,11 +187,12 @@ function DTC.Bribe:SendLobby(candidate, amount)
     end
     
     local payload = string.format("%s,%d", candidate, amount)
-    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "LOBBY_OFFER:"..payload, "RAID")
+    if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "LOBBY_OFFER:"..payload, "RAID") end
     print("|cFF00FF00DTC:|r Lobbying for " .. candidate .. " (" .. amount .. "g) broadcast to raid.")
 end
 
-function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount)
+function DTC.Bribe:ReceiveLobby(lobbyist, candidate, amount, isTest)
+    if not IsInRaid() and not isTest then return end
     if lobbyist == UnitName("player") then return end
     if candidate == UnitName("player") then return end
     if DTC.Vote and (DTC.Vote.myVotesLeft <= 0 or not DTC.Vote.isOpen) then return end
@@ -220,7 +226,7 @@ function DTC.Bribe:AcceptLobby(lobbyID)
         DTC.Vote:CastVote(lobby.candidate)
         local boss = DTC.Vote.currentBoss or "Unknown"
         local payload = string.format("%s,%d,%s,LOBBY", lobby.lobbyist, lobby.amount, (boss:gsub(",", "")))
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID")
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "BRIBE_FINAL:"..payload, "RAID") end
         print("|cFF00FF00DTC:|r Accepted Lobby from " .. lobby.lobbyist .. " to vote for " .. lobby.candidate)
         self:TrackBribe(lobby.lobbyist, UnitName("player"), lobby.amount, boss, "LOBBY")
         if DTC.Vote.myVotesLeft <= 0 then self:DeclineAll() end
@@ -254,23 +260,19 @@ end
 -- =========================================================
 function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss, bType)
     boss = (boss or "Unknown"):gsub(",", "")
+    local amt = tonumber(amount) or 0
     local ts = date("%Y-%m-%d %H:%M:%S")
-    local entry = { offerer = offerer, recipient = recipient, amount = tonumber(amount), boss = boss, paid = false, timestamp = ts }
+    local entry = { offerer = offerer, recipient = recipient, amount = amt, boss = boss, paid = false, timestamp = ts }
     table.insert(DTCRaidDB.bribes, entry)
     
     -- Corruption Fee Logic
     local feePct = DTCRaidDB.settings.corruptionFee or 10
     if feePct > 0 then
-        local fee = math.floor(tonumber(amount) * (feePct / 100))
+        local fee = math.floor(amt * (feePct / 100))
         if fee > 0 then
             local leader = self:GetLeaderName()
             if leader then
-                local feePayer = nil
-                if bType == "BRIBE" or bType == "PROP" then
-                    feePayer = recipient -- Receiver of funds (Voter) pays the tax
-                elseif bType == "LOBBY" then
-                    feePayer = offerer -- Funder of lobby pays the tax
-                end
+                local feePayer = recipient -- Receiver of funds always pays the tax
                 if feePayer and feePayer ~= leader then
                     local feeEntry = { offerer = feePayer, recipient = leader, amount = fee, boss = (boss or "Unknown") .. " (Tax)", paid = false, timestamp = ts }
                     table.insert(DTCRaidDB.bribes, feeEntry)
@@ -320,21 +322,61 @@ function DTC.Bribe:GetProposition(id)
     return nil, nil
 end
 
-function DTC.Bribe:InitiateTrade(player, amount, dbIndex)
-    self.ActiveTrade = { target = player, amount = amount, index = dbIndex }
-    if UnitExists("target") and UnitName("target") == player then InitiateTrade("target")
-    else TargetUnit(player); InitiateTrade("target") end
+function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
+    if InCombatLockdown() then print("|cFFFF0000DTC:|r Cannot initiate trade in combat."); return end
+    if UnitIsDeadOrGhost("player") then print("|cFFFF0000DTC:|r Cannot initiate trade while dead."); return end
+    self.ActiveTrade = { target = player, amount = tonumber(amount) or 0, index = dbIndex, isPaying = isPaying }
+    
+    -- Attempt to find a UnitID to avoid TargetUnit()
+    local unitID
+    if player == UnitName("target") then unitID = "target" end
+    
+    if not unitID and IsInRaid() then
+        local prefix = "raid"
+        local count = GetNumGroupMembers()
+        for i=1, count do
+            local u = prefix..i
+            local name = GetUnitName(u, true)
+            local short = name
+            if name and string.find(name, "-") then short = strsplit("-", name) end
+            
+            if name == player or short == player then unitID = u; break end
+        end
+    end
+
+    if unitID then InitiateTrade(unitID) else TargetUnit(player); InitiateTrade("target") end
 end
 function DTC.Bribe:OnTradeShow()
     self.PlayerMoneyStart = GetMoney()
-    if self.ActiveTrade then MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, self.ActiveTrade.amount * 10000) end
+    if self.ActiveTrade then
+        local target = UnitName("NPC")
+        if target and string.find(target, "-") then target = strsplit("-", target) end
+        
+        local expected = self.ActiveTrade.target
+        if expected and string.find(expected, "-") then expected = strsplit("-", expected) end
+        
+        if target == expected then
+            if self.ActiveTrade.isPaying and TradePlayerInputMoneyFrame then 
+                MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, math.floor(self.ActiveTrade.amount * 10000)) 
+            end
+        else
+            self.ActiveTrade = nil -- Mismatch, clear to prevent accidents
+        end
+    end
 end
 function DTC.Bribe:OnTradeClosed()
     if self.ActiveTrade and self.ActiveTrade.index then
         local moneyEnd = GetMoney()
-        local diff = self.PlayerMoneyStart - moneyEnd
-        local expected = self.ActiveTrade.amount * 10000
-        if diff >= expected then
+        local success = false
+        local expected = math.floor(self.ActiveTrade.amount * 10000)
+        
+        if self.ActiveTrade.isPaying then
+            if (self.PlayerMoneyStart - moneyEnd) >= expected then success = true end
+        else
+            if (moneyEnd - self.PlayerMoneyStart) >= expected then success = true end
+        end
+        
+        if success then
             local entry = DTCRaidDB.bribes[self.ActiveTrade.index]
             if entry then 
                 entry.paid = true
@@ -343,7 +385,7 @@ function DTC.Bribe:OnTradeClosed()
                 
                 -- Sync payment status to raid
                 local payload = string.format("%s,%s,%d,%s", entry.offerer, entry.recipient, entry.amount, entry.boss)
-                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID")
+                if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID") end
             end
         end
     end
@@ -372,7 +414,7 @@ function DTC.Bribe:AnnounceDebts()
         return
     end
     
-    local channel = IsInRaid() and "RAID" or (IsInGroup() and "PARTY" or "PRINT")
+    local channel = IsInRaid() and "RAID" or "PRINT"
     local header = "--- DTC Debt Report ---"
     if channel == "PRINT" then print(header) else SendChatMessage(header, channel) end
     
@@ -383,6 +425,7 @@ function DTC.Bribe:AnnounceDebts()
 end
 
 function DTC.Bribe:PayAllTaxes()
+    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark taxes as paid (to ensure sync)."); return end
     local count = 0
     for _, entry in ipairs(DTCRaidDB.bribes or {}) do
         if not entry.paid and entry.boss and string.find(entry.boss, "%(Tax%)") and entry.recipient == UnitName("player") then
@@ -391,10 +434,11 @@ function DTC.Bribe:PayAllTaxes()
             
             -- Sync payment status to raid
             local payload = string.format("%s,%s,%d,%s", entry.offerer, entry.recipient, entry.amount, entry.boss)
-            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID")
+            if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID") end
         end
     end
     if count > 0 then
+        PlaySound(1203)
         print("|cFF00FF00DTC:|r Marked " .. count .. " tax debts as paid.")
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
     else
@@ -403,67 +447,47 @@ function DTC.Bribe:PayAllTaxes()
 end
 
 function DTC.Bribe:ForgiveDebt(index)
+    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to forgive debts."); return end
     local entry = DTCRaidDB.bribes[index]
     if entry then
         if entry.recipient ~= UnitName("player") then return end
         entry.paid = true
+        PlaySound(1203)
         print("|cFF00FF00DTC:|r You forgave the debt of " .. entry.offerer .. " (" .. entry.amount .. "g).")
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
         
         -- Sync payment status to raid
         local payload = string.format("%s,%s,%d,%s", entry.offerer, entry.recipient, entry.amount, entry.boss)
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID")
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID") end
     end
 end
 
 function DTC.Bribe:MarkDebtPaid(index)
+    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."); return end
     local entry = DTCRaidDB.bribes[index]
     if entry then
         if entry.recipient ~= UnitName("player") then return end
         entry.paid = true
+        PlaySound(1203)
         print("|cFF00FF00DTC:|r Manually marked debt from " .. entry.offerer .. " as PAID.")
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
         
         -- Sync payment status to raid
         local payload = string.format("%s,%s,%d,%s", entry.offerer, entry.recipient, entry.amount, entry.boss)
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID")
+        if IsInRaid() then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "DEBT_PAID:"..payload, "RAID") end
     end
 end
 
 function DTC.Bribe:GetLeaderName()
-    if not IsInGroup() then return UnitName("player") end
-    if IsInRaid() then
-        for i = 1, GetNumGroupMembers() do
-            local name, rank = GetRaidRosterInfo(i)
-            if rank == 2 then
-                if name and string.find(name, "-") then name = strsplit("-", name) end
-                return name
-            end
-        end
-    else
-        if UnitIsGroupLeader("player") then return UnitName("player") end
-        for i=1, 4 do
-            if UnitIsGroupLeader("party"..i) then
-                local name = UnitName("party"..i)
-                if name and string.find(name, "-") then name = strsplit("-", name) end
-                return name
-            end
+    if not IsInRaid() then return UnitName("player") end
+    for i = 1, GetNumGroupMembers() do
+        local name, rank = GetRaidRosterInfo(i)
+        if rank == 2 then
+            if name and string.find(name, "-") then name = strsplit("-", name) end
+            return name
         end
     end
     return UnitName("player")
-end
-
-function DTC.Bribe:GetFullName(shortName)
-    if not IsInRaid() then return shortName end
-    for i=1, GetNumGroupMembers() do
-        local name = GetRaidRosterInfo(i)
-        if name then
-            local sName = name
-            if string.find(sName, "-") then sName = strsplit("-", sName) end
-            if sName == shortName then return name end
-        end
-    end
-    return shortName
 end
 
 function DTC.Bribe:OnComm(action, data, sender)
@@ -483,7 +507,7 @@ function DTC.Bribe:OnComm(action, data, sender)
         DTC.Bribe:TrackBribe(offerer, sender, amount, boss, bType)
     elseif action == "DEBT_PAID" then
         local offerer, recipient, amount, boss = strsplit(",", data, 4)
-        amount = tonumber(amount)
+        amount = tonumber(amount) or 0
         for _, e in ipairs(DTCRaidDB.bribes) do
             if e.offerer == offerer and e.recipient == recipient and e.amount == amount and e.boss == boss and not e.paid then
                 e.paid = true
@@ -492,9 +516,13 @@ function DTC.Bribe:OnComm(action, data, sender)
             end
         end
     elseif action == "SYNC_LIMIT" then
-        DTCRaidDB.settings.debtLimit = tonumber(data) or 0
+        if sender == self:GetLeaderName() then
+            DTCRaidDB.settings.debtLimit = tonumber(data) or 0
+        end
     elseif action == "SYNC_FEE" then
-        DTCRaidDB.settings.corruptionFee = tonumber(data) or 10
+        if sender == self:GetLeaderName() then
+            DTCRaidDB.settings.corruptionFee = tonumber(data) or 10
+        end
     elseif action == "VOTE" then C_Timer.After(0.5, function() DTC.Bribe:CheckPropositionValidity() end) end
 end
 

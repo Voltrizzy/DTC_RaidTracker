@@ -17,6 +17,8 @@ StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
         if DTC.LeaderboardUI then DTC.LeaderboardUI:UpdateList() end
         if DTC.HistoryUI then DTC.HistoryUI:UpdateList() end
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
+        if DTC.Bribe then DTC.Bribe.ActiveTrade = nil end
+        if DTC.Bribe and DTC.Bribe.DeclineAll then DTC.Bribe:DeclineAll() end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -35,6 +37,27 @@ StaticPopupDialogs["DTC_MARKPAID_CONFIRM"] = {
     button1 = "Yes", button2 = "No",
     OnAccept = function(self, data)
         if DTC.Bribe then DTC.Bribe:MarkDebtPaid(data) end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_RESET_SETTINGS_CONFIRM"] = {
+    text = "Reset all configuration settings to defaults?",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function()
+        DTCRaidDB.settings = {}
+        DTC:InitDatabase()
+        print("|cFFFFD700DTC:|r Settings reset to defaults.")
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_CLEAR_BRIBES_CONFIRM"] = {
+    text = "Clear all bribe ledger entries? This cannot be undone.",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function()
+        DTCRaidDB.bribes = {}
+        if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -65,6 +88,9 @@ f:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
         DTC:CheckRosterForNicknames()
+        if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
+        if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
+        if DTC.BribeUI and DTC.BribeUI.UpdateTracker then DTC.BribeUI:UpdateTracker() end
     end
 end)
 
@@ -112,12 +138,36 @@ function DTC:InitDatabase()
     C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
+function DTC:GetColoredName(name)
+    if not name then return "" end
+    local lookup = name
+    if string.find(name, "-") then lookup = strsplit("-", name) end
+    if DTCRaidDB.classes and DTCRaidDB.classes[lookup] then
+        local c = RAID_CLASS_COLORS[DTCRaidDB.classes[lookup]]
+        if c then return string.format("|cFF%02x%02x%02x%s|r", c.r*255, c.g*255, c.b*255, name) end
+    end
+    return name
+end
+
+function DTC:GetFullName(shortName)
+    if not IsInRaid() then return shortName end
+    for i=1, GetNumGroupMembers() do
+        local name = GetRaidRosterInfo(i)
+        if name then
+            local sName = name
+            if string.find(sName, "-") then sName = strsplit("-", sName) end
+            if sName == shortName then return name end
+        end
+    end
+    return shortName
+end
+
 function DTC:ResetDatabase() StaticPopup_Show("DTC_RESET_CONFIRM") end
 
 function DTC:IsValidRaid()
     local name, instanceType, difficultyID = GetInstanceInfo()
     if instanceType ~= "raid" then return false end 
-    if difficultyID == 7 or difficultyID == 17 then return false end 
+    if difficultyID == 7 or difficultyID == 17 or difficultyID == 33 then return false end 
     
     local isValidRaid = false
     if DTC.Static and DTC.Static.RAID_DATA then
@@ -157,20 +207,17 @@ SlashCmdList["DTC"] = function(msg)
         if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
     elseif cmd == "lb" then 
         DTC.isTestModeLB = false
-        if DTC.Leaderboard then 
-            DTC.Leaderboard:Toggle() 
-            if DTC_LeaderboardFrame and DTC_LeaderboardFrame.SetTitle then DTC_LeaderboardFrame:SetTitle("DTC Tracker - Leaderboard") end
+        if DTC.LeaderboardUI then 
+            DTC.LeaderboardUI:Toggle() 
         end
     elseif cmd == "history" then 
         DTC.isTestModeHist = false
-        if DTC.History then 
-            DTC.History:Toggle() 
-            if DTC_HistoryFrame and DTC_HistoryFrame.SetTitle then DTC_HistoryFrame:SetTitle("DTC Tracker - History") end
+        if DTC.HistoryUI then 
+            DTC.HistoryUI:Toggle() 
         end
     elseif cmd == "awards" or cmd == "bribes" then
         if DTC.BribeUI then 
             DTC.BribeUI:ToggleTracker() 
-            if DTC_BribeTrackerFrame and DTC_BribeTrackerFrame.SetTitle then DTC_BribeTrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
         end
     elseif cmd == "config" then
         if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) 

@@ -8,10 +8,14 @@ local rows = {} -- Frame pool
 function DTC.HistoryUI:Init()
     frame = DTC_HistoryFrame -- Defined in UI/History.xml
     
-    -- Set Title
-    if frame.SetTitle then
-        frame:SetTitle("DTC Tracker - History")
+    if not frame.SetTitle then
+        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        frame.TitleText:SetPoint("TOP", 0, -5)
+        frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
     end
+
+    -- Set Title
+    frame:SetTitle("DTC Tracker - History")
     
     -- Adjust ScrollFrame to fit within header/footer
     if frame.ListScroll then
@@ -61,7 +65,7 @@ function DTC.HistoryUI:Init()
 end
 
 -- 2. Toggle
-function DTC.History:Toggle()
+function DTC.HistoryUI:Toggle()
     if not frame then DTC.HistoryUI:Init() end
     
     if frame:IsShown() then
@@ -69,7 +73,7 @@ function DTC.History:Toggle()
     else
         local title = "DTC Tracker - History"
         if DTC.isTestModeHist then title = "(Test) " .. title end
-        if frame.SetTitle then frame:SetTitle(title) end
+        frame:SetTitle(title)
         
         frame:Show()
         DTC.HistoryUI:UpdateList()
@@ -122,16 +126,18 @@ function DTC.HistoryUI:UpdateList()
         row.Boss:SetText(h.b)
         
         local wName = h.w
+        local displayName = DTC:GetColoredName(wName)
         if DTCRaidDB.identities and DTCRaidDB.identities[h.w] then
-            wName = h.w .. " (" .. DTCRaidDB.identities[h.w] .. ")"
+            displayName = displayName .. " (" .. DTCRaidDB.identities[h.w] .. ")"
         end
-        row.Winner:SetText(wName)
+        row.Winner:SetText(displayName)
         
         row.Voters:SetText(h.v or "None")
         
         row:Show()
         yOffset = yOffset - 20
     end
+    content:SetHeight(math.abs(yOffset) + 20)
 end
 
 -- 4. CSV Popup
@@ -204,12 +210,13 @@ function DTC.HistoryUI:InitNameMenu(menu, level)
     UIDropDownMenu_AddButton(info, level)
     
     for _, n in ipairs(names) do
-        info.text = n
+        local colored = DTC:GetColoredName(n)
+        info.text = colored
         info.value = n
         info.checked = (DTC.History.Filters.Name == n)
         info.func = function() 
             DTC.History.Filters.Name = n
-            UIDropDownMenu_SetText(menu, n)
+            UIDropDownMenu_SetText(menu, colored)
             self:UpdateList() 
         end
         UIDropDownMenu_AddButton(info, level)

@@ -82,7 +82,7 @@
         <Anchors><Anchor point="CENTER"/></Anchors>
         <Frames>
             <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate"><Anchors><Anchor point="TOPLEFT" x="15" y="-60"/><Anchor point="BOTTOMRIGHT" x="-35" y="55"/></Anchors><ScrollChild><Frame parentKey="Content"><Size x="600" y="1"/></Frame></ScrollChild></ScrollFrame>
-            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear"><Size x="60" y="20"/><Anchors><Anchor point="TOPRIGHT" x="-20" y="-2"/></Anchors></Button>
+            <Button parentKey="ClearBtn" inherits="UIPanelButtonTemplate" text="Clear"><Size x="60" y="20"/><Anchors><Anchor point="TOPRIGHT" x="-22" y="-1"/></Anchors></Button>
         </Frames>
     </Frame>
     
@@ -91,15 +91,15 @@
         <Anchors><Anchor point="CENTER"/></Anchors>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Lobby for Candidate"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
-                <FontString parentKey="Desc" inherits="GameFontHighlightSmall" text="Offer Gold to vote for:"><Anchors><Anchor point="TOP" y="-35"/></Anchors></FontString>
+                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Lobby for Candidate"><Anchors><Anchor point="TOP" y="-20"/></Anchors></FontString>
+                <FontString parentKey="Desc" inherits="GameFontHighlightSmall" text="Offer Gold to vote for:"><Anchors><Anchor point="TOP" y="-55"/></Anchors></FontString>
             </Layer>
         </Layers>
         <Frames>
-            <Frame parentKey="CandidateDD" inherits="UIDropDownMenuTemplate"><Anchors><Anchor point="TOP" y="-50"/></Anchors></Frame>
-            <EditBox parentKey="AmountBox" inherits="InputBoxTemplate" numeric="true"><Size x="120" y="30"/><Anchors><Anchor point="TOP" y="-90"/></Anchors><Layers><Layer level="ARTWORK"><Texture file="Interface\MoneyFrame\UI-GoldIcon"><Size x="16" y="16"/><Anchors><Anchor point="RIGHT" x="-5" y="0"/></Anchors></Texture></Layer></Layers></EditBox>
-            <Button parentKey="ConfirmBtn" inherits="UIPanelButtonTemplate" text="Lobby"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="40" y="20"/></Anchors></Button>
-            <Button parentKey="CancelBtn" inherits="UIPanelButtonTemplate" text="Cancel"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-40" y="20"/></Anchors></Button>
+            <Frame parentKey="CandidateDD" inherits="UIDropDownMenuTemplate"><Anchors><Anchor point="TOP" y="-80"/></Anchors></Frame>
+            <EditBox parentKey="AmountBox" inherits="InputBoxTemplate" numeric="true"><Size x="120" y="30"/><Anchors><Anchor point="TOP" y="-115"/></Anchors><Layers><UI-GoldIcon"><Layer level="ARTWORK"><Texture file="Interface\MoneyFrame\Size x="16" y="16"/><Anchors><Anchor point="RIGHT" x="-5" y="0"/></Anchors></Texture></Layer></Layers></EditBox>
+            <Button parentKey="ConfirmBtn" inherits="UIPanelButtonTemplate" text="Lobby"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="5" y="2"/></Anchors></Button>
+            <Button parentKey="CancelBtn" inherits="UIPanelButtonTemplate" text="Cancel"><Size x="80" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-5" y="2"/></Anchors></Button>
         </Frames>
     </Frame>
 
