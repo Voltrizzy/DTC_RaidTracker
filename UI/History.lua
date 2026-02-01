@@ -139,11 +139,7 @@ function DTC.HistoryUI:UpdateList()
         row.Boss:SetText(h.b)
         
         local wName = h.w
-        local displayName = DTC:GetColoredName(wName)
-        if DTCRaidDB.identities and DTCRaidDB.identities[h.w] then
-            displayName = displayName .. " (" .. DTCRaidDB.identities[h.w] .. ")"
-        end
-        row.Winner:SetText(displayName)
+        row.Winner:SetText(DTC:GetDisplayColoredName(wName))
         
         row.Voters:SetText(h.v or "None")
         
@@ -224,7 +220,7 @@ function DTC.HistoryUI:InitNameMenu(menu, level)
     UIDropDownMenu_AddButton(info, level)
     
     for _, n in ipairs(names) do
-        local colored = DTC:GetColoredName(n)
+        local colored = DTC:GetDisplayColoredName(n)
         info.text = colored
         info.value = n
         info.checked = (DTC.History.Filters.Name == n)

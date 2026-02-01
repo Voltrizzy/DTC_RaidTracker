@@ -67,7 +67,7 @@ function DTC.LeaderboardUI:UpdateList()
     for i, item in ipairs(data) do
         local row = self:GetRow(content)
         row:SetPoint("TOPLEFT", 0, yOffset)
-        row.Text:SetText(i .. ". " .. DTC:GetColoredName(item.n))
+        row.Text:SetText(i .. ". " .. DTC:GetDisplayColoredName(item.n))
         row.Text:SetPoint("RIGHT", row.Value, "LEFT", -10, 0) -- Constrain width
         row.Value:SetText(item.v)
         row.Text:SetTextColor(1, 1, 1)
@@ -78,7 +78,7 @@ function DTC.LeaderboardUI:UpdateList()
             for _, char in ipairs(item.chars) do
                 local subRow = self:GetRow(content)
                 subRow:SetPoint("TOPLEFT", 0, yOffset)
-                subRow.Text:SetText("   - " .. DTC:GetColoredName(char.n))
+                subRow.Text:SetText("   - " .. DTC:GetDisplayColoredName(char.n))
                 subRow.Value:SetText(char.v)
                 subRow.Text:SetTextColor(0.6, 0.6, 0.6)
                 subRow:Show()

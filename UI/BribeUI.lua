@@ -134,11 +134,11 @@ function DTC.BribeUI:Init()
             table.sort(names)
             
             for _, n in ipairs(names) do
-                info.text = DTC:GetColoredName(n)
+                info.text = DTC:GetDisplayColoredName(n)
                 info.value = n
                 info.func = function(s) 
                     self.SearchFilter = s.value
-                    UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value))
+                    UIDropDownMenu_SetText(frame, DTC:GetDisplayColoredName(s.value))
                     self:UpdateTracker() 
                 end
                 info.checked = (self.SearchFilter == n)
@@ -188,7 +188,7 @@ function DTC.BribeUI:Init()
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) 
                 self.LobbyInputFrame.candidate = s.value
-                UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value)) 
+                UIDropDownMenu_SetText(frame, DTC:GetDisplayColoredName(s.value)) 
             end
             
             local myName = UnitName("player")
@@ -207,7 +207,7 @@ function DTC.BribeUI:Init()
             table.sort(candidates)
             
             for _, name in ipairs(candidates) do
-                info.text = DTC:GetColoredName(name); info.value = name; info.checked = (self.LobbyInputFrame.candidate == name)
+                info.text = DTC:GetDisplayColoredName(name); info.value = name; info.checked = (self.LobbyInputFrame.candidate == name)
                 UIDropDownMenu_AddButton(info, level)
             end
         end)
@@ -259,7 +259,7 @@ function DTC.BribeUI:OpenLobbyInput(targetName)
     if not self.LobbyInputFrame then return end
     self.LobbyInputFrame.AmountBox:SetText(""); self.LobbyInputFrame.AmountBox:SetFocus()
     self.LobbyInputFrame.candidate = targetName
-    UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName and DTC:GetColoredName(targetName) or "Select Candidate")
+    UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName and DTC:GetDisplayColoredName(targetName) or "Select Candidate")
     self.LobbyInputFrame:Show()
 end
 
@@ -270,7 +270,7 @@ function DTC.BribeUI:ShowNextOffer()
     if #DTC.Bribe.IncomingQueue == 0 then self.IncomingFrame:Hide(); self.CurrentOfferID = nil; return end
     local offer = DTC.Bribe.IncomingQueue[1]
     self.CurrentOfferID = offer.id
-    self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r", DTC:GetColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
+    self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r", DTC:GetDisplayColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
     self.IncomingFrame:Show()
     
     self.IncomingFrame:SetScript("OnUpdate", function(f, elapsed)
@@ -309,7 +309,7 @@ function DTC.BribeUI:UpdatePropositionList()
         row:Show()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
-        row.Text:SetText(DTC:GetColoredName(prop.offerer) .. " (" .. BreakUpLargeNumbers(prop.amount) .. "g)")
+        row.Text:SetText(DTC:GetDisplayColoredName(prop.offerer) .. " (" .. BreakUpLargeNumbers(prop.amount) .. "g)")
         
         row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptProposition(prop.id) end)
         
@@ -366,7 +366,7 @@ function DTC.BribeUI:UpdateLobbyList()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
         -- Text: "[Lobbyist] pays [Amt] for [Candidate]"
-        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetColoredName(lobby.lobbyist), BreakUpLargeNumbers(lobby.amount), DTC:GetColoredName(lobby.candidate))
+        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetDisplayColoredName(lobby.lobbyist), BreakUpLargeNumbers(lobby.amount), DTC:GetDisplayColoredName(lobby.candidate))
         row.Text:SetText(txt)
         
         row:SetScript("OnUpdate", function(self, elapsed)
@@ -529,7 +529,7 @@ function DTC.BribeUI:UpdateTracker()
             row:SetParent(content)
             row:Show()
             row:SetPoint("TOPLEFT", 0, yOffset)
-            local txt = string.format("%s -> %s (%s)", DTC:GetColoredName(entry.offerer), DTC:GetColoredName(entry.recipient), entry.boss or "?")
+            local txt = string.format("%s -> %s (%s)", DTC:GetDisplayColoredName(entry.offerer), DTC:GetDisplayColoredName(entry.recipient), entry.boss or "?")
             row.Text:SetText(txt)
             
             if entry.boss and string.find(entry.boss, "%(Tax%)") then

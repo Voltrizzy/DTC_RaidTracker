@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.7"
+DTC.VERSION = "7.3.8"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -226,6 +226,17 @@ function DTC:GetColoredName(name)
         if c then return string.format("|cFF%02x%02x%02x%s|r", c.r*255, c.g*255, c.b*255, name) end
     end
     return name
+end
+
+-- Returns "ColoredName (Nickname)" or just "ColoredName" if no nickname exists.
+-- Handles class coloring and avoids redundant "Name (Name)" display.
+function DTC:GetDisplayColoredName(name)
+    local cName = self:GetColoredName(name)
+    local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
+    if nick and nick ~= "" and nick ~= name then
+        return cName .. " (" .. nick .. ")"
+    end
+    return cName
 end
 
 -- Returns the full name (Name-Realm) of a player if they are in the raid group.

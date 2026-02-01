@@ -231,9 +231,8 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         end
         
         row:SetPoint("TOPLEFT", 5, yOffset); row:Show()
-        local color = RAID_CLASS_COLORS[p.class] or {r=1,g=1,b=1}
-        row.Name:SetTextColor(color.r, color.g, color.b)
-        row.Name:SetText(p.nick and (p.name.." ("..p.nick..")") or p.name)
+        row.Name:SetTextColor(1, 1, 1) -- Reset base color, let GetDisplayColoredName handle class colors
+        row.Name:SetText(DTC:GetDisplayColoredName(p.name))
         
         if DTC.Bribe and DTC.Bribe:HasUnpaidDebt(p.name) then
             row.DeadbeatIcon:Show()

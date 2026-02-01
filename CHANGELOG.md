@@ -1,5 +1,11 @@
 # DTC Raid Tracker
 
+## [v7.3.7](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.7) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.6...v7.3.7)
+
+### Polish
+- **Nicknames:** Standardized nickname display across all windows (Vote, Leaderboard, History, Bribe Ledger). Now consistently shows "Name (Nickname)" or just "Name" if they match.
+
 ## [v7.3.6](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.6) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.5...v7.3.6)
 

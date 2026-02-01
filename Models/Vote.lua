@@ -193,6 +193,7 @@ function DTC.Vote:GetRosterData()
         if name then
             if string.find(name, "-") then name = strsplit("-", name) end
             local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
+            if nick == name then nick = nil end -- Avoid redundant "Name (Name)"
             local hasAddon = (self.versions[name] ~= nil)
             local mismatch = false
             if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
