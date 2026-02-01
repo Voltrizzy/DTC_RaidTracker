@@ -2,7 +2,7 @@
 ## Title: DTC Raid Tracker
 ## Notes: Modular version of the Disney Trip Champion tracker.
 ## Author: Voltrizzy
-## Version: 7.3.3
+## Version: 7.3.4
 ## SavedVariables: DTCRaidDB
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 ## X-Wago-ID: 56ndd5G9

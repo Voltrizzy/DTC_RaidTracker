@@ -11,193 +11,202 @@ DTC.BribeUI = {}
 function DTC.BribeUI:Init()
     -- 1. Send Bribe
     self.OfferFrame = DTC_BribeOfferPopup
-    self.OfferFrame.ConfirmBtn:SetScript("OnClick", function()
-        DTC.Bribe:OfferBribe(self.OfferFrame.target, self.OfferFrame.AmountBox:GetText())
-        self.OfferFrame:Hide()
-    end)
-    self.OfferFrame.CancelBtn:SetScript("OnClick", function() self.OfferFrame:Hide() end)
-    if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle("DTC Tracker - Bribe Offer") end
+    if self.OfferFrame then
+        self.OfferFrame.ConfirmBtn:SetScript("OnClick", function()
+            DTC.Bribe:OfferBribe(self.OfferFrame.target, self.OfferFrame.AmountBox:GetText())
+            self.OfferFrame:Hide()
+        end)
+        self.OfferFrame.CancelBtn:SetScript("OnClick", function() self.OfferFrame:Hide() end)
+        if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle("DTC Tracker - Bribe Offer") end
+    end
 
     -- 2. Proposition Input
     self.PropInputFrame = DTC_PropositionInputPopup
-    self.PropInputFrame.ConfirmBtn:SetScript("OnClick", function()
-        local amt = self.PropInputFrame.AmountBox:GetText()
-        DTC.Bribe.MyCurrentPropPrice = tonumber(amt) -- Store for later
-        DTC.Bribe:SendProposition(amt)
-        self.PropInputFrame:Hide()
-    end)
-    self.PropInputFrame.CancelBtn:SetScript("OnClick", function() self.PropInputFrame:Hide() end)
-    if self.PropInputFrame.SetTitle then self.PropInputFrame:SetTitle("Proposition Bribe") end
+    if self.PropInputFrame then
+        self.PropInputFrame.ConfirmBtn:SetScript("OnClick", function()
+            local amt = self.PropInputFrame.AmountBox:GetText()
+            DTC.Bribe.MyCurrentPropPrice = tonumber(amt) -- Store for later
+            DTC.Bribe:SendProposition(amt)
+            self.PropInputFrame:Hide()
+        end)
+        self.PropInputFrame.CancelBtn:SetScript("OnClick", function() self.PropInputFrame:Hide() end)
+        if self.PropInputFrame.SetTitle then self.PropInputFrame:SetTitle("Proposition Bribe") end
+    end
 
     -- 3. Proposition List
     self.PropListFrame = DTC_PropositionListFrame
-    if self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("DTC Tracker - Proposition") end
+    if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("DTC Tracker - Proposition") end
 
     -- 4. Incoming Bribe
     self.IncomingFrame = DTC_BribeIncomingPopup
-    self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
-    self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
-    
-    if self.IncomingFrame.TimerBar then
-        self.IncomingFrame.TimerBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        self.IncomingFrame.TimerBar:SetStatusBarColor(0.5, 0.05, 0.05)
+    if self.IncomingFrame then
+        self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
+        self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
+        
+        if self.IncomingFrame.TimerBar then
+            self.IncomingFrame.TimerBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            self.IncomingFrame.TimerBar:SetStatusBarColor(0.5, 0.05, 0.05)
+        end
     end
 
     -- 5. Tracker
     self.TrackerFrame = DTC_BribeTrackerFrame
-    if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
-    self.TrackerFrame.ClearBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_CLEAR_BRIBES_CONFIRM") end)
-    
-    -- NEW: Filter Dropdown
-    self.TrackerFrame.FilterDD = CreateFrame("Frame", "DTC_BribeTrackerFilterDD", self.TrackerFrame, "UIDropDownMenuTemplate")
-    self.TrackerFrame.FilterDD:SetPoint("TOPLEFT", 10, -25)
-    UIDropDownMenu_SetWidth(self.TrackerFrame.FilterDD, 150)
-    UIDropDownMenu_Initialize(self.TrackerFrame.FilterDD, function(frame, level)
-        local info = UIDropDownMenu_CreateInfo()
-        info.func = function(s) self.FilterMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
+    if self.TrackerFrame then
+        if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
+        self.TrackerFrame.ClearBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_CLEAR_BRIBES_CONFIRM") end)
         
-        info.text, info.arg1, info.value = "All", "ALL", "All"; info.checked = (self.FilterMode == "ALL"); UIDropDownMenu_AddButton(info, level)
-        info.text, info.arg1, info.value = "My Debts", "OWE", "My Debts"; info.checked = (self.FilterMode == "OWE"); UIDropDownMenu_AddButton(info, level)
-        info.text, info.arg1, info.value = "Debts Owed to Me", "OWED", "Debts Owed to Me"; info.checked = (self.FilterMode == "OWED"); UIDropDownMenu_AddButton(info, level)
-    end)
-    UIDropDownMenu_SetText(self.TrackerFrame.FilterDD, "All")
-    self.FilterMode = "ALL"
+        -- NEW: Filter Dropdown
+        self.TrackerFrame.FilterDD = CreateFrame("Frame", "DTC_BribeTrackerFilterDD", self.TrackerFrame, "UIDropDownMenuTemplate")
+        self.TrackerFrame.FilterDD:SetPoint("TOPLEFT", 10, -25)
+        UIDropDownMenu_SetWidth(self.TrackerFrame.FilterDD, 150)
+        UIDropDownMenu_Initialize(self.TrackerFrame.FilterDD, function(frame, level)
+            local info = UIDropDownMenu_CreateInfo()
+            info.func = function(s) self.FilterMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
+            
+            info.text, info.arg1, info.value = "All", "ALL", "All"; info.checked = (self.FilterMode == "ALL"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = "My Debts", "OWE", "My Debts"; info.checked = (self.FilterMode == "OWE"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = "Debts Owed to Me", "OWED", "Debts Owed to Me"; info.checked = (self.FilterMode == "OWED"); UIDropDownMenu_AddButton(info, level)
+        end)
+        UIDropDownMenu_SetText(self.TrackerFrame.FilterDD, "All")
+        self.FilterMode = "ALL"
 
-    -- NEW: Sort Dropdown
-    self.TrackerFrame.SortDD = CreateFrame("Frame", "DTC_BribeTrackerSortDD", self.TrackerFrame, "UIDropDownMenuTemplate")
-    self.TrackerFrame.SortDD:SetPoint("LEFT", self.TrackerFrame.FilterDD, "RIGHT", -20, 0)
-    UIDropDownMenu_SetWidth(self.TrackerFrame.SortDD, 110)
-    UIDropDownMenu_Initialize(self.TrackerFrame.SortDD, function(frame, level)
-        local info = UIDropDownMenu_CreateInfo()
-        info.func = function(s) self.SortMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
-        
-        info.text, info.arg1, info.value = "Date (Newest)", "DATE_DESC", "Date (Newest)"; info.checked = (self.SortMode == "DATE_DESC"); UIDropDownMenu_AddButton(info, level)
-        info.text, info.arg1, info.value = "Date (Oldest)", "DATE_ASC", "Date (Oldest)"; info.checked = (self.SortMode == "DATE_ASC"); UIDropDownMenu_AddButton(info, level)
-        info.text, info.arg1, info.value = "Amount (High)", "AMT_DESC", "Amount (High)"; info.checked = (self.SortMode == "AMT_DESC"); UIDropDownMenu_AddButton(info, level)
-        info.text, info.arg1, info.value = "Amount (Low)", "AMT_ASC", "Amount (Low)"; info.checked = (self.SortMode == "AMT_ASC"); UIDropDownMenu_AddButton(info, level)
-    end)
-    UIDropDownMenu_SetText(self.TrackerFrame.SortDD, "Date (Newest)")
-    self.SortMode = "DATE_DESC"
+        -- NEW: Sort Dropdown
+        self.TrackerFrame.SortDD = CreateFrame("Frame", "DTC_BribeTrackerSortDD", self.TrackerFrame, "UIDropDownMenuTemplate")
+        self.TrackerFrame.SortDD:SetPoint("LEFT", self.TrackerFrame.FilterDD, "RIGHT", -20, 0)
+        UIDropDownMenu_SetWidth(self.TrackerFrame.SortDD, 110)
+        UIDropDownMenu_Initialize(self.TrackerFrame.SortDD, function(frame, level)
+            local info = UIDropDownMenu_CreateInfo()
+            info.func = function(s) self.SortMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
+            
+            info.text, info.arg1, info.value = "Date (Newest)", "DATE_DESC", "Date (Newest)"; info.checked = (self.SortMode == "DATE_DESC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = "Date (Oldest)", "DATE_ASC", "Date (Oldest)"; info.checked = (self.SortMode == "DATE_ASC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = "Amount (High)", "AMT_DESC", "Amount (High)"; info.checked = (self.SortMode == "AMT_DESC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = "Amount (Low)", "AMT_ASC", "Amount (Low)"; info.checked = (self.SortMode == "AMT_ASC"); UIDropDownMenu_AddButton(info, level)
+        end)
+        UIDropDownMenu_SetText(self.TrackerFrame.SortDD, "Date (Newest)")
+        self.SortMode = "DATE_DESC"
 
-    -- NEW: Search Dropdown
-    self.TrackerFrame.SearchDD = CreateFrame("Frame", "DTC_BribeTrackerSearchDD", self.TrackerFrame, "UIDropDownMenuTemplate")
-    self.TrackerFrame.SearchDD:SetPoint("LEFT", self.TrackerFrame.SortDD, "RIGHT", -10, 0)
-    UIDropDownMenu_SetWidth(self.TrackerFrame.SearchDD, 120)
-    UIDropDownMenu_Initialize(self.TrackerFrame.SearchDD, function(frame, level)
-        local info = UIDropDownMenu_CreateInfo()
-        
-        info.text = "All Names"
-        info.value = nil
-        info.func = function(s) 
-            self.SearchFilter = nil
-            UIDropDownMenu_SetText(frame, "All Names")
-            self:UpdateTracker() 
-        end
-        info.checked = (self.SearchFilter == nil)
-        UIDropDownMenu_AddButton(info, level)
-        
-        local names = {}
-        local seen = {}
-        local data = DTCRaidDB.bribes or {}
-        for _, e in ipairs(data) do
-            if e.offerer and not seen[e.offerer] then table.insert(names, e.offerer); seen[e.offerer] = true end
-            if e.recipient and not seen[e.recipient] then table.insert(names, e.recipient); seen[e.recipient] = true end
-        end
-        table.sort(names)
-        
-        for _, n in ipairs(names) do
-            info.text = DTC:GetColoredName(n)
-            info.value = n
+        -- NEW: Search Dropdown
+        self.TrackerFrame.SearchDD = CreateFrame("Frame", "DTC_BribeTrackerSearchDD", self.TrackerFrame, "UIDropDownMenuTemplate")
+        self.TrackerFrame.SearchDD:SetPoint("LEFT", self.TrackerFrame.SortDD, "RIGHT", -10, 0)
+        UIDropDownMenu_SetWidth(self.TrackerFrame.SearchDD, 120)
+        UIDropDownMenu_Initialize(self.TrackerFrame.SearchDD, function(frame, level)
+            local info = UIDropDownMenu_CreateInfo()
+            
+            info.text = "All Names"
+            info.value = nil
             info.func = function(s) 
-                self.SearchFilter = s.value
-                UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value))
+                self.SearchFilter = nil
+                UIDropDownMenu_SetText(frame, "All Names")
                 self:UpdateTracker() 
             end
-            info.checked = (self.SearchFilter == n)
+            info.checked = (self.SearchFilter == nil)
             UIDropDownMenu_AddButton(info, level)
-        end
-    end)
-    UIDropDownMenu_SetText(self.TrackerFrame.SearchDD, "All Names")
+            
+            local names = {}
+            local seen = {}
+            local data = DTCRaidDB.bribes or {}
+            for _, e in ipairs(data) do
+                if e.offerer and not seen[e.offerer] then table.insert(names, e.offerer); seen[e.offerer] = true end
+                if e.recipient and not seen[e.recipient] then table.insert(names, e.recipient); seen[e.recipient] = true end
+            end
+            table.sort(names)
+            
+            for _, n in ipairs(names) do
+                info.text = DTC:GetColoredName(n)
+                info.value = n
+                info.func = function(s) 
+                    self.SearchFilter = s.value
+                    UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value))
+                    self:UpdateTracker() 
+                end
+                info.checked = (self.SearchFilter == n)
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end)
+        UIDropDownMenu_SetText(self.TrackerFrame.SearchDD, "All Names")
 
-    -- NEW: Total Debt Label
-    self.TrackerFrame.TotalDebt = self.TrackerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    self.TrackerFrame.TotalDebt:SetPoint("TOPRIGHT", -20, -30)
-    self.TrackerFrame.TotalDebt:SetText("Total Debt: 0g")
-    
-    self.TrackerFrame.ExportBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
-    self.TrackerFrame.ExportBtn:SetSize(80, 20)
-    self.TrackerFrame.ExportBtn:SetPoint("BOTTOMRIGHT", -20, 2)
-    self.TrackerFrame.ExportBtn:SetText("Export CSV")
-    self.TrackerFrame.ExportBtn:SetScript("OnClick", function() self:ShowExportPopup() end)
-    
-    self.TrackerFrame.AnnounceBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
-    self.TrackerFrame.AnnounceBtn:SetSize(120, 22)
-    self.TrackerFrame.AnnounceBtn:SetPoint("BOTTOM", 0, 2)
-    self.TrackerFrame.AnnounceBtn:SetText("Announce Debts")
-    self.TrackerFrame.AnnounceBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:AnnounceDebts() end end)
-    
-    self.TrackerFrame.PayTaxBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
-    self.TrackerFrame.PayTaxBtn:SetSize(120, 22)
-    self.TrackerFrame.PayTaxBtn:SetPoint("BOTTOMLEFT", 20, 2)
-    self.TrackerFrame.PayTaxBtn:SetText("Mark Taxes Paid")
-    self.TrackerFrame.PayTaxBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:PayAllTaxes() end end)
-    self.TrackerFrame.PayTaxBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Mark Taxes Paid")
-        GameTooltip:AddLine("Marks all 'Corruption Fee' debts owed to you as PAID.", 1, 1, 1, true)
-        GameTooltip:AddLine("Use this after collecting gold from the mailbox or trade.", 0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    self.TrackerFrame.PayTaxBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        -- NEW: Total Debt Label
+        self.TrackerFrame.TotalDebt = self.TrackerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        self.TrackerFrame.TotalDebt:SetPoint("TOPRIGHT", -20, -30)
+        self.TrackerFrame.TotalDebt:SetText("Total Debt: 0g")
+        
+        self.TrackerFrame.ExportBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
+        self.TrackerFrame.ExportBtn:SetSize(80, 20)
+        self.TrackerFrame.ExportBtn:SetPoint("BOTTOMRIGHT", -20, 2)
+        self.TrackerFrame.ExportBtn:SetText("Export CSV")
+        self.TrackerFrame.ExportBtn:SetScript("OnClick", function() self:ShowExportPopup() end)
+        
+        self.TrackerFrame.AnnounceBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
+        self.TrackerFrame.AnnounceBtn:SetSize(120, 22)
+        self.TrackerFrame.AnnounceBtn:SetPoint("BOTTOM", 0, 2)
+        self.TrackerFrame.AnnounceBtn:SetText("Announce Debts")
+        self.TrackerFrame.AnnounceBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:AnnounceDebts() end end)
+        
+        self.TrackerFrame.PayTaxBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
+        self.TrackerFrame.PayTaxBtn:SetSize(120, 22)
+        self.TrackerFrame.PayTaxBtn:SetPoint("BOTTOMLEFT", 20, 2)
+        self.TrackerFrame.PayTaxBtn:SetText("Mark Taxes Paid")
+        self.TrackerFrame.PayTaxBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:PayAllTaxes() end end)
+        self.TrackerFrame.PayTaxBtn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Mark Taxes Paid")
+            GameTooltip:AddLine("Marks all 'Corruption Fee' debts owed to you as PAID.", 1, 1, 1, true)
+            GameTooltip:AddLine("Use this after collecting gold from the mailbox or trade.", 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        self.TrackerFrame.PayTaxBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    end
     
     -- NEW: 6. Lobby Input
     self.LobbyInputFrame = DTC_LobbyInputPopup
-    
-    UIDropDownMenu_SetWidth(self.LobbyInputFrame.CandidateDD, 140)
-    UIDropDownMenu_Initialize(self.LobbyInputFrame.CandidateDD, function(frame, level)
-        local info = UIDropDownMenu_CreateInfo()
-        info.func = function(s) 
-            self.LobbyInputFrame.candidate = s.value
-            UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value)) 
-        end
-        
-        local myName = UnitName("player")
-        local candidates = {}
-        if IsInRaid() then
-            for i = 1, GetNumGroupMembers() do
-                local name = GetRaidRosterInfo(i)
-                if name then
-                    if string.find(name, "-") then name = strsplit("-", name) end
-                    if name ~= myName then table.insert(candidates, name) end
-                end
+    if self.LobbyInputFrame then
+        UIDropDownMenu_SetWidth(self.LobbyInputFrame.CandidateDD, 140)
+        UIDropDownMenu_Initialize(self.LobbyInputFrame.CandidateDD, function(frame, level)
+            local info = UIDropDownMenu_CreateInfo()
+            info.func = function(s) 
+                self.LobbyInputFrame.candidate = s.value
+                UIDropDownMenu_SetText(frame, DTC:GetColoredName(s.value)) 
             end
-        else
-            table.insert(candidates, "Mickey"); table.insert(candidates, "Donald"); table.insert(candidates, "Goofy")
-        end
-        table.sort(candidates)
-        
-        for _, name in ipairs(candidates) do
-            info.text = DTC:GetColoredName(name); info.value = name; info.checked = (self.LobbyInputFrame.candidate == name)
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end)
+            
+            local myName = UnitName("player")
+            local candidates = {}
+            if IsInRaid() then
+                for i = 1, GetNumGroupMembers() do
+                    local name = GetRaidRosterInfo(i)
+                    if name then
+                        if string.find(name, "-") then name = strsplit("-", name) end
+                        if name ~= myName then table.insert(candidates, name) end
+                    end
+                end
+            else
+                table.insert(candidates, "Mickey"); table.insert(candidates, "Donald"); table.insert(candidates, "Goofy")
+            end
+            table.sort(candidates)
+            
+            for _, name in ipairs(candidates) do
+                info.text = DTC:GetColoredName(name); info.value = name; info.checked = (self.LobbyInputFrame.candidate == name)
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end)
 
-    self.LobbyInputFrame.ConfirmBtn:SetScript("OnClick", function()
-        local amt = self.LobbyInputFrame.AmountBox:GetText()
-        local cand = self.LobbyInputFrame.candidate
-        if cand then
-            DTC.Bribe:SendLobby(cand, amt)
-            self.LobbyInputFrame:Hide()
-        else
-            print("|cFFFF0000DTC:|r Select a candidate.")
-        end
-    end)
-    self.LobbyInputFrame.CancelBtn:SetScript("OnClick", function() self.LobbyInputFrame:Hide() end)
-    if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle("Lobbying") end
+        self.LobbyInputFrame.ConfirmBtn:SetScript("OnClick", function()
+            local amt = self.LobbyInputFrame.AmountBox:GetText()
+            local cand = self.LobbyInputFrame.candidate
+            if cand then
+                DTC.Bribe:SendLobby(cand, amt)
+                self.LobbyInputFrame:Hide()
+            else
+                print("|cFFFF0000DTC:|r Select a candidate.")
+            end
+        end)
+        self.LobbyInputFrame.CancelBtn:SetScript("OnClick", function() self.LobbyInputFrame:Hide() end)
+        if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle("Lobbying") end
+    end
     
     -- NEW: 7. Lobby List
     self.LobbyListFrame = DTC_LobbyListFrame
-    if self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("DTC Tracker - Lobby") end
+    if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("DTC Tracker - Lobby") end
     
 end
 
@@ -205,6 +214,7 @@ end
 -- --- OPENERS ---
 function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then self:Init() end
+    if not self.OfferFrame then return end
     self.OfferFrame.target = targetName
     self.OfferFrame.AmountBox:SetText(""); self.OfferFrame.AmountBox:SetFocus()
     self.OfferFrame.Title:SetText("DTC Tracker - Bribe Offer")
@@ -215,6 +225,7 @@ end
 -- Opens the Proposition Input window.
 function DTC.BribeUI:OpenPropInput()
     if not self.PropInputFrame then self:Init() end
+    if not self.PropInputFrame then return end
     self.PropInputFrame.AmountBox:SetText(""); self.PropInputFrame.AmountBox:SetFocus()
     self.PropInputFrame:Show()
 end
@@ -222,6 +233,7 @@ end
 -- Opens the Lobby Input window for a specific target.
 function DTC.BribeUI:OpenLobbyInput(targetName)
     if not self.LobbyInputFrame then self:Init() end
+    if not self.LobbyInputFrame then return end
     self.LobbyInputFrame.AmountBox:SetText(""); self.LobbyInputFrame.AmountBox:SetFocus()
     self.LobbyInputFrame.candidate = targetName
     UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName and DTC:GetColoredName(targetName) or "Select Candidate")
@@ -231,6 +243,7 @@ end
 -- Displays the next incoming bribe offer in the queue.
 function DTC.BribeUI:ShowNextOffer()
     if not self.IncomingFrame then self:Init() end
+    if not self.IncomingFrame then return end
     if #DTC.Bribe.IncomingQueue == 0 then self.IncomingFrame:Hide(); self.CurrentOfferID = nil; return end
     local offer = DTC.Bribe.IncomingQueue[1]
     self.CurrentOfferID = offer.id
@@ -252,6 +265,7 @@ end
 -- --- LIST UPDATES ---
 function DTC.BribeUI:UpdatePropositionList()
     if not self.PropListFrame then self:Init() end
+    if not self.PropListFrame then return end
     local list = DTC.Bribe.PropositionQueue
     
     -- Show window if items exist
@@ -308,6 +322,7 @@ end
 -- Updates the list of active lobby offers.
 function DTC.BribeUI:UpdateLobbyList()
     if not self.LobbyListFrame then self:Init() end
+    if not self.LobbyListFrame then return end
     local list = DTC.Bribe.LobbyQueue
     if #list > 0 then self.LobbyListFrame:Show() else self.LobbyListFrame:Hide() end
     
@@ -400,6 +415,7 @@ end
 -- Toggles the Bribe Ledger (Tracker) window.
 function DTC.BribeUI:ToggleTracker()
     if not self.TrackerFrame then self:Init() end
+    if not self.TrackerFrame then return end
     if self.TrackerFrame:IsShown() then self.TrackerFrame:Hide() else self.TrackerFrame:Show(); self:UpdateTracker() end
 end
 
