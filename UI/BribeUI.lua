@@ -270,7 +270,7 @@ function DTC.BribeUI:ShowNextOffer()
     if #DTC.Bribe.IncomingQueue == 0 then self.IncomingFrame:Hide(); self.CurrentOfferID = nil; return end
     local offer = DTC.Bribe.IncomingQueue[1]
     self.CurrentOfferID = offer.id
-    self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r", offer.sender, BreakUpLargeNumbers(offer.amount)))
+    self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r", DTC:GetColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
     self.IncomingFrame:Show()
     
     self.IncomingFrame:SetScript("OnUpdate", function(f, elapsed)
@@ -309,7 +309,7 @@ function DTC.BribeUI:UpdatePropositionList()
         row:Show()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
-        row.Text:SetText(prop.offerer .. " (" .. BreakUpLargeNumbers(prop.amount) .. "g)")
+        row.Text:SetText(DTC:GetColoredName(prop.offerer) .. " (" .. BreakUpLargeNumbers(prop.amount) .. "g)")
         
         row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptProposition(prop.id) end)
         
@@ -366,7 +366,7 @@ function DTC.BribeUI:UpdateLobbyList()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
         -- Text: "[Lobbyist] pays [Amt] for [Candidate]"
-        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", lobby.lobbyist, BreakUpLargeNumbers(lobby.amount), lobby.candidate)
+        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetColoredName(lobby.lobbyist), BreakUpLargeNumbers(lobby.amount), DTC:GetColoredName(lobby.candidate))
         row.Text:SetText(txt)
         
         row:SetScript("OnUpdate", function(self, elapsed)
