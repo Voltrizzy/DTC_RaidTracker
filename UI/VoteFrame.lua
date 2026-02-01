@@ -19,6 +19,25 @@ function DTC.VoteFrame:Init()
         end
         frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
     end
+    
+    -- Ensure title doesn't overlap close button
+    if frame.TitleText then
+        frame.TitleText:SetWidth(frame:GetWidth() - 60)
+        frame.TitleText:SetWordWrap(false)
+    end
+    
+    -- Boss Info Label (Inside Frame)
+    frame.BossInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    frame.BossInfo:SetPoint("TOP", 0, -30)
+    frame.BossInfo:SetWidth(frame:GetWidth() - 20)
+    frame.BossInfo:SetWordWrap(false)
+    
+    -- Adjust ScrollFrame to make room for Boss Info
+    if frame.ListScroll then
+        frame.ListScroll:ClearAllPoints()
+        frame.ListScroll:SetPoint("TOPLEFT", 10, -55)
+        frame.ListScroll:SetPoint("BOTTOMRIGHT", -30, 65)
+    end
 
     frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
     frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
@@ -64,7 +83,8 @@ function DTC.VoteFrame:UpdateHeader()
         local _, _, _, diffName = GetInstanceInfo()
         if diffName and diffName ~= "" then titleText = "(" .. diffName .. ") " .. titleText end
     end
-    frame:SetTitle("DTC Tracker - Vote: " .. titleText)
+    frame:SetTitle("DTC Tracker - Vote")
+    if frame.BossInfo then frame.BossInfo:SetText(titleText) end
 end
 
 -- Refreshes the list of players in the voting window.
@@ -116,7 +136,9 @@ function DTC.VoteFrame:UpdateList()
     end
     
     if isOpen then
-        frame.VotesLeft:SetText("Votes: " .. (DTC.Vote.myVotesLeft or 0))
+        local left = DTC.Vote.myVotesLeft or 0
+        if left < 0 then left = 0 end
+        frame.VotesLeft:SetText("Votes: " .. left)
         frame.VotesLeft:SetTextColor(1, 1, 1)
     else
         frame.VotesLeft:SetText("CLOSED")
@@ -227,7 +249,8 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         isMe = (p.name == UnitName("player"))
         local alreadyVotedFor = DTC.Vote and DTC.Vote:HasVotedFor(p.name)
         local targetVotesCast = DTC.Vote:GetVotesCastBy(p.name)
-        local targetHasVotesLeft = (targetVotesCast < 3)
+        local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
+        local targetHasVotesLeft = (targetVotesCast < maxVotes)
 
         -- VOTE
         row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(p.name) end end)

@@ -76,7 +76,7 @@ end
 
 -- Builds the "General" configuration tab.
 function DTC.Config:BuildGeneralTab(frame)
-    local box = CreateGroupBox(frame, "General Options", 580, 170)
+    local box = CreateGroupBox(frame, "General Options", 580, 200)
     box:SetPoint("TOPLEFT", 0, 0)
     
     local btnVote = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
@@ -404,7 +404,7 @@ end
 
 -- Builds the "Voting" configuration tab.
 function DTC.Config:BuildVotingTab(frame)
-    local b1 = CreateGroupBox(frame, "Voting Options", 580, 130)
+    local b1 = CreateGroupBox(frame, "Voting Options", 580, 140)
     b1:SetPoint("TOPLEFT", 0, 0)
     
     local lbl = b1:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); lbl:SetPoint("TOPLEFT", 15, -30); lbl:SetText("List Format:")
@@ -420,7 +420,7 @@ function DTC.Config:BuildVotingTab(frame)
 
     -- NEW: Voting Timer Slider
     local s = CreateFrame("Slider", "DTC_VoteTimerSlider", b1, "OptionsSliderTemplate")
-    s:SetPoint("TOPLEFT", 20, -70)
+    s:SetPoint("TOPLEFT", 20, -75)
     s:SetMinMaxValues(30, 600)
     s:SetValueStep(10)
     s:SetObeyStepOnDrag(true)
@@ -439,7 +439,32 @@ function DTC.Config:BuildVotingTab(frame)
         self.isSettingUp = false
     end)
 
-    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 350)
+    local sVotes = CreateFrame("Slider", "DTC_VotesPerPersonSlider", b1, "OptionsSliderTemplate")
+    sVotes:SetPoint("LEFT", s, "RIGHT", 40, 0)
+    sVotes:SetMinMaxValues(1, 10)
+    sVotes:SetValueStep(1)
+    sVotes:SetObeyStepOnDrag(true)
+    sVotes:SetWidth(200)
+    _G[sVotes:GetName() .. "Text"]:SetText("Votes Per Person")
+    _G[sVotes:GetName() .. "Low"]:SetText("1")
+    _G[sVotes:GetName() .. "High"]:SetText("10")
+    local valLabelVotes = sVotes:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall"); valLabelVotes:SetPoint("TOP", sVotes, "BOTTOM", 0, 0)
+    sVotes:SetScript("OnValueChanged", function(self, value) 
+        if self.isSettingUp then return end
+        value = math.floor(value); DTCRaidDB.settings.votesPerPerson = value; valLabelVotes:SetText(value) 
+    end)
+    sVotes:SetScript("OnMouseUp", function(self) if IsInRaid() and UnitIsGroupLeader("player") then C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:"..DTCRaidDB.settings.votesPerPerson, "RAID") end end)
+    sVotes:SetScript("OnShow", function(self) 
+        self.isSettingUp = true
+        local val = DTCRaidDB.settings.votesPerPerson or 3; self:SetValue(val); valLabelVotes:SetText(val) 
+        self.isSettingUp = false
+    end)
+
+    -- Reset Button
+    local btnReset = CreateFrame("Button", nil, b1, "UIPanelButtonTemplate")
+    btnReset:SetSize(120, 22); btnReset:SetPoint("TOPRIGHT", -20, -30); btnReset:SetText("Reset Defaults")
+    
+    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 340)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigVoteMsgScroll", b2, "UIPanelScrollFrameTemplate")
@@ -464,6 +489,7 @@ function DTC.Config:BuildVotingTab(frame)
     end)
 
     local msgBoxes = {}
+    local winMsgEBs = {}
     for i = 1, 10 do
         local row = CreateFrame("Frame", nil, content)
         row:SetSize(520, 20); row:SetPoint("TOPLEFT", 15, -60 - ((i-1)*25))
@@ -473,6 +499,7 @@ function DTC.Config:BuildVotingTab(frame)
         eb:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end)
         eb:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
         msgBoxes[i] = row
+        winMsgEBs[i] = eb
     end
 
     local function UpdateVis(val)
@@ -491,10 +518,12 @@ function DTC.Config:BuildVotingTab(frame)
         self.isSettingUp = false
     end)
 
+    local otherEBs = {}
     local function AddEdit(title, key, y, toggleKey)
         local l = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); l:SetPoint("TOPLEFT", 15, y); l:SetText(title)
+        local cb = nil
         if toggleKey then
-            local cb = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+            cb = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
             cb:SetSize(20, 20); cb:SetPoint("LEFT", l, "RIGHT", 10, 0)
             cb:SetScript("OnShow", function(self) self:SetChecked(DTCRaidDB.settings[toggleKey] ~= false) end)
             cb:SetScript("OnClick", function(self) DTCRaidDB.settings[toggleKey] = self:GetChecked() end)
@@ -502,9 +531,50 @@ function DTC.Config:BuildVotingTab(frame)
         end
         local e = CreateFrame("EditBox", nil, content, "InputBoxTemplate"); e:SetSize(510, 20); e:SetPoint("TOPLEFT", l, "BOTTOMLEFT", 0, -5); e:SetAutoFocus(false)
         e:SetScript("OnShow", function(self) self:SetText(DTCRaidDB.settings[key] or "") end); e:SetScript("OnEditFocusLost", function(self) DTCRaidDB.settings[key] = self:GetText() end)
+        table.insert(otherEBs, {e=e, key=key, cb=cb, toggleKey=toggleKey})
     end
     AddEdit("Runner Up Message:", "voteRunnerUpMsg", -330, "voteRunnerUpEnabled")
     AddEdit("Lowest Vote Message:", "voteLowMsg", -375, "voteLowEnabled")
+
+    btnReset:SetScript("OnClick", function()
+        -- Defaults
+        DTCRaidDB.settings.voteSortMode = "ROLE"
+        DTCRaidDB.settings.voteTimer = 180
+        DTCRaidDB.settings.votesPerPerson = 3
+        DTCRaidDB.settings.voteWinCount = 10
+        
+        DTCRaidDB.settings.voteRunnerUpMsg = "Honorable mention goes to %s."
+        DTCRaidDB.settings.voteLowMsg = "Don't worry %s, there's always next time."
+        DTCRaidDB.settings.voteRunnerUpEnabled = true
+        DTCRaidDB.settings.voteLowEnabled = true
+        
+        DTCRaidDB.settings.voteWinMsg_1 = "Congrats to %s for winning the vote!"
+        DTCRaidDB.settings.voteWinMsg_2 = "And the winner is... %s!"    
+        DTCRaidDB.settings.voteWinMsg_3 = "STOP THE COUNT! %s has taken the lead!"
+        DTCRaidDB.settings.voteWinMsg_4 = "The tribe has spoken. %s is the winner!"
+        DTCRaidDB.settings.voteWinMsg_5 = "Democracy manifests! %s wins the vote."
+        DTCRaidDB.settings.voteWinMsg_6 = "By popular demand, %s takes the crown."
+        DTCRaidDB.settings.voteWinMsg_7 = "The people have chosen... wisely? %s wins!"
+        DTCRaidDB.settings.voteWinMsg_8 = "Victory! %s is the chosen one."
+        DTCRaidDB.settings.voteWinMsg_9 = "Against all odds, %s secures the win."
+        DTCRaidDB.settings.voteWinMsg_10 = "Look at me. %s is the captain now."
+        
+        -- Refresh UI
+        UIDropDownMenu_SetText(dd, "Show Players and Roles")
+        s:SetValue(180)
+        sVotes:SetValue(3)
+        sCount:SetValue(10)
+        
+        for i, eb in ipairs(winMsgEBs) do eb:SetText(DTCRaidDB.settings["voteWinMsg_"..i]) end
+        for _, item in ipairs(otherEBs) do
+            item.e:SetText(DTCRaidDB.settings[item.key])
+            if item.cb then item.cb:SetChecked(DTCRaidDB.settings[item.toggleKey]) end
+        end
+        print("|cFFFFD700DTC:|r Voting settings reset to defaults.")
+        if IsInRaid() and UnitIsGroupLeader("player") then
+             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:3", "RAID")
+        end
+    end)
 end
 
 -- Builds the "Bribes" configuration tab.

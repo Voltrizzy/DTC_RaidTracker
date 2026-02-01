@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.5"
+DTC.VERSION = "7.3.6"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -137,7 +137,14 @@ f:SetScript("OnEvent", function(self, event, ...)
             if DTC.Bribe then DTC.Bribe:OnComm(action, data, sender) end
             
             if action == "SESSION_QUERY" then
-                if UnitIsGroupLeader("player") then DTC:SyncSessionStatus() end
+                if UnitIsGroupLeader("player") then 
+                    DTC:SyncSessionStatus()
+                    -- Sync critical settings to the new/reloading player
+                    local s = DTCRaidDB.settings
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:"..(s.votesPerPerson or 3), "RAID")
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..(s.corruptionFee or 10), "RAID")
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_LIMIT:"..(s.debtLimit or 0), "RAID")
+                end
             elseif action == "SESSION_STATUS" then
                 DTC.SessionActive = (data == "1")
             end
@@ -189,6 +196,7 @@ function DTC:InitDatabase()
     
     if DTCRaidDB.settings.voteRunnerUpMsg == nil then DTCRaidDB.settings.voteRunnerUpMsg = "Honorable mention goes to %s." end
     if DTCRaidDB.settings.voteLowMsg == nil then DTCRaidDB.settings.voteLowMsg = "Don't worry %s, there's always next time." end
+    if DTCRaidDB.settings.votesPerPerson == nil then DTCRaidDB.settings.votesPerPerson = 3 end
     
     -- Timer Defaults
     if DTCRaidDB.settings.voteTimer == nil then DTCRaidDB.settings.voteTimer = 180 end -- NEW: Voting Window

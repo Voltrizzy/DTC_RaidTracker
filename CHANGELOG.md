@@ -1,5 +1,15 @@
 # DTC Raid Tracker
 
+## [v7.3.6](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.6) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.5...v7.3.6)
+
+### Fixes & Improvements
+- **UI Layouts:** Fixed XML anchoring issues in Bribe/Lobby rows where text was missing.
+- **Vote Window:** Moved Boss Name to a dedicated label to prevent title overflow; fixed footer button layout.
+- **Configuration:** Increased size of General Options frame; added "Reset Defaults" for Voting.
+- **Logic:** Fixed voting session lifecycle to prevent chat spam; ensured "Votes Per Person" setting syncs correctly.
+- **Export:** Fixed Bribe Ledger export to respect active filters.
+
 ## [v7.3.1](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.1) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3...v7.3.1)
 

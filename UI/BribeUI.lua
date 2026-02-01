@@ -332,7 +332,8 @@ function DTC.BribeUI:UpdatePropositionList()
         -- Logic: If offerer has no votes left (should be caught by model check, but double check here)
         if DTC.Vote then
             local votes = DTC.Vote:GetVotesCastBy(prop.offerer)
-            if votes >= 3 then row.AcceptBtn:Disable() else row.AcceptBtn:Enable() end
+            local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
+            if votes >= maxVotes then row.AcceptBtn:Disable() else row.AcceptBtn:Enable() end
         else
             row.AcceptBtn:Disable()
         end

@@ -143,7 +143,8 @@ function DTC.Bribe:ReceiveProposition(offerer, amount, isTest)
     if not DTC.Vote or not DTC.Vote.isOpen then return end
     if offerer == UnitName("player") then return end
     local votesUsed = DTC.Vote:GetVotesCastBy(offerer)
-    if votesUsed >= 3 then return end
+    local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
+    if votesUsed >= maxVotes then return end
     local duration = DTCRaidDB.settings.propTimer or 90
     local prop = { 
         id = GetTime() .. "-" .. offerer, 
@@ -290,6 +291,7 @@ function DTC.Bribe:TrackBribe(offerer, recipient, amount, boss, bType)
     offerer = (offerer or "Unknown"):gsub(",", "")
     recipient = (recipient or "Unknown"):gsub(",", "")
     local amt = math.floor(tonumber(amount) or 0)
+    if amt <= 0 then return end -- Safety check
     local ts = date("%Y-%m-%d %H:%M:%S")
     local entry = { offerer = offerer, recipient = recipient, amount = amt, boss = boss, paid = false, timestamp = ts }
     table.insert(DTCRaidDB.bribes, entry)
@@ -433,10 +435,11 @@ end
 function DTC.Bribe:CheckPropositionValidity()
     if not DTC.Vote then return end
     local changed = false
+    local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
     for i = #self.PropositionQueue, 1, -1 do
         local p = self.PropositionQueue[i]
         local votes = DTC.Vote:GetVotesCastBy(p.offerer)
-        if votes >= 3 then if p.timer then p.timer:Cancel() end; table.remove(self.PropositionQueue, i); changed = true end
+        if votes >= maxVotes then if p.timer then p.timer:Cancel() end; table.remove(self.PropositionQueue, i); changed = true end
     end
     if changed and DTC.BribeUI then DTC.BribeUI:UpdatePropositionList() end
 end
@@ -566,6 +569,18 @@ function DTC.Bribe:OnComm(action, data, sender)
     elseif action == "SYNC_FEE" then
         if sender == self:GetLeaderName() then
             DTCRaidDB.settings.corruptionFee = tonumber(data) or 10
+        end
+    elseif action == "SYNC_VOTES" then
+        if sender == self:GetLeaderName() then
+            DTCRaidDB.settings.votesPerPerson = tonumber(data) or 3
+            -- Recalculate votes left if session is active
+            if DTC.Vote and DTC.Vote.isOpen then
+                local max = DTCRaidDB.settings.votesPerPerson
+                local myName = UnitName("player")
+                local used = (DTC.Vote.voters and DTC.Vote.voters[myName]) or 0
+                DTC.Vote.myVotesLeft = max - used
+                if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
+            end
         end
     elseif action == "VOTE" then C_Timer.After(0.5, function() DTC.Bribe:CheckPropositionValidity() end) end
 end

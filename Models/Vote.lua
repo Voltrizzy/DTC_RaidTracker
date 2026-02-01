@@ -32,7 +32,7 @@ end
 function DTC.Vote:StartSession(bossName, isTest)
     self.isOpen = true
     self.currentBoss = bossName
-    self.myVotesLeft = 3
+    self.myVotesLeft = DTCRaidDB.settings.votesPerPerson or 3
     self.votes = {}
     self.voters = {}
     self.versions = {} 
@@ -43,9 +43,11 @@ function DTC.Vote:StartSession(bossName, isTest)
     
     self.sessionDuration = DTCRaidDB.settings.voteTimer or 180
     self.sessionStartTime = GetTime()
-    self.sessionTimer = C_Timer.NewTimer(self.sessionDuration, function()
-        self:Finalize()
-    end)
+    if UnitIsGroupLeader("player") or self.isTestMode then
+        self.sessionTimer = C_Timer.NewTimer(self.sessionDuration, function()
+            self:Finalize()
+        end)
+    end
     
     if not isTest then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
@@ -55,6 +57,7 @@ function DTC.Vote:StartSession(bossName, isTest)
 end
 
 function DTC.Vote:EndSession()
+    if not self.isOpen then return end
     self.isOpen = false
     if self.sessionTimer then self.sessionTimer:Cancel() end
     if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
@@ -94,6 +97,11 @@ function DTC.Vote:Finalize()
     
     -- KILL ALL ACTIVE BRIBES/LOBBIES
     if DTC.Bribe then DTC.Bribe:DeclineAll() end
+    
+    if not UnitIsGroupLeader("player") and not self.isTestMode then
+        self:EndSession()
+        return
+    end
     
     local raidInfo = GetInstanceInfo()
     local _, _, _, diffName = GetInstanceInfo()
@@ -220,6 +228,8 @@ function DTC.Vote:OnComm(action, data, sender)
     elseif action == "PONG_ADDON" then
         self.versions[sender] = data or "Unknown"
         if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
+    elseif action == "FINALIZE" then
+        self:EndSession()
     end
 end
 
