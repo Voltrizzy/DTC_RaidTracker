@@ -7,11 +7,13 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.4"
+DTC.VERSION = "7.3.5"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
 DTC.isTestModeHist = false
+DTC.SessionActive = nil
+DTC.SessionDecided = false
 
 -- ============================================================================
 -- STATIC POPUPS
@@ -73,6 +75,34 @@ StaticPopupDialogs["DTC_CLEAR_BRIBES_CONFIRM"] = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+StaticPopupDialogs["DTC_START_SESSION"] = {
+    text = "Do you want to activate DTC Raid Tracker for this raid?",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function()
+        DTC.SessionActive = true
+        DTC.SessionDecided = true
+        DTC:SyncSessionStatus()
+        print("|cFF00FF00DTC:|r Session started.")
+    end,
+    OnCancel = function()
+        DTC.SessionActive = false
+        DTC.SessionDecided = true
+        DTC:SyncSessionStatus()
+        print("|cFFFF0000DTC:|r Session disabled.")
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = false, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_FORCE_START_CONFIRM"] = {
+    text = "Force start a new session? This will re-prompt everyone.",
+    button1 = "Yes", button2 = "No",
+    OnAccept = function()
+        DTC.SessionDecided = false
+        DTC:CheckSessionStart()
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
 -- ============================================================================
 -- EVENT HANDLING
 -- ============================================================================
@@ -82,6 +112,9 @@ f:RegisterEvent("ADDON_LOADED");
 f:RegisterEvent("PLAYER_LOGOUT"); 
 f:RegisterEvent("GROUP_ROSTER_UPDATE")
 f:RegisterEvent("ZONE_CHANGED_NEW_AREA") 
+f:RegisterEvent("PLAYER_DEAD")
+f:RegisterEvent("PLAYER_ALIVE")
+f:RegisterEvent("PLAYER_UNGHOST")
 
 f:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" and ... == folderName then
@@ -91,6 +124,7 @@ f:SetScript("OnEvent", function(self, event, ...)
         C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
         f:RegisterEvent("CHAT_MSG_ADDON")
         print("|cFFFFD700DTC Tracker|r " .. DTC.VERSION .. " loaded.")
+        DTC:CheckSessionStart()
         
     elseif event == "CHAT_MSG_ADDON" then
         -- Handle incoming addon communication messages
@@ -101,11 +135,18 @@ f:SetScript("OnEvent", function(self, event, ...)
             if DTC.History then DTC.History:OnComm(action, data, sender) end
             if DTC.Leaderboard then DTC.Leaderboard:OnComm(action, data, sender) end
             if DTC.Bribe then DTC.Bribe:OnComm(action, data, sender) end
+            
+            if action == "SESSION_QUERY" then
+                if UnitIsGroupLeader("player") then DTC:SyncSessionStatus() end
+            elseif action == "SESSION_STATUS" then
+                DTC.SessionActive = (data == "1")
+            end
         end
         
-    elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
         -- Update roster data and UI lists when group composition or zone changes
         DTC:CheckRosterForNicknames()
+        DTC:CheckSessionStart()
         if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
         if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
         if DTC.BribeUI and DTC.BribeUI.UpdateTracker then DTC.BribeUI:UpdateTracker() end
@@ -237,6 +278,32 @@ function DTC:CheckRosterForNicknames()
     end
 end
 
+function DTC:CheckSessionStart()
+    if not self:IsValidRaid() then
+        self.SessionActive = nil
+        self.SessionDecided = false
+        return
+    end
+
+    if UnitIsGroupLeader("player") then
+        if not self.SessionDecided then
+            StaticPopup_Show("DTC_START_SESSION")
+        end
+    else
+        if IsInRaid() and self.SessionActive == nil then
+             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SESSION_QUERY", "RAID")
+             self.SessionActive = false -- Assume false until we hear back to prevent spam
+        end
+    end
+end
+
+function DTC:SyncSessionStatus()
+    local status = DTC.SessionActive and "1" or "0"
+    if IsInRaid() then
+        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SESSION_STATUS:"..status, "RAID")
+    end
+end
+
 -- ============================================================================
 -- SLASH COMMANDS
 -- ============================================================================
@@ -244,6 +311,14 @@ end
 SLASH_DTC1 = "/dtc"
 SlashCmdList["DTC"] = function(msg)
     local cmd = msg:match("^(%S*)"):lower()
+    
+    if DTC:IsValidRaid() and not DTC.SessionActive then
+        if cmd ~= "config" and cmd ~= "reset" then
+            print("|cFFFF0000DTC:|r Addon is not active for this raid session (Leader disabled or not started).")
+            return
+        end
+    end
+
     if cmd == "vote" then 
         if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
     elseif cmd == "lb" then 

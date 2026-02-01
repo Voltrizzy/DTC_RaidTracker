@@ -13,10 +13,17 @@ function DTC.LeaderboardUI:Init()
     frame = DTC_LeaderboardFrame
     
     if not frame.SetTitle then
-        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        frame.TitleText:SetPoint("TOP", 0, -5)
+        if not frame.TitleText then
+            frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            frame.TitleText:SetPoint("TOP", 0, -5)
+        end
         frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
     end
+
+    -- Handle Window Closing (Reset Test Mode)
+    frame:SetScript("OnHide", function() 
+        DTC.isTestModeLB = false 
+    end)
 
     if frame.SetTitle then frame:SetTitle("DTC Tracker - Leaderboard") end
     
@@ -61,6 +68,7 @@ function DTC.LeaderboardUI:UpdateList()
         local row = self:GetRow(content)
         row:SetPoint("TOPLEFT", 0, yOffset)
         row.Text:SetText(i .. ". " .. DTC:GetColoredName(item.n))
+        row.Text:SetPoint("RIGHT", row.Value, "LEFT", -10, 0) -- Constrain width
         row.Value:SetText(item.v)
         row.Text:SetTextColor(1, 1, 1)
         row:Show()

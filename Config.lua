@@ -167,6 +167,16 @@ function DTC.Config:BuildGeneralTab(frame)
     local btnReset = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
     btnReset:SetSize(140, 24); btnReset:SetPoint("LEFT", btnVer, "RIGHT", 10, 0); btnReset:SetText("Reset to Defaults")
     btnReset:SetScript("OnClick", function() StaticPopup_Show("DTC_RESET_SETTINGS_CONFIRM") end)
+
+    local btnForceStart = CreateFrame("Button", nil, box, "UIPanelButtonTemplate")
+    btnForceStart:SetSize(140, 24); btnForceStart:SetPoint("TOPLEFT", 15, -160); btnForceStart:SetText("Force Start Session")
+    btnForceStart:SetScript("OnClick", function() 
+        if UnitIsGroupLeader("player") and DTC:IsValidRaid() then
+            StaticPopup_Show("DTC_FORCE_START_CONFIRM")
+        else
+            print("|cFFFF0000DTC:|r You must be in a valid raid instance to start a session.")
+        end
+    end)
 end
 
 -- Builds the "Nicknames" configuration tab.
@@ -429,11 +439,11 @@ function DTC.Config:BuildVotingTab(frame)
         self.isSettingUp = false
     end)
 
-    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 400)
+    local b2 = CreateGroupBox(frame, "Announce Messages", 580, 350)
     b2:SetPoint("TOPLEFT", b1, "BOTTOMLEFT", 0, -10)
     
     local sf = CreateFrame("ScrollFrame", "DTC_ConfigVoteMsgScroll", b2, "UIPanelScrollFrameTemplate")
-    sf:SetPoint("TOPLEFT", 10, -10); sf:SetPoint("BOTTOMRIGHT", -30, 10)
+    sf:SetPoint("TOPLEFT", 10, -30); sf:SetPoint("BOTTOMRIGHT", -30, 10)
     local content = CreateFrame("Frame", nil, sf); content:SetSize(540, 450); sf:SetScrollChild(content)
     
     local sCount = CreateFrame("Slider", "DTC_VoteMsgCountSlider", content, "OptionsSliderTemplate")
@@ -469,6 +479,7 @@ function DTC.Config:BuildVotingTab(frame)
         DTCRaidDB.settings.voteWinCount = val
         valLabel:SetText(val)
         for i=1,10 do if i<=val then msgBoxes[i]:Show() else msgBoxes[i]:Hide() end end
+        content:SetHeight(60 + (val * 25) + 20)
     end
     sCount:SetScript("OnValueChanged", function(self, v) 
         if self.isSettingUp then return end

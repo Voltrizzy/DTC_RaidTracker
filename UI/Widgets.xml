@@ -45,7 +45,7 @@
         <Size x="300" y="20"/>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT">
+                <FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT" wordwrap="false">
                     <Anchors>
                         <Anchor point="LEFT" x="5" y="0"/>
                     </Anchors>

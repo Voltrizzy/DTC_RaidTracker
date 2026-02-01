@@ -13,8 +13,10 @@ function DTC.VoteFrame:Init()
     frame = DTC_VoteFrame
     
     if not frame.SetTitle then
-        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        frame.TitleText:SetPoint("TOP", 0, -5)
+        if not frame.TitleText then
+            frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            frame.TitleText:SetPoint("TOP", 0, -5)
+        end
         frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
     end
 
@@ -78,13 +80,39 @@ function DTC.VoteFrame:UpdateList()
     local isOpen = DTC.Vote.isOpen
     
     -- UPDATE FOOTER BUTTONS
-    -- Aligned to y=32 as requested (handled in XML, shown/hidden here)
-    frame.FinalizeBtn:SetShown(isLeader and isOpen)
-    frame.AnnounceBtn:SetShown(isLeader)
+    -- Dynamically anchor buttons to ensure they stack to the left
+    local lastFrame = nil
+    local padding = 5
+    
+    if isLeader and isOpen then
+        frame.FinalizeBtn:Show()
+        frame.FinalizeBtn:ClearAllPoints()
+        frame.FinalizeBtn:SetPoint("BOTTOMLEFT", 5, 32)
+        lastFrame = frame.FinalizeBtn
+    else
+        frame.FinalizeBtn:Hide()
+    end
+    
+    if isLeader then
+        frame.AnnounceBtn:Show()
+        frame.AnnounceBtn:ClearAllPoints()
+        if lastFrame then frame.AnnounceBtn:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0)
+        else frame.AnnounceBtn:SetPoint("BOTTOMLEFT", 5, 32) end
+        lastFrame = frame.AnnounceBtn
+    else
+        frame.AnnounceBtn:Hide()
+    end
     
     if frame.PropBtn then
         local canProp = isOpen and (DTC.Vote.myVotesLeft > 0)
-        frame.PropBtn:SetShown(canProp)
+        if canProp then
+            frame.PropBtn:Show()
+            frame.PropBtn:ClearAllPoints()
+            if lastFrame then frame.PropBtn:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0)
+            else frame.PropBtn:SetPoint("BOTTOMLEFT", 5, 32) end
+        else
+            frame.PropBtn:Hide()
+        end
     end
     
     if isOpen then
@@ -152,7 +180,9 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
             row = CreateFrame("Frame", nil, parent)
             row:SetSize(330, 24)
             row.StatusIcon = row:CreateTexture(nil, "OVERLAY"); row.StatusIcon:SetSize(16, 16); row.StatusIcon:SetPoint("LEFT", 0, 0)
+            
             row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); row.Name:SetPoint("LEFT", 20, 0)
+            row.Name:SetWordWrap(false)
             
             row.DeadbeatIcon = row:CreateTexture(nil, "OVERLAY")
             row.DeadbeatIcon:SetSize(12, 12)
@@ -171,6 +201,9 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
             
             row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             row.Count:SetPoint("RIGHT", row.LobbyBtn, "LEFT", -10, 0)
+            
+            -- Prevent Name overlap
+            row.Name:SetPoint("RIGHT", row.Count, "LEFT", -25, 0)
             
             table.insert(rows, row)
         end

@@ -116,13 +116,13 @@
 
     <Frame name="DTC_BribeRowTemplate" virtual="true">
         <Size x="600" y="24"/>
-        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString><FontString parentKey="Amount" inherits="GameFontNormal" justifyH="RIGHT"><Anchors><Anchor point="RIGHT" x="-90"/></Anchors></FontString></Layer></Layers>
+        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT" wordwrap="false"><Anchors><Anchor point="LEFT" x="5"/><Anchor point="RIGHT" relativeKey="$parent.Amount" relativePoint="LEFT" x="-10"/></Anchors></FontString><FontString parentKey="Amount" inherits="GameFontNormal" justifyH="RIGHT"><Anchors><Anchor point="RIGHT" x="-90"/></Anchors></FontString></Layer></Layers>
         <Frames><Button parentKey="TradeBtn" inherits="UIPanelButtonTemplate" text="Trade"><Size x="60" y="20"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button></Frames>
     </Frame>
     
     <Frame name="DTC_PropRowTemplate" virtual="true">
         <Size x="350" y="24"/>
-        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
+        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT" wordwrap="false"><Anchors><Anchor point="LEFT" x="5"/><Anchor point="RIGHT" relativeKey="$parent.DeclineBtn" relativePoint="LEFT" x="-5"/></Anchors></FontString></Layer></Layers>
         <Frames>
             <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
             <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" relativeKey="$parent.AcceptBtn" relativePoint="LEFT" x="-5"/></Anchors></Button>
@@ -142,7 +142,7 @@
     
     <Frame name="DTC_LobbyRowTemplate" virtual="true">
         <Size x="400" y="24"/>
-        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT"><Anchors><Anchor point="LEFT" x="5"/></Anchors></FontString></Layer></Layers>
+        <Layers><Layer level="OVERLAY"><FontString parentKey="Text" inherits="GameFontHighlight" justifyH="LEFT" wordwrap="false"><Anchors><Anchor point="LEFT" x="5"/><Anchor point="RIGHT" relativeKey="$parent.DeclineBtn" relativePoint="LEFT" x="-5"/></Anchors></FontString></Layer></Layers>
         <Frames>
             <Button parentKey="AcceptBtn" inherits="UIPanelButtonTemplate" text="Accept"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" x="-5"/></Anchors></Button>
             <Button parentKey="DeclineBtn" inherits="UIPanelButtonTemplate" text="Decline"><Size x="60" y="22"/><Anchors><Anchor point="RIGHT" relativeKey="$parent.AcceptBtn" relativePoint="LEFT" x="-5"/></Anchors></Button>

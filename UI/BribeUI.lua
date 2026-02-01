@@ -7,11 +7,28 @@
 local folderName, DTC = ...
 DTC.BribeUI = {}
 
+local function InjectTitle(f)
+    if not f then return end
+    if not f.SetTitle then
+        -- Prefer existing Title (XML) or TitleText (Template)
+        local target = f.Title or f.TitleText
+        -- If both exist (e.g. Popups), hide the Template one to prevent overlap
+        if f.Title and f.TitleText then f.TitleText:SetText(""); f.TitleText:Hide() end
+        
+        if not target then
+            target = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            target:SetPoint("TOP", 0, -5)
+        end
+        f.SetTitle = function(self, text) target:SetText(text) end
+    end
+end
+
 -- Initializes all Bribe UI frames and scripts.
 function DTC.BribeUI:Init()
     -- 1. Send Bribe
     self.OfferFrame = DTC_BribeOfferPopup
     if self.OfferFrame then
+        InjectTitle(self.OfferFrame)
         self.OfferFrame.ConfirmBtn:SetScript("OnClick", function()
             DTC.Bribe:OfferBribe(self.OfferFrame.target, self.OfferFrame.AmountBox:GetText())
             self.OfferFrame:Hide()
@@ -23,6 +40,7 @@ function DTC.BribeUI:Init()
     -- 2. Proposition Input
     self.PropInputFrame = DTC_PropositionInputPopup
     if self.PropInputFrame then
+        InjectTitle(self.PropInputFrame)
         self.PropInputFrame.ConfirmBtn:SetScript("OnClick", function()
             local amt = self.PropInputFrame.AmountBox:GetText()
             DTC.Bribe.MyCurrentPropPrice = tonumber(amt) -- Store for later
@@ -35,11 +53,13 @@ function DTC.BribeUI:Init()
 
     -- 3. Proposition List
     self.PropListFrame = DTC_PropositionListFrame
+    InjectTitle(self.PropListFrame)
     if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("DTC Tracker - Proposition") end
 
     -- 4. Incoming Bribe
     self.IncomingFrame = DTC_BribeIncomingPopup
     if self.IncomingFrame then
+        InjectTitle(self.IncomingFrame)
         self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
         self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
         
@@ -52,6 +72,7 @@ function DTC.BribeUI:Init()
     -- 5. Tracker
     self.TrackerFrame = DTC_BribeTrackerFrame
     if self.TrackerFrame then
+        InjectTitle(self.TrackerFrame)
         if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
         self.TrackerFrame.ClearBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_CLEAR_BRIBES_CONFIRM") end)
         
@@ -161,6 +182,7 @@ function DTC.BribeUI:Init()
     -- NEW: 6. Lobby Input
     self.LobbyInputFrame = DTC_LobbyInputPopup
     if self.LobbyInputFrame then
+        InjectTitle(self.LobbyInputFrame)
         UIDropDownMenu_SetWidth(self.LobbyInputFrame.CandidateDD, 140)
         UIDropDownMenu_Initialize(self.LobbyInputFrame.CandidateDD, function(frame, level)
             local info = UIDropDownMenu_CreateInfo()
@@ -206,6 +228,7 @@ function DTC.BribeUI:Init()
     
     -- NEW: 7. Lobby List
     self.LobbyListFrame = DTC_LobbyListFrame
+    InjectTitle(self.LobbyListFrame)
     if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("DTC Tracker - Lobby") end
     
 end
@@ -376,15 +399,27 @@ function DTC.BribeUI:ShowExportPopup()
         return tA > tB 
     end)
 
+    local myName = UnitName("player")
+    local filter = self.FilterMode or "ALL"
+    local search = (self.SearchFilter or ""):lower()
+
     for _, e in ipairs(sorted) do
-        table.insert(buffer, string.format("%s,%s,%s,%d,%s,%s",
-            e.timestamp or "?", 
-            (e.offerer or "?"):gsub(",", ""), 
-            (e.recipient or "?"):gsub(",", ""), 
-            e.amount or 0, 
-            (e.boss or "?"):gsub(",", ""), 
-            tostring(e.paid)
-        ))
+        local show = true
+        if filter == "OWE" and e.offerer ~= myName then show = false end
+        if filter == "OWED" and e.recipient ~= myName then show = false end
+        
+        if show and search ~= "" then
+            local o = (e.offerer or ""):lower()
+            local r = (e.recipient or ""):lower()
+            if not string.find(o, search, 1, true) and not string.find(r, search, 1, true) then show = false end
+        end
+
+        if show then
+            table.insert(buffer, string.format("%s,%s,%s,%d,%s,%s",
+                e.timestamp or "?", (e.offerer or "?"):gsub(",", ""), (e.recipient or "?"):gsub(",", ""), 
+                e.amount or 0, (e.boss or "?"):gsub(",", ""), tostring(e.paid)
+            ))
+        end
     end
     local str = table.concat(buffer, "\n")
 
@@ -394,6 +429,7 @@ function DTC.BribeUI:ShowExportPopup()
         p:SetSize(500, 300)
         p:SetPoint("CENTER", 0, 0)
         p:SetFrameStrata("DIALOG")
+        InjectTitle(p)
         if p.SetTitle then p:SetTitle("Export Bribe Ledger (Ctrl+C)") end
         
         p.Scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
@@ -520,7 +556,17 @@ function DTC.BribeUI:UpdateTracker()
             row.ForgiveBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_FORGIVE_CONFIRM", nil, nil, originalIndex) end)
             row.MarkPaidBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_MARKPAID_CONFIRM", nil, nil, originalIndex) end)
             
-            if entry.recipient == UnitName("player") and not entry.paid then row.ForgiveBtn:Show(); row.MarkPaidBtn:Show() else row.ForgiveBtn:Hide(); row.MarkPaidBtn:Hide() end
+            if entry.recipient == UnitName("player") and not entry.paid then 
+                row.ForgiveBtn:Show(); row.MarkPaidBtn:Show() 
+                -- Anchor Amount to left of MarkPaidBtn
+                row.Amount:ClearAllPoints()
+                row.Amount:SetPoint("RIGHT", row.MarkPaidBtn, "LEFT", -10, 0)
+            else 
+                row.ForgiveBtn:Hide(); row.MarkPaidBtn:Hide() 
+                -- Anchor Amount to left of TradeBtn
+                row.Amount:ClearAllPoints()
+                row.Amount:SetPoint("RIGHT", row.TradeBtn, "LEFT", -10, 0)
+            end
             
             yOffset = yOffset - 25
             rowIndex = rowIndex + 1

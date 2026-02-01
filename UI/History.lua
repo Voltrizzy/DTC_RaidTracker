@@ -15,8 +15,10 @@ function DTC.HistoryUI:Init()
     frame = DTC_HistoryFrame -- Defined in UI/History.xml
     
     if not frame.SetTitle then
-        frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        frame.TitleText:SetPoint("TOP", 0, -5)
+        if not frame.TitleText then
+            frame.TitleText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            frame.TitleText:SetPoint("TOP", 0, -5)
+        end
         frame.SetTitle = function(self, text) self.TitleText:SetText(text) end
     end
 
@@ -105,18 +107,23 @@ function DTC.HistoryUI:UpdateList()
             row:SetSize(800, 20)
             
             row.Date = row.Text 
+            row.Date:SetWidth(80) -- Prevent overlap with Raid column
             
             row.Raid = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             row.Raid:SetPoint("LEFT", 85, 0); row.Raid:SetWidth(130); row.Raid:SetJustifyH("LEFT")
+            row.Raid:SetWordWrap(false)
             
             row.Diff = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             row.Diff:SetPoint("LEFT", 220, 0); row.Diff:SetWidth(80); row.Diff:SetJustifyH("LEFT")
+            row.Diff:SetWordWrap(false)
             
             row.Boss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             row.Boss:SetPoint("LEFT", 305, 0); row.Boss:SetWidth(130); row.Boss:SetJustifyH("LEFT")
+            row.Boss:SetWordWrap(false)
             
             row.Winner = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             row.Winner:SetPoint("LEFT", 440, 0); row.Winner:SetWidth(100); row.Winner:SetJustifyH("LEFT")
+            row.Winner:SetWordWrap(false)
             
             row.Voters = row.Value 
             row.Voters:ClearAllPoints()
@@ -155,7 +162,8 @@ function DTC.HistoryUI:ShowExportPopup()
         p:SetSize(500, 300)
         p:SetPoint("CENTER", 0, 0)
         p:SetFrameStrata("DIALOG")
-        if p.SetTitle then p:SetTitle("Export Data (Ctrl+C)") end
+        if p.SetTitle then p:SetTitle("Export Data (Ctrl+C)") 
+        elseif p.TitleText then p.TitleText:SetText("Export Data (Ctrl+C)") end
         
         p.Scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
         p.Scroll:SetPoint("TOPLEFT", 10, -30)
