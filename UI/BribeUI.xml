@@ -48,7 +48,7 @@
         <Anchors><Anchor point="CENTER" y="100"/></Anchors>
         <Layers>
             <Layer level="OVERLAY">
-                <FontString parentKey="Title" inherits="GameFontNormalLarge" text="Bribe Offered!"><Anchors><Anchor point="TOP" y="-30"/></Anchors></FontString>
+                <FontString parentKey="Header" inherits="GameFontNormalLarge" text="Bribe Offered!"><Anchors><Anchor point="TOP" y="-30"/></Anchors></FontString>
                 <FontString parentKey="Desc" inherits="GameFontHighlightLarge" justifyH="CENTER"><Size x="300" y="40"/><Anchors><Anchor point="TOP" y="-60"/></Anchors></FontString>
             </Layer>
         </Layers>

@@ -33,7 +33,7 @@ end
 -- Sends a direct bribe offer to a target player via addon message.
 function DTC.Bribe:OfferBribe(targetPlayer, amount)
     if not targetPlayer or not amount or tonumber(amount) <= 0 then return end
-    if not IsInRaid() then print("|cFFFF0000DTC:|r Bribes are only available in a raid group."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r Bribes are only available in a raid group (or Solo for testing)."); return end
     if self:HasUnpaidDebt() then print("|cFFFF0000DTC:|r Unpaid debts exist!"); return end
     
     local limit = DTCRaidDB.settings.debtLimit or 0
@@ -121,7 +121,7 @@ end
 -- Broadcasts a proposition (selling own vote) to the raid.
 function DTC.Bribe:SendProposition(amount)
     if not amount or tonumber(amount) <= 0 then return end
-    if not IsInRaid() then print("|cFFFF0000DTC:|r Propositions are only available in a raid group."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r Propositions are only available in a raid group (or Solo for testing)."); return end
     self.MyCurrentPropPrice = tonumber(amount)
     if not DTC.Vote or not DTC.Vote.isOpen then print("Voting is closed."); return end
     if DTC.Vote.myVotesLeft <= 0 then print("No votes left to sell!"); return end
@@ -196,7 +196,7 @@ end
 -- Broadcasts a lobby offer (paying others to vote for a candidate) to the raid.
 function DTC.Bribe:SendLobby(candidate, amount)
     if not candidate or not amount or tonumber(amount) <= 0 then return end
-    if not IsInRaid() then print("|cFFFF0000DTC:|r Lobbying is only available in a raid group."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r Lobbying is only available in a raid group (or Solo for testing)."); return end
     
     if candidate and string.find(candidate, "-") then candidate = strsplit("-", candidate) end
     if candidate == UnitName("player") then print("|cFFFF0000DTC:|r You cannot lobby for yourself."); return end
@@ -468,7 +468,7 @@ end
 
 -- Marks all tax debts owed to the player as paid.
 function DTC.Bribe:PayAllTaxes()
-    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark taxes as paid (to ensure sync)."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark taxes as paid (to ensure sync)."); return end
     local count = 0
     for _, entry in ipairs(DTCRaidDB.bribes or {}) do
         if not entry.paid and entry.boss and string.find(entry.boss, "%(Tax%)") and entry.recipient == UnitName("player") then
@@ -491,7 +491,7 @@ end
 
 -- Forgives a specific debt entry.
 function DTC.Bribe:ForgiveDebt(index)
-    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to forgive debts."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to forgive debts."); return end
     local entry = DTCRaidDB.bribes[index]
     if entry then
         if entry.recipient ~= UnitName("player") then return end
@@ -508,7 +508,7 @@ end
 
 -- Manually marks a debt as paid without a trade.
 function DTC.Bribe:MarkDebtPaid(index)
-    if not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."); return end
+    if IsInGroup() and not IsInRaid() then print("|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."); return end
     local entry = DTCRaidDB.bribes[index]
     if entry then
         if entry.recipient ~= UnitName("player") then return end

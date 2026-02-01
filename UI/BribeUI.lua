@@ -60,8 +60,18 @@ function DTC.BribeUI:Init()
     self.IncomingFrame = DTC_BribeIncomingPopup
     if self.IncomingFrame then
         InjectTitle(self.IncomingFrame)
+        if self.IncomingFrame.SetTitle then self.IncomingFrame:SetTitle("DTC Tracker - Incoming Bribe") end
         self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
         self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
+        
+        self.IncomingFrame:SetScript("OnHide", function()
+            if self.CurrentOfferID and DTC.Bribe then
+                local offer = DTC.Bribe:GetOffer(self.CurrentOfferID)
+                if offer then
+                    DTC.Bribe:DeclineOffer(self.CurrentOfferID)
+                end
+            end
+        end)
         
         if self.IncomingFrame.TimerBar then
             self.IncomingFrame.TimerBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
