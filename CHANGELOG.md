@@ -1,5 +1,8 @@
 # DTC Raid Tracker
 
+## [v7.3.13](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.13) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.12...v7.3.13)
+
 ## [v7.3.12](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.12) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.9...v7.3.12)
 
