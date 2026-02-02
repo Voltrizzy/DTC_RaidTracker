@@ -270,18 +270,18 @@ end
 
 -- Handles the "Award Trip" button click.
 function DTC.LeaderboardUI:OnAwardClick()
-    if DTC.isTestModeLB then print("|cFFFF0000DTC:|r Cannot award in Test Mode."); return end
+    if DTC.isTestModeLB then print(DTC.L["|cFFFF0000DTC:|r Cannot award in Test Mode."]); return end
     local data = DTC.Leaderboard:GetSortedData(false)
     if #data > 0 then
         local winner = data[1].n
         DTC.Leaderboard:AwardTrip(winner)
         
         local channel = IsInRaid() and "RAID_WARNING" or "PRINT"
-        local msg = DTCRaidDB.settings.awardMsg or "Congrats %s!"
+        local msg = DTCRaidDB.settings.awardMsg or DTC.L["Congrats %s!"]
         if channel == "PRINT" then
-            print("--- DTC TRIP AWARDED ---"); print(msg:format(winner))
+            print(DTC.L["--- DTC TRIP AWARDED ---"]); print(msg:format(winner))
         else
-            SendChatMessage("--- DTC TRIP AWARDED ---", channel)
+            SendChatMessage(DTC.L["--- DTC TRIP AWARDED ---"], channel)
             SendChatMessage(msg:format(winner), channel)
         end
         self:UpdateList()

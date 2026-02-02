@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.13"
+DTC.VERSION = "7.3.14"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -21,12 +21,12 @@ DTC.SessionDecided = false
 -- Definitions for confirmation dialogs used throughout the addon.
 
 StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
-    text = "Reset ALL data? This cannot be undone.",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Reset ALL data? This cannot be undone."],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         local s = DTCRaidDB.settings or {}
         DTCRaidDB = { global={}, history={}, trips={}, identities={}, guilds={}, classes={}, bribes={}, settings=s }
-        print("|cFFFFD700DTC:|r Database reset.")
+        print(DTC.L["|cFFFFD700DTC:|r Database reset."])
         if DTC.LeaderboardUI then DTC.LeaderboardUI:UpdateList() end
         if DTC.HistoryUI then DTC.HistoryUI:UpdateList() end
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
@@ -37,8 +37,8 @@ StaticPopupDialogs["DTC_RESET_CONFIRM"] = {
 }
 
 StaticPopupDialogs["DTC_FORGIVE_CONFIRM"] = {
-    text = "Are you sure you want to forgive this debt?",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Are you sure you want to forgive this debt?"],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function(self, data)
         if DTC.Bribe then DTC.Bribe:ForgiveDebt(data) end
     end,
@@ -46,8 +46,8 @@ StaticPopupDialogs["DTC_FORGIVE_CONFIRM"] = {
 }
 
 StaticPopupDialogs["DTC_MARKPAID_CONFIRM"] = {
-    text = "Mark this debt as PAID? (No gold will be traded)",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Mark this debt as PAID? (No gold will be traded)"],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function(self, data)
         if DTC.Bribe then DTC.Bribe:MarkDebtPaid(data) end
     end,
@@ -55,19 +55,19 @@ StaticPopupDialogs["DTC_MARKPAID_CONFIRM"] = {
 }
 
 StaticPopupDialogs["DTC_RESET_SETTINGS_CONFIRM"] = {
-    text = "Reset all configuration settings to defaults?",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Reset all configuration settings to defaults?"],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         DTCRaidDB.settings = {}
         DTC:InitDatabase()
-        print("|cFFFFD700DTC:|r Settings reset to defaults.")
+        print(DTC.L["|cFFFFD700DTC:|r Settings reset to defaults."])
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
 StaticPopupDialogs["DTC_CLEAR_BRIBES_CONFIRM"] = {
-    text = "Clear all bribe ledger entries? This cannot be undone.",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Clear all bribe ledger entries? This cannot be undone."],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         DTCRaidDB.bribes = {}
         if DTC.BribeUI then DTC.BribeUI:UpdateTracker() end
@@ -76,26 +76,26 @@ StaticPopupDialogs["DTC_CLEAR_BRIBES_CONFIRM"] = {
 }
 
 StaticPopupDialogs["DTC_START_SESSION"] = {
-    text = "Do you want to activate DTC Raid Tracker for this raid?",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Do you want to activate DTC Raid Tracker for this raid?"],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         DTC.SessionActive = true
         DTC.SessionDecided = true
         DTC:SyncSessionStatus()
-        print("|cFF00FF00DTC:|r Session started.")
+        print(DTC.L["|cFF00FF00DTC:|r Session started."])
     end,
     OnCancel = function()
         DTC.SessionActive = false
         DTC.SessionDecided = true
         DTC:SyncSessionStatus()
-        print("|cFFFF0000DTC:|r Session disabled.")
+        print(DTC.L["|cFFFF0000DTC:|r Session disabled."])
     end,
     timeout = 0, whileDead = true, hideOnEscape = false, preferredIndex = 3,
 }
 
 StaticPopupDialogs["DTC_FORCE_START_CONFIRM"] = {
-    text = "Force start a new session? This will re-prompt everyone.",
-    button1 = "Yes", button2 = "No",
+    text = DTC.L["Force start a new session? This will re-prompt everyone."],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         DTC.SessionDecided = false
         DTC:CheckSessionStart()
@@ -356,6 +356,19 @@ function DTC:TestUniqueID()
     if collisions == 0 then print("|cFF00FF00PASS:|r Generated " .. count .. " unique IDs with 0 collisions.") else print("|cFFFF0000FAIL:|r " .. collisions .. " collisions detected!") end
 end
 
+-- Unit Test: Verify InitiateTrade Safety
+function DTC:TestInitiateTradeSafe()
+    if not DTC.Bribe then print("Bribe module not loaded."); return end
+    
+    print("|cFFFFD700DTC Test:|r Starting InitiateTrade Safety Test...")
+    
+    -- Test with a guaranteed invalid target to ensure no protected functions (TargetUnit) are called
+    local invalidTarget = "InvalidTarget_" .. GetTime()
+    DTC.Bribe:InitiateTrade(invalidTarget, 100, nil, true)
+    
+    print("|cFF00FF00PASS:|r Test completed. If no 'Action Forbidden' error occurred, the fix is working.")
+end
+
 -- ============================================================================
 -- SLASH COMMANDS
 -- ============================================================================
@@ -388,14 +401,15 @@ SlashCmdList["DTC"] = function(msg)
             DTC.BribeUI:ToggleTracker() 
         end
     elseif cmd == "config" then
-        if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) 
-        else InterfaceOptionsFrame_OpenToCategory("DTC Raid Tracker") end
+        if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) end
     elseif cmd == "reset" then 
         DTC:ResetDatabase()
     elseif cmd == "testselfvote" then
         DTC:TestSelfVoting()
     elseif cmd == "testuid" then
         DTC:TestUniqueID()
+    elseif cmd == "testtrade" then
+        DTC:TestInitiateTradeSafe()
     else 
         print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
     end

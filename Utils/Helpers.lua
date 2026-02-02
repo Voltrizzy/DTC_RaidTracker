@@ -3,7 +3,7 @@ DTC.Utils = {}
 
 -- Helper to format names for chat announcements
 function DTC.Utils:GetAnnounceName(fullName)
-    if not fullName then return "Unknown" end
+    if not fullName then return DTC.L["Unknown"] end
     
     local canonical = self:GetCanonicalName(fullName)
     -- 1. Check for Nickname Override

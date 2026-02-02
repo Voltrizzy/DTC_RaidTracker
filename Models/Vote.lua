@@ -88,7 +88,7 @@ function DTC.Vote:CastVote(targetName)
     if not self.isOpen or self.myVotesLeft <= 0 then return end
     
     
-    if targetName == UnitName("player") then print("|cFFFF0000DTC:|r You cannot vote for yourself."); return end
+    if targetName == UnitName("player") then print(DTC.L["|cFFFF0000DTC:|r You cannot vote for yourself."]); return end
     if self.myHistory[targetName] then return end
     
     self.myVotesLeft = self.myVotesLeft - 1
@@ -145,7 +145,7 @@ function DTC.Vote:Finalize()
     
     local bossDisplay = self.currentBoss
     if diffName and diffName ~= "" then bossDisplay = "("..diffName..") " .. self.currentBoss end
-    local msg = DTCRaidDB.settings.voteFinalizeMsg or "Voting has been finalized for %s!"
+    local msg = DTCRaidDB.settings.voteFinalizeMsg or DTC.L["Voting has been finalized for %s!"]
     SendChatMessage(msg:format(bossDisplay), "RAID")
     
     self:EndSession()
@@ -153,23 +153,22 @@ end
 
 -- 5. Announcement Logic
 function DTC.Vote:Announce()
-    math.randomseed(GetTime())
     local sorted = {}
     for n, v in pairs(self.votes) do
         table.insert(sorted, {name=n, val=v}) 
     end
     table.sort(sorted, function(a,b) return a.val > b.val end)
     
-    local _, _, _, _, _, _, _, _, _, diffName = GetInstanceInfo()
+    local _, _, _, diffName = GetInstanceInfo()
     local bossDisplay = self.currentBoss
     if diffName and diffName ~= "" then bossDisplay = "("..diffName..") " .. self.currentBoss end
     
-    local header = DTCRaidDB.settings.voteAnnounceHeader or "--- DTC Results: %s ---"
+    local header = DTCRaidDB.settings.voteAnnounceHeader or DTC.L["--- DTC Results: %s ---"]
     SendChatMessage(header:format(bossDisplay), "RAID")
     
     for i=1, math.min(3, #sorted) do
         local dName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[i].name) or sorted[i].name
-        SendChatMessage(i..". "..dName.." ("..sorted[i].val.." pts)", "RAID")
+        SendChatMessage(DTC.L["%d. %s (%d pts)"]:format(i, dName, sorted[i].val), "RAID")
     end
     
     if sorted[1] then
@@ -177,7 +176,7 @@ function DTC.Vote:Announce()
         if count < 1 then count = 1 end
         local idx = math.random(1, count)
         local winMsg = DTCRaidDB.settings["voteWinMsg_"..idx]
-        if not winMsg or winMsg == "" then winMsg = "Congrats %s!" end
+        if not winMsg or winMsg == "" then winMsg = DTC.L["Congrats %s!"] end
         
         local wName = DTC.Utils and DTC.Utils:GetAnnounceName(sorted[1].name) or sorted[1].name
         SendChatMessage(winMsg:format(wName), "RAID")

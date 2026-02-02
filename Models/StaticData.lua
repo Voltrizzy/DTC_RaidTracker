@@ -3,117 +3,117 @@ DTC.Static = {}
 
 -- 1. Expansion Names
 DTC.Static.EXPANSION_NAMES = {
-    [0]="Classic", [1]="Burning Crusade", [2]="Wrath of the Lich King", 
-    [3]="Cataclysm", [4]="Mists of Pandaria", [5]="Warlords of Draenor", 
-    [6]="Legion", [7]="Battle for Azeroth", [8]="Shadowlands", 
-    [9]="Dragonflight", [10]="The War Within", [11]="Midnight"
+    [0]=DTC.L["Classic"], [1]=DTC.L["Burning Crusade"], [2]=DTC.L["Wrath of the Lich King"], 
+    [3]=DTC.L["Cataclysm"], [4]=DTC.L["Mists of Pandaria"], [5]=DTC.L["Warlords of Draenor"], 
+    [6]=DTC.L["Legion"], [7]=DTC.L["Battle for Azeroth"], [8]=DTC.L["Shadowlands"], 
+    [9]=DTC.L["Dragonflight"], [10]=DTC.L["The War Within"], [11]=DTC.L["Midnight"]
 }
 
 -- 2. Raid List (Map Exp ID -> List of Raid Names)
 DTC.Static.RAID_DATA = {
-    [0] = { "Molten Core", "Blackwing Lair", "Ruins of Ahn'Qiraj", "Temple of Ahn'Qiraj", "Naxxramas", "Onyxia's Lair" },
-    [1] = { "Karazhan", "Gruul's Lair", "Magtheridon's Lair", "Serpentshrine Cavern", "The Eye", "Mount Hyjal", "Black Temple", "Sunwell Plateau" },
-    [2] = { "Naxxramas (WotLK)", "Ulduar", "Trial of the Crusader", "Icecrown Citadel", "Ruby Sanctum", "Obsidian Sanctum", "Eye of Eternity", "Vault of Archavon" },
-    [3] = { "Bastion of Twilight", "Blackwing Descent", "Throne of the Four Winds", "Firelands", "Dragon Soul", "Baradin Hold" },
-    [4] = { "Mogu'shan Vaults", "Heart of Fear", "Terrace of Endless Spring", "Throne of Thunder", "Siege of Orgrimmar" },
-    [5] = { "Highmaul", "Blackrock Foundry", "Hellfire Citadel" },
-    [6] = { "Emerald Nightmare", "Trial of Valor", "Nighthold", "Tomb of Sargeras", "Antorus, the Burning Throne" },
-    [7] = { "Uldir", "Battle of Dazar'alor", "Crucible of Storms", "The Eternal Palace", "Ny'alotha" },
-    [8] = { "Castle Nathria", "Sanctum of Domination", "Sepulcher of the First Ones" },
-    [9] = { "Vault of the Incarnates", "Aberrus, the Shadowed Crucible", "Amirdrassil, the Dream's Hope" },
-    [10] = { "Nerub-ar Palace", "Liberation of Undermine", "Manaforge Omega" },
-    [11] = { "The Voidspire", "The Dreamrift", "March on Quel'Danas" }
+    [0] = { DTC.L["Molten Core"], DTC.L["Blackwing Lair"], DTC.L["Ruins of Ahn'Qiraj"], DTC.L["Temple of Ahn'Qiraj"], DTC.L["Naxxramas"], DTC.L["Onyxia's Lair"] },
+    [1] = { DTC.L["Karazhan"], DTC.L["Gruul's Lair"], DTC.L["Magtheridon's Lair"], DTC.L["Serpentshrine Cavern"], DTC.L["The Eye"], DTC.L["Mount Hyjal"], DTC.L["Black Temple"], DTC.L["Sunwell Plateau"] },
+    [2] = { DTC.L["Naxxramas (WotLK)"], DTC.L["Ulduar"], DTC.L["Trial of the Crusader"], DTC.L["Icecrown Citadel"], DTC.L["Ruby Sanctum"], DTC.L["Obsidian Sanctum"], DTC.L["Eye of Eternity"], DTC.L["Vault of Archavon"] },
+    [3] = { DTC.L["Bastion of Twilight"], DTC.L["Blackwing Descent"], DTC.L["Throne of the Four Winds"], DTC.L["Firelands"], DTC.L["Dragon Soul"], DTC.L["Baradin Hold"] },
+    [4] = { DTC.L["Mogu'shan Vaults"], DTC.L["Heart of Fear"], DTC.L["Terrace of Endless Spring"], DTC.L["Throne of Thunder"], DTC.L["Siege of Orgrimmar"] },
+    [5] = { DTC.L["Highmaul"], DTC.L["Blackrock Foundry"], DTC.L["Hellfire Citadel"] },
+    [6] = { DTC.L["Emerald Nightmare"], DTC.L["Trial of Valor"], DTC.L["Nighthold"], DTC.L["Tomb of Sargeras"], DTC.L["Antorus, the Burning Throne"] },
+    [7] = { DTC.L["Uldir"], DTC.L["Battle of Dazar'alor"], DTC.L["Crucible of Storms"], DTC.L["The Eternal Palace"], DTC.L["Ny'alotha"] },
+    [8] = { DTC.L["Castle Nathria"], DTC.L["Sanctum of Domination"], DTC.L["Sepulcher of the First Ones"] },
+    [9] = { DTC.L["Vault of the Incarnates"], DTC.L["Aberrus, the Shadowed Crucible"], DTC.L["Amirdrassil, the Dream's Hope"] },
+    [10] = { DTC.L["Nerub-ar Palace"], DTC.L["Liberation of Undermine"], DTC.L["Manaforge Omega"] },
+    [11] = { DTC.L["The Voidspire"], DTC.L["The Dreamrift"], DTC.L["March on Quel'Danas"] }
 }
 
 -- 3. Boss Lists (Map Raid Name -> List of Boss Names)
 DTC.Static.BOSS_DATA = {
     -- MIDNIGHT (Patch 12.0)
-    ["The Voidspire"] = { "Imperator Averzian", "Vorasius", "Fallen-King Salhadaar", "Vaelgor & Ezzorak", "Lightblinded Vanguard", "Crown of the Cosmos" },
-    ["The Dreamrift"] = { "Chimaerus, the Undreamt God" },
-    ["March on Quel'Danas"] = { "Belo'ren, Child of Al'ar", "Midnight Falls" },
+    [DTC.L["The Voidspire"]] = { DTC.L["Imperator Averzian"], DTC.L["Vorasius"], DTC.L["Fallen-King Salhadaar"], DTC.L["Vaelgor & Ezzorak"], DTC.L["Lightblinded Vanguard"], DTC.L["Crown of the Cosmos"] },
+    [DTC.L["The Dreamrift"]] = { DTC.L["Chimaerus, the Undreamt God"] },
+    [DTC.L["March on Quel'Danas"]] = { DTC.L["Belo'ren, Child of Al'ar"], DTC.L["Midnight Falls"] },
 
     -- THE WAR WITHIN (Patches 11.0 - 11.2)
-    ["Nerub-ar Palace"] = { "Ulgrax the Devourer", "The Bloodbound Horror", "Sikran", "Rasha'nan", "Eggtender Ovi'nax", "Nexus-Princess Ky'veza", "The Silken Court", "Queen Ansurek" },
-    ["Liberation of Undermine"] = { "Vexie and the Geargrinders", "Cauldron of Carnage", "Rik Reverb", "Stix Bunkjunker", "Sprocketmonger Lockenstock", "The One-Armed Bandit", "Mug'Zee, Heads of Security", "Chrome King Gallywix" },
-    ["Manaforge Omega"] = { "Plexus Sentinel", "Loom'ithar", "Soulbinder Naazindhri", "Forgeweaver Araz", "The Soul Hunters", "Fractillus", "Nexus-King Salhadaar", "Dimensius, the All-Devouring" },
+    [DTC.L["Nerub-ar Palace"]] = { DTC.L["Ulgrax the Devourer"], DTC.L["The Bloodbound Horror"], DTC.L["Sikran"], DTC.L["Rasha'nan"], DTC.L["Eggtender Ovi'nax"], DTC.L["Nexus-Princess Ky'veza"], DTC.L["The Silken Court"], DTC.L["Queen Ansurek"] },
+    [DTC.L["Liberation of Undermine"]] = { DTC.L["Vexie and the Geargrinders"], DTC.L["Cauldron of Carnage"], DTC.L["Rik Reverb"], DTC.L["Stix Bunkjunker"], DTC.L["Sprocketmonger Lockenstock"], DTC.L["The One-Armed Bandit"], DTC.L["Mug'Zee, Heads of Security"], DTC.L["Chrome King Gallywix"] },
+    [DTC.L["Manaforge Omega"]] = { DTC.L["Plexus Sentinel"], DTC.L["Loom'ithar"], DTC.L["Soulbinder Naazindhri"], DTC.L["Forgeweaver Araz"], DTC.L["The Soul Hunters"], DTC.L["Fractillus"], DTC.L["Nexus-King Salhadaar"], DTC.L["Dimensius, the All-Devouring"] },
 
     -- DRAGONFLIGHT
-    ["Amirdrassil, the Dream's Hope"] = { "Gnarlroot", "Igira the Cruel", "Volcoross", "Council of Dreams", "Larodar, Keeper of the Flame", "Nymue", "Smolderon", "Tindral Sageswift", "Fyrakk the Blazing" },
-    ["Aberrus, the Shadowed Crucible"] = { "Kazzara", "The Amalgamation Chamber", "The Forgotten Experiments", "Assault of the Zaqali", "Rashok", "The Vigilant Steward, Zskarn", "Magmorax", "Echo of Neltharion", "Scalecommander Sarkareth" },
-    ["Vault of the Incarnates"] = { "Eranog", "Terros", "The Primal Council", "Sennarth", "Dathea", "Kurog Grimtotem", "Broodkeeper Diurna", "Raszageth" },
+    [DTC.L["Amirdrassil, the Dream's Hope"]] = { DTC.L["Gnarlroot"], DTC.L["Igira the Cruel"], DTC.L["Volcoross"], DTC.L["Council of Dreams"], DTC.L["Larodar, Keeper of the Flame"], DTC.L["Nymue"], DTC.L["Smolderon"], DTC.L["Tindral Sageswift"], DTC.L["Fyrakk the Blazing"] },
+    [DTC.L["Aberrus, the Shadowed Crucible"]] = { DTC.L["Kazzara"], DTC.L["The Amalgamation Chamber"], DTC.L["The Forgotten Experiments"], DTC.L["Assault of the Zaqali"], DTC.L["Rashok"], DTC.L["The Vigilant Steward, Zskarn"], DTC.L["Magmorax"], DTC.L["Echo of Neltharion"], DTC.L["Scalecommander Sarkareth"] },
+    [DTC.L["Vault of the Incarnates"]] = { DTC.L["Eranog"], DTC.L["Terros"], DTC.L["The Primal Council"], DTC.L["Sennarth"], DTC.L["Dathea"], DTC.L["Kurog Grimtotem"], DTC.L["Broodkeeper Diurna"], DTC.L["Raszageth"] },
 
     -- SHADOWLANDS
-    ["Sepulcher of the First Ones"] = { "Vigilant Guardian", "Skolex", "Artificer Xy'mox", "Dausegne", "Prototype Pantheon", "Lihuvim", "Halondrus", "Anduin Wrynn", "Lords of Dread", "Rygelon", "The Jailer" },
-    ["Sanctum of Domination"] = { "The Tarragrue", "Eye of the Jailer", "The Nine", "Remnant of Ner'zhul", "Soulrender Dormazain", "Painsmith Raznal", "Guardian of the First Ones", "Fatescribe Roh-Kalo", "Kel'Thuzad", "Sylvanas Windrunner" },
-    ["Castle Nathria"] = { "Shriekwing", "Huntsman Altimor", "Sun King's Salvation", "Artificer Xy'mox", "Hungering Destroyer", "Lady Inerva Darkvein", "Council of Blood", "Sludgefist", "Stone Legion Generals", "Sire Denathrius" },
+    [DTC.L["Sepulcher of the First Ones"]] = { DTC.L["Vigilant Guardian"], DTC.L["Skolex"], DTC.L["Artificer Xy'mox"], DTC.L["Dausegne"], DTC.L["Prototype Pantheon"], DTC.L["Lihuvim"], DTC.L["Halondrus"], DTC.L["Anduin Wrynn"], DTC.L["Lords of Dread"], DTC.L["Rygelon"], DTC.L["The Jailer"] },
+    [DTC.L["Sanctum of Domination"]] = { DTC.L["The Tarragrue"], DTC.L["Eye of the Jailer"], DTC.L["The Nine"], DTC.L["Remnant of Ner'zhul"], DTC.L["Soulrender Dormazain"], DTC.L["Painsmith Raznal"], DTC.L["Guardian of the First Ones"], DTC.L["Fatescribe Roh-Kalo"], DTC.L["Kel'Thuzad"], DTC.L["Sylvanas Windrunner"] },
+    [DTC.L["Castle Nathria"]] = { DTC.L["Shriekwing"], DTC.L["Huntsman Altimor"], DTC.L["Sun King's Salvation"], DTC.L["Artificer Xy'mox"], DTC.L["Hungering Destroyer"], DTC.L["Lady Inerva Darkvein"], DTC.L["Council of Blood"], DTC.L["Sludgefist"], DTC.L["Stone Legion Generals"], DTC.L["Sire Denathrius"] },
 
     -- BATTLE FOR AZEROTH
-    ["Ny'alotha"] = { "Wrathion", "Maut", "Prophet Skitra", "Dark Inquisitor Xanesh", "The Hivemind", "Shad'har the Insatiable", "Drest'agath", "Il'gynoth", "Vexiona", "Ra-den the Despoiled", "Carapace of N'Zoth", "N'Zoth the Corruptor" },
-    ["The Eternal Palace"] = { "Abyssal Commander Sivara", "Blackwater Behemoth", "Radiance of Azshara", "Lady Ashvane", "Orgozoa", "The Queen's Court", "Za'qul", "Queen Azshara" },
-    ["Crucible of Storms"] = { "The Restless Cabal", "Uu'nat" },
-    ["Battle of Dazar'alor"] = { "Champion of the Light", "Grong", "Jadefire Masters", "Opulence", "Conclave of the Chosen", "King Rastakhan", "High Tinker Mekkatorque", "Stormwall Blockade", "Lady Jaina Proudmoore" },
-    ["Uldir"] = { "Taloc", "MOTHER", "Fetid Devourer", "Zek'voz", "Vectis", "Zul", "Mythrax", "G'huun" },
+    [DTC.L["Ny'alotha"]] = { DTC.L["Wrathion"], DTC.L["Maut"], DTC.L["Prophet Skitra"], DTC.L["Dark Inquisitor Xanesh"], DTC.L["The Hivemind"], DTC.L["Shad'har the Insatiable"], DTC.L["Drest'agath"], DTC.L["Il'gynoth"], DTC.L["Vexiona"], DTC.L["Ra-den the Despoiled"], DTC.L["Carapace of N'Zoth"], DTC.L["N'Zoth the Corruptor"] },
+    [DTC.L["The Eternal Palace"]] = { DTC.L["Abyssal Commander Sivara"], DTC.L["Blackwater Behemoth"], DTC.L["Radiance of Azshara"], DTC.L["Lady Ashvane"], DTC.L["Orgozoa"], DTC.L["The Queen's Court"], DTC.L["Za'qul"], DTC.L["Queen Azshara"] },
+    [DTC.L["Crucible of Storms"]] = { DTC.L["The Restless Cabal"], DTC.L["Uu'nat"] },
+    [DTC.L["Battle of Dazar'alor"]] = { DTC.L["Champion of the Light"], DTC.L["Grong"], DTC.L["Jadefire Masters"], DTC.L["Opulence"], DTC.L["Conclave of the Chosen"], DTC.L["King Rastakhan"], DTC.L["High Tinker Mekkatorque"], DTC.L["Stormwall Blockade"], DTC.L["Lady Jaina Proudmoore"] },
+    [DTC.L["Uldir"]] = { DTC.L["Taloc"], DTC.L["MOTHER"], DTC.L["Fetid Devourer"], DTC.L["Zek'voz"], DTC.L["Vectis"], DTC.L["Zul"], DTC.L["Mythrax"], DTC.L["G'huun"] },
 
     -- LEGION
-    ["Antorus, the Burning Throne"] = { "Garothi Worldbreaker", "Felhounds of Sargeras", "Antoran High Command", "Portal Keeper Hasabel", "Eonar", "Imonar the Soulhunter", "Kin'garoth", "Varimathras", "Coven of Shivarra", "Aggramar", "Argus the Unmaker" },
-    ["Tomb of Sargeras"] = { "Goroth", "Demonic Inquisition", "Harjatan", "Mistress Sassz'ine", "Sisters of the Moon", "Desolate Host", "Maiden of Vigilance", "Fallen Avatar", "Kil'jaeden" },
-    ["The Nighthold"] = { "Skorpyron", "Chronomatic Anomaly", "Trilliax", "Spellblade Aluriel", "Star Augur Etraeus", "High Botanist Tel'arn", "Krosus", "Tichondrius", "Elisande", "Gul'dan" },
-    ["Trial of Valor"] = { "Odyn", "Guarm", "Helya" },
-    ["Emerald Nightmare"] = { "Nythendra", "Il'gynoth", "Elerethe Renferal", "Ursoc", "Dragons of Nightmare", "Cenarius", "Xavius" },
+    [DTC.L["Antorus, the Burning Throne"]] = { DTC.L["Garothi Worldbreaker"], DTC.L["Felhounds of Sargeras"], DTC.L["Antoran High Command"], DTC.L["Portal Keeper Hasabel"], DTC.L["Eonar"], DTC.L["Imonar the Soulhunter"], DTC.L["Kin'garoth"], DTC.L["Varimathras"], DTC.L["Coven of Shivarra"], DTC.L["Aggramar"], DTC.L["Argus the Unmaker"] },
+    [DTC.L["Tomb of Sargeras"]] = { DTC.L["Goroth"], DTC.L["Demonic Inquisition"], DTC.L["Harjatan"], DTC.L["Mistress Sassz'ine"], DTC.L["Sisters of the Moon"], DTC.L["Desolate Host"], DTC.L["Maiden of Vigilance"], DTC.L["Fallen Avatar"], DTC.L["Kil'jaeden"] },
+    [DTC.L["The Nighthold"]] = { DTC.L["Skorpyron"], DTC.L["Chronomatic Anomaly"], DTC.L["Trilliax"], DTC.L["Spellblade Aluriel"], DTC.L["Star Augur Etraeus"], DTC.L["High Botanist Tel'arn"], DTC.L["Krosus"], DTC.L["Tichondrius"], DTC.L["Elisande"], DTC.L["Gul'dan"] },
+    [DTC.L["Trial of Valor"]] = { DTC.L["Odyn"], DTC.L["Guarm"], DTC.L["Helya"] },
+    [DTC.L["Emerald Nightmare"]] = { DTC.L["Nythendra"], DTC.L["Il'gynoth"], DTC.L["Elerethe Renferal"], DTC.L["Ursoc"], DTC.L["Dragons of Nightmare"], DTC.L["Cenarius"], DTC.L["Xavius"] },
 
     -- WARLORDS OF DRAENOR
-    ["Hellfire Citadel"] = { "Hellfire Assault", "Iron Reaver", "Kormrok", "Hellfire High Council", "Kilrogg Deadeye", "Gorefiend", "Shadow-Lord Iskar", "Socrates", "Tyrant Velhari", "Fel Lord Zakuun", "Xhul'horac", "Mannoroth", "Archimonde" },
-    ["Blackrock Foundry"] = { "Gruul", "Oregorger", "Blast Furnace", "Hans'gar and Franzok", "Flamebender Ka'graz", "Kromog", "Beastlord Darmac", "Operator Thogar", "Iron Maidens", "Blackhand" },
-    ["Highmaul"] = { "Kargath Bladefist", "The Butcher", "Tectus", "Brackenspore", "Twin Ogron", "Ko'ragh", "Imperator Mar'gok" },
+    [DTC.L["Hellfire Citadel"]] = { DTC.L["Hellfire Assault"], DTC.L["Iron Reaver"], DTC.L["Kormrok"], DTC.L["Hellfire High Council"], DTC.L["Kilrogg Deadeye"], DTC.L["Gorefiend"], DTC.L["Shadow-Lord Iskar"], DTC.L["Socrates"], DTC.L["Tyrant Velhari"], DTC.L["Fel Lord Zakuun"], DTC.L["Xhul'horac"], DTC.L["Mannoroth"], DTC.L["Archimonde"] },
+    [DTC.L["Blackrock Foundry"]] = { DTC.L["Gruul"], DTC.L["Oregorger"], DTC.L["Blast Furnace"], DTC.L["Hans'gar and Franzok"], DTC.L["Flamebender Ka'graz"], DTC.L["Kromog"], DTC.L["Beastlord Darmac"], DTC.L["Operator Thogar"], DTC.L["Iron Maidens"], DTC.L["Blackhand"] },
+    [DTC.L["Highmaul"]] = { DTC.L["Kargath Bladefist"], DTC.L["The Butcher"], DTC.L["Tectus"], DTC.L["Brackenspore"], DTC.L["Twin Ogron"], DTC.L["Ko'ragh"], DTC.L["Imperator Mar'gok"] },
 
     -- MISTS OF PANDARIA
-    ["Siege of Orgrimmar"] = { "Immerseus", "Fallen Protectors", "Norushen", "Sha of Pride", "Galakras", "Iron Juggernaut", "Kor'kron Dark Shaman", "General Nazgrim", "Malkorok", "Spoils of Pandaria", "Thok the Bloodthirsty", "Siegecrafter Blackfuse", "Paragons of the Klaxxi", "Garrosh Hellscream" },
-    ["Throne of Thunder"] = { "Jin'rokh", "Horridon", "Council of Elders", "Tortos", "Megaera", "Ji-Kun", "Durumu", "Primordius", "Dark Animus", "Iron Qon", "Twin Consorts", "Lei Shen", "Ra-den" },
-    ["Terrace of Endless Spring"] = { "Protectors of the Endless", "Tsulong", "Lei Shi", "Sha of Fear" },
-    ["Heart of Fear"] = { "Imperial Vizier Zor'lok", "Blade Lord Ta'yak", "Garalon", "Wind Lord Mel'jarak", "Amber-Shaper Un'sok", "Grand Empress Shek'zara" },
-    ["Mogu'shan Vaults"] = { "The Stone Guard", "Feng the Accursed", "Gara'jal the Spiritbinder", "The Spirit Kings", "Elegon", "Will of the Emperor" },
+    [DTC.L["Siege of Orgrimmar"]] = { DTC.L["Immerseus"], DTC.L["Fallen Protectors"], DTC.L["Norushen"], DTC.L["Sha of Pride"], DTC.L["Galakras"], DTC.L["Iron Juggernaut"], DTC.L["Kor'kron Dark Shaman"], DTC.L["General Nazgrim"], DTC.L["Malkorok"], DTC.L["Spoils of Pandaria"], DTC.L["Thok the Bloodthirsty"], DTC.L["Siegecrafter Blackfuse"], DTC.L["Paragons of the Klaxxi"], DTC.L["Garrosh Hellscream"] },
+    [DTC.L["Throne of Thunder"]] = { DTC.L["Jin'rokh"], DTC.L["Horridon"], DTC.L["Council of Elders"], DTC.L["Tortos"], DTC.L["Megaera"], DTC.L["Ji-Kun"], DTC.L["Durumu"], DTC.L["Primordius"], DTC.L["Dark Animus"], DTC.L["Iron Qon"], DTC.L["Twin Consorts"], DTC.L["Lei Shen"], DTC.L["Ra-den"] },
+    [DTC.L["Terrace of Endless Spring"]] = { DTC.L["Protectors of the Endless"], DTC.L["Tsulong"], DTC.L["Lei Shi"], DTC.L["Sha of Fear"] },
+    [DTC.L["Heart of Fear"]] = { DTC.L["Imperial Vizier Zor'lok"], DTC.L["Blade Lord Ta'yak"], DTC.L["Garalon"], DTC.L["Wind Lord Mel'jarak"], DTC.L["Amber-Shaper Un'sok"], DTC.L["Grand Empress Shek'zara"] },
+    [DTC.L["Mogu'shan Vaults"]] = { DTC.L["The Stone Guard"], DTC.L["Feng the Accursed"], DTC.L["Gara'jal the Spiritbinder"], DTC.L["The Spirit Kings"], DTC.L["Elegon"], DTC.L["Will of the Emperor"] },
 
     -- CATACLYSM
-    ["Dragon Soul"] = { "Morchok", "Warlord Zon'ozz", "Yor'sahj the Unsleeping", "Hagara the Stormbinder", "Ultraxion", "Warmaster Blackhorn", "Spine of Deathwing", "Madness of Deathwing" },
-    ["Firelands"] = { "Beth'tilac", "Lord Rhyolith", "Alysrazor", "Shannox", "Baleroc", "Majordomo Staghelm", "Ragnaros" },
-    ["Throne of the Four Winds"] = { "Conclave of Wind", "Al'Akir" },
-    ["Blackwing Descent"] = { "Magmaw", "Omnotron Defense System", "Maloriak", "Atramedes", "Chimaeron", "Nefarian" },
-    ["Bastion of Twilight"] = { "Halfus Wyrmbreaker", "Valiona and Theralion", "Ascendant Council", "Cho'gall", "Sinestra" },
-    ["Baradin Hold"] = { "Argaloth", "Occu'thar", "Alizabal" },
+    [DTC.L["Dragon Soul"]] = { DTC.L["Morchok"], DTC.L["Warlord Zon'ozz"], DTC.L["Yor'sahj the Unsleeping"], DTC.L["Hagara the Stormbinder"], DTC.L["Ultraxion"], DTC.L["Warmaster Blackhorn"], DTC.L["Spine of Deathwing"], DTC.L["Madness of Deathwing"] },
+    [DTC.L["Firelands"]] = { DTC.L["Beth'tilac"], DTC.L["Lord Rhyolith"], DTC.L["Alysrazor"], DTC.L["Shannox"], DTC.L["Baleroc"], DTC.L["Majordomo Staghelm"], DTC.L["Ragnaros"] },
+    [DTC.L["Throne of the Four Winds"]] = { DTC.L["Conclave of Wind"], DTC.L["Al'Akir"] },
+    [DTC.L["Blackwing Descent"]] = { DTC.L["Magmaw"], DTC.L["Omnotron Defense System"], DTC.L["Maloriak"], DTC.L["Atramedes"], DTC.L["Chimaeron"], DTC.L["Nefarian"] },
+    [DTC.L["Bastion of Twilight"]] = { DTC.L["Halfus Wyrmbreaker"], DTC.L["Valiona and Theralion"], DTC.L["Ascendant Council"], DTC.L["Cho'gall"], DTC.L["Sinestra"] },
+    [DTC.L["Baradin Hold"]] = { DTC.L["Argaloth"], DTC.L["Occu'thar"], DTC.L["Alizabal"] },
 
     -- WRATH OF THE LICH KING
-    ["The Ruby Sanctum"] = { "Halion" },
-    ["Icecrown Citadel"] = { "Lord Marrowgar", "Lady Deathwhisper", "Gunship Battle", "Deathbringer Saurfang", "Festergut", "Rotface", "Professor Putricide", "Blood Prince Council", "Blood-Queen Lana'thel", "Valithria Dreamwalker", "Sindragosa", "The Lich King" },
-    ["Onyxia's Lair"] = { "Onyxia" },
-    ["Trial of the Crusader"] = { "Northrend Beasts", "Lord Jaraxxus", "Faction Champions", "Twin Val'kyr", "Anub'arak" },
-    ["Ulduar"] = { "Flame Leviathan", "Ignis", "Razorscale", "XT-002", "Assembly of Iron", "Kologarn", "Auriaya", "Hodir", "Thorim", "Freya", "Mimiron", "General Vezax", "Yogg-Saron", "Algalon" },
-    ["The Eye of Eternity"] = { "Malygos" },
-    ["The Obsidian Sanctum"] = { "Sartharion" },
-    ["Naxxramas (WotLK)"] = { "Anub'Rekhan", "Faerlina", "Maexxna", "Noth", "Heigan", "Loatheb", "Instructor Razuvious", "Gothik", "Four Horsemen", "Patchwerk", "Grobbulus", "Gluth", "Thaddius", "Sapphiron", "Kel'Thuzad" },
-    ["Vault of Archavon"] = { "Archavon", "Emalon", "Koralon", "Toravon" },
+    [DTC.L["The Ruby Sanctum"]] = { DTC.L["Halion"] },
+    [DTC.L["Icecrown Citadel"]] = { DTC.L["Lord Marrowgar"], DTC.L["Lady Deathwhisper"], DTC.L["Gunship Battle"], DTC.L["Deathbringer Saurfang"], DTC.L["Festergut"], DTC.L["Rotface"], DTC.L["Professor Putricide"], DTC.L["Blood Prince Council"], DTC.L["Blood-Queen Lana'thel"], DTC.L["Valithria Dreamwalker"], DTC.L["Sindragosa"], DTC.L["The Lich King"] },
+    [DTC.L["Onyxia's Lair"]] = { DTC.L["Onyxia"] },
+    [DTC.L["Trial of the Crusader"]] = { DTC.L["Northrend Beasts"], DTC.L["Lord Jaraxxus"], DTC.L["Faction Champions"], DTC.L["Twin Val'kyr"], DTC.L["Anub'arak"] },
+    [DTC.L["Ulduar"]] = { DTC.L["Flame Leviathan"], DTC.L["Ignis"], DTC.L["Razorscale"], DTC.L["XT-002"], DTC.L["Assembly of Iron"], DTC.L["Kologarn"], DTC.L["Auriaya"], DTC.L["Hodir"], DTC.L["Thorim"], DTC.L["Freya"], DTC.L["Mimiron"], DTC.L["General Vezax"], DTC.L["Yogg-Saron"], DTC.L["Algalon"] },
+    [DTC.L["The Eye of Eternity"]] = { DTC.L["Malygos"] },
+    [DTC.L["The Obsidian Sanctum"]] = { DTC.L["Sartharion"] },
+    [DTC.L["Naxxramas (WotLK)"]] = { DTC.L["Anub'Rekhan"], DTC.L["Faerlina"], DTC.L["Maexxna"], DTC.L["Noth"], DTC.L["Heigan"], DTC.L["Loatheb"], DTC.L["Instructor Razuvious"], DTC.L["Gothik"], DTC.L["Four Horsemen"], DTC.L["Patchwerk"], DTC.L["Grobbulus"], DTC.L["Gluth"], DTC.L["Thaddius"], DTC.L["Sapphiron"], DTC.L["Kel'Thuzad"] },
+    [DTC.L["Vault of Archavon"]] = { DTC.L["Archavon"], DTC.L["Emalon"], DTC.L["Koralon"], DTC.L["Toravon"] },
 
     -- BURNING CRUSADE
-    ["Sunwell Plateau"] = { "Kalecgos", "Brutallus", "Felmyst", "Eredar Twins", "M'uru", "Kil'jaeden" },
-    ["Black Temple"] = { "Naj'entus", "Supremus", "Shade of Akama", "Teron Gorefiend", "Gurtogg Bloodboil", "Reliquary of Souls", "Mother Shahraz", "Illidari Council", "Illidan Stormrage" },
-    ["Mount Hyjal"] = { "Rage Winterchill", "Anetheron", "Kaz'rogal", "Azgalor", "Archimonde" },
-    ["The Eye"] = { "Al'ar", "Void Reaver", "High Astromancer Solarian", "Kael'thas Sunstrider" },
-    ["Serpentshrine Cavern"] = { "Hydross", "The Lurker Below", "Leotheras the Blind", "Fathom-Lord Karathress", "Morogrim Tidewalker", "Lady Vashj" },
-    ["Magtheridon's Lair"] = { "Magtheridon" },
-    ["Gruul's Lair"] = { "High King Maulgar", "Gruul" },
-    ["Karazhan"] = { "Attumen", "Moroes", "Maiden", "Opera", "Curator", "Terestian", "Aran", "Netherspite", "Chess", "Prince Malchezaar", "Nightbane" },
+    [DTC.L["Sunwell Plateau"]] = { DTC.L["Kalecgos"], DTC.L["Brutallus"], DTC.L["Felmyst"], DTC.L["Eredar Twins"], DTC.L["M'uru"], DTC.L["Kil'jaeden"] },
+    [DTC.L["Black Temple"]] = { DTC.L["Naj'entus"], DTC.L["Supremus"], DTC.L["Shade of Akama"], DTC.L["Teron Gorefiend"], DTC.L["Gurtogg Bloodboil"], DTC.L["Reliquary of Souls"], DTC.L["Mother Shahraz"], DTC.L["Illidari Council"], DTC.L["Illidan Stormrage"] },
+    [DTC.L["Mount Hyjal"]] = { DTC.L["Rage Winterchill"], DTC.L["Anetheron"], DTC.L["Kaz'rogal"], DTC.L["Azgalor"], DTC.L["Archimonde"] },
+    [DTC.L["The Eye"]] = { DTC.L["Al'ar"], DTC.L["Void Reaver"], DTC.L["High Astromancer Solarian"], DTC.L["Kael'thas Sunstrider"] },
+    [DTC.L["Serpentshrine Cavern"]] = { DTC.L["Hydross"], DTC.L["The Lurker Below"], DTC.L["Leotheras the Blind"], DTC.L["Fathom-Lord Karathress"], DTC.L["Morogrim Tidewalker"], DTC.L["Lady Vashj"] },
+    [DTC.L["Magtheridon's Lair"]] = { DTC.L["Magtheridon"] },
+    [DTC.L["Gruul's Lair"]] = { DTC.L["High King Maulgar"], DTC.L["Gruul"] },
+    [DTC.L["Karazhan"]] = { DTC.L["Attumen"], DTC.L["Moroes"], DTC.L["Maiden"], DTC.L["Opera"], DTC.L["Curator"], DTC.L["Terestian"], DTC.L["Aran"], DTC.L["Netherspite"], DTC.L["Chess"], DTC.L["Prince Malchezaar"], DTC.L["Nightbane"] },
 
     -- CLASSIC
-    ["Naxxramas"] = { "Anub'Rekhan", "Faerlina", "Maexxna", "Noth", "Heigan", "Loatheb", "Instructor Razuvious", "Gothik", "Four Horsemen", "Patchwerk", "Grobbulus", "Gluth", "Thaddius", "Sapphiron", "Kel'Thuzad" },
-    ["Temple of Ahn'Qiraj"] = { "Skeram", "Bug Trio", "Sartura", "Fankriss", "Viscidus", "Huhuran", "Twin Emperors", "Ouro", "C'Thun" },
-    ["Ruins of Ahn'Qiraj"] = { "Kurinnaxx", "Rajaxx", "Moam", "Buru", "Ayamiss", "Ossirian" },
-    ["Blackwing Lair"] = { "Razorgore", "Vaelastrasz", "Broodlord Lashlayer", "Firemaw", "Ebonroc", "Flamegor", "Chromaggus", "Nefarian" },
-    ["Molten Core"] = { "Lucifron", "Magmadar", "Gehennas", "Garr", "Shazzrah", "Baron Geddon", "Sulfuron Harbinger", "Golemagg the Incinerator", "Majordomo Executus", "Ragnaros" }
+    [DTC.L["Naxxramas"]] = { DTC.L["Anub'Rekhan"], DTC.L["Faerlina"], DTC.L["Maexxna"], DTC.L["Noth"], DTC.L["Heigan"], DTC.L["Loatheb"], DTC.L["Instructor Razuvious"], DTC.L["Gothik"], DTC.L["Four Horsemen"], DTC.L["Patchwerk"], DTC.L["Grobbulus"], DTC.L["Gluth"], DTC.L["Thaddius"], DTC.L["Sapphiron"], DTC.L["Kel'Thuzad"] },
+    [DTC.L["Temple of Ahn'Qiraj"]] = { DTC.L["Skeram"], DTC.L["Bug Trio"], DTC.L["Sartura"], DTC.L["Fankriss"], DTC.L["Viscidus"], DTC.L["Huhuran"], DTC.L["Twin Emperors"], DTC.L["Ouro"], DTC.L["C'Thun"] },
+    [DTC.L["Ruins of Ahn'Qiraj"]] = { DTC.L["Kurinnaxx"], DTC.L["Rajaxx"], DTC.L["Moam"], DTC.L["Buru"], DTC.L["Ayamiss"], DTC.L["Ossirian"] },
+    [DTC.L["Blackwing Lair"]] = { DTC.L["Razorgore"], DTC.L["Vaelastrasz"], DTC.L["Broodlord Lashlayer"], DTC.L["Firemaw"], DTC.L["Ebonroc"], DTC.L["Flamegor"], DTC.L["Chromaggus"], DTC.L["Nefarian"] },
+    [DTC.L["Molten Core"]] = { DTC.L["Lucifron"], DTC.L["Magmadar"], DTC.L["Gehennas"], DTC.L["Garr"], DTC.L["Shazzrah"], DTC.L["Baron Geddon"], DTC.L["Sulfuron Harbinger"], DTC.L["Golemagg the Incinerator"], DTC.L["Majordomo Executus"], DTC.L["Ragnaros"] }
 }
 
 -- 4. Difficulties
 DTC.Static.DIFFICULTIES = {
-    [0] = {"Normal"}, [1] = {"Normal"}, [2] = {"10m Normal", "25m Normal", "10m Heroic", "25m Heroic"}, 
-    ["DEFAULT"] = {"LFR", "Normal", "Heroic", "Mythic", "10m Normal", "25m Normal", "10m Heroic", "25m Heroic"}
+    [0] = {DTC.L["Normal"]}, [1] = {DTC.L["Normal"]}, [2] = {DTC.L["10m Normal"], DTC.L["25m Normal"], DTC.L["10m Heroic"], DTC.L["25m Heroic"]}, 
+    ["DEFAULT"] = {DTC.L["LFR"], DTC.L["Normal"], DTC.L["Heroic"], DTC.L["Mythic"], DTC.L["10m Normal"], DTC.L["25m Normal"], DTC.L["10m Heroic"], DTC.L["25m Heroic"]}
 }
 
 -- Helper to safely get boss list

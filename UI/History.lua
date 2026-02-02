@@ -23,7 +23,7 @@ function DTC.HistoryUI:Init()
     end
 
     -- Set Title
-    frame:SetTitle("DTC Tracker - History")
+    frame:SetTitle(DTC.L["DTC Tracker - History"])
     
     -- Adjust ScrollFrame to fit within header/footer
     if frame.ListScroll then
@@ -45,13 +45,13 @@ function DTC.HistoryUI:Init()
     UIDropDownMenu_Initialize(frame.DateDD, function(self, level) 
         DTC.HistoryUI:InitDateMenu(self, level) 
     end)
-    UIDropDownMenu_SetText(frame.DateDD, "All Dates")
+    UIDropDownMenu_SetText(frame.DateDD, DTC.L["All Dates"])
     
     UIDropDownMenu_SetWidth(frame.NameDD, 130)
     UIDropDownMenu_Initialize(frame.NameDD, function(self, level) 
         DTC.HistoryUI:InitNameMenu(self, level) 
     end)
-    UIDropDownMenu_SetText(frame.NameDD, "All Names")
+    UIDropDownMenu_SetText(frame.NameDD, DTC.L["All Names"])
     
     -- Headers
     if not frame.Headers then
@@ -62,12 +62,12 @@ function DTC.HistoryUI:Init()
             h:SetText(text)
             return h
         end
-        CreateHeader("Date", 0)
-        CreateHeader("Raid", 85)
-        CreateHeader("Diff", 220)
-        CreateHeader("Boss", 305)
-        CreateHeader("Winner", 440)
-        CreateHeader("Voters", 550)
+        CreateHeader(DTC.L["Date"], 0)
+        CreateHeader(DTC.L["Raid"], 85)
+        CreateHeader(DTC.L["Diff"], 220)
+        CreateHeader(DTC.L["Boss"], 305)
+        CreateHeader(DTC.L["Winner"], 440)
+        CreateHeader(DTC.L["Voters"], 550)
         frame.Headers = true
     end
 end
@@ -79,8 +79,8 @@ function DTC.HistoryUI:Toggle()
     if frame:IsShown() then
         frame:Hide()
     else
-        local title = "DTC Tracker - History"
-        if DTC.isTestModeHist then title = "(Test) " .. title end
+        local title = DTC.L["DTC Tracker - History"]
+        if DTC.isTestModeHist then title = DTC.L["(Test) "] .. title end
         frame:SetTitle(title)
         
         frame:Show()
@@ -141,7 +141,7 @@ function DTC.HistoryUI:UpdateList()
         local wName = h.w
         row.Winner:SetText(DTC:GetDisplayColoredName(wName))
         
-        row.Voters:SetText(h.v or "None")
+        row.Voters:SetText(h.v or DTC.L["None"])
         
         row:Show()
         yOffset = yOffset - 20
@@ -158,8 +158,8 @@ function DTC.HistoryUI:ShowExportPopup()
         p:SetSize(500, 300)
         p:SetPoint("CENTER", 0, 0)
         p:SetFrameStrata("DIALOG")
-        if p.SetTitle then p:SetTitle("Export Data (Ctrl+C)") 
-        elseif p.TitleText then p.TitleText:SetText("Export Data (Ctrl+C)") end
+        if p.SetTitle then p:SetTitle(DTC.L["Export Data (Ctrl+C)"]) 
+        elseif p.TitleText then p.TitleText:SetText(DTC.L["Export Data (Ctrl+C)"]) end
         
         p.Scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
         p.Scroll:SetPoint("TOPLEFT", 10, -30)
@@ -182,12 +182,12 @@ function DTC.HistoryUI:InitDateMenu(menu, level)
     local dates = DTC.History:GetUniqueMenus()
     local info = UIDropDownMenu_CreateInfo()
     
-    info.text = "All Dates"
+    info.text = DTC.L["All Dates"]
     info.value = "ALL"
     info.checked = (DTC.History.Filters.Date == "ALL")
     info.func = function() 
         DTC.History.Filters.Date = "ALL"
-        UIDropDownMenu_SetText(menu, "All Dates")
+        UIDropDownMenu_SetText(menu, DTC.L["All Dates"])
         self:UpdateList() 
     end
     UIDropDownMenu_AddButton(info, level)
@@ -209,12 +209,12 @@ function DTC.HistoryUI:InitNameMenu(menu, level)
     local _, names = DTC.History:GetUniqueMenus()
     local info = UIDropDownMenu_CreateInfo()
     
-    info.text = "All Names"
+    info.text = DTC.L["All Names"]
     info.value = "ALL"
     info.checked = (DTC.History.Filters.Name == "ALL")
     info.func = function() 
         DTC.History.Filters.Name = "ALL"
-        UIDropDownMenu_SetText(menu, "All Names")
+        UIDropDownMenu_SetText(menu, DTC.L["All Names"])
         self:UpdateList() 
     end
     UIDropDownMenu_AddButton(info, level)

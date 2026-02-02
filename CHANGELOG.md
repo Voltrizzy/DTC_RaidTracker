@@ -1,5 +1,13 @@
 # DTC Raid Tracker
 
+## [v7.3.14](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.14) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.13...v7.3.14)
+
+### Fixes & Improvements
+- **API Compliance:** Fixed invalid WoW API calls in Bribe module.
+- **Optimization:** Removed redundant API calls in Vote module.
+- **UI:** Fixed redundant frame definitions in VoteFrame.
+
 ## [v7.3.13](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.13) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.12...v7.3.13)
 

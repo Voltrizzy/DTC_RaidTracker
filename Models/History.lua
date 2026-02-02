@@ -85,7 +85,7 @@ function DTC.History:PurgeMatching(filters)
     end
     
     DTCRaidDB.history = kept
-    print("|cFFFFD700DTC:|r Purged " .. count .. " entries.")
+    print(DTC.L["|cFFFFD700DTC:|r Purged %d entries."]:format(count))
     
     if DTC.HistoryUI and DTC.HistoryUI.UpdateList then DTC.HistoryUI:UpdateList() end
     if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
@@ -94,12 +94,12 @@ end
 -- 5. Sync Push Logic
 -- Sends matching history entries to a target player via addon message.
 function DTC.History:PushSync(target, filters)
-    if not target or target == "" then print("Invalid target."); return end
+    if not target or target == "" then print(DTC.L["Invalid target."]); return end
     
     local raw = DTCRaidDB.history or {}
     local count = 0
     
-    print("|cFFFFD700DTC:|r Sending data to " .. target .. "...")
+    print(DTC.L["|cFFFFD700DTC:|r Sending data to %s..."]:format(target))
     
     for _, h in ipairs(raw) do
         if self:MatchesFilter(h, filters) then
@@ -119,7 +119,7 @@ function DTC.History:PushSync(target, filters)
             count = count + 1
         end
     end
-    print("|cFFFFD700DTC:|r Sent " .. count .. " entries.")
+    print(DTC.L["|cFFFFD700DTC:|r Sent %d entries."]:format(count))
 end
 
 -- 6. Receiver Logic (OnComm)
@@ -151,7 +151,7 @@ local commHandlers = {
             
             if not isDup then
                 table.insert(DTCRaidDB.history, newEntry)
-                print("|cFF00FF00DTC:|r Received entry from " .. sender)
+                print(DTC.L["|cFF00FF00DTC:|r Received entry from %s"]:format(sender))
                 
                 -- Refresh UI if open
                 if DTC.HistoryUI and DTC.HistoryUI.UpdateList then DTC.HistoryUI:UpdateList() end

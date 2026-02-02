@@ -65,7 +65,7 @@ function DTC.VoteFrame:Init()
         self:SetStatusBarColor(0.5, 0.05, 0.05) -- Dark Red
     end)
     
-    frame:SetTitle("DTC Tracker - Vote")
+    frame:SetTitle(DTC.L["DTC Tracker - Vote"])
 end
 
 -- Toggles the visibility of the Vote Frame.
@@ -77,13 +77,13 @@ end
 -- Updates the window title with the current boss name and difficulty.
 function DTC.VoteFrame:UpdateHeader()
     if not frame then return end
-    local titleText = DTC.Vote and DTC.Vote.currentBoss or "Unknown Boss"
-    if DTC.Vote and DTC.Vote.isTestMode then titleText = "(Test) " .. titleText
+    local titleText = DTC.Vote and DTC.Vote.currentBoss or DTC.L["Unknown Boss"]
+    if DTC.Vote and DTC.Vote.isTestMode then titleText = DTC.L["(Test) "] .. titleText
     else
         local _, _, _, diffName = GetInstanceInfo()
         if diffName and diffName ~= "" then titleText = "(" .. diffName .. ") " .. titleText end
     end
-    frame:SetTitle("DTC Tracker - Vote")
+    frame:SetTitle(DTC.L["DTC Tracker - Vote"])
     if frame.BossInfo then frame.BossInfo:SetText(titleText) end
 end
 
@@ -138,10 +138,10 @@ function DTC.VoteFrame:UpdateList()
     if isOpen then
         local left = DTC.Vote.myVotesLeft or 0
         if left < 0 then left = 0 end
-        frame.VotesLeft:SetText("Votes: " .. left)
+        frame.VotesLeft:SetText(DTC.L["Votes: "] .. left)
         frame.VotesLeft:SetTextColor(1, 1, 1)
     else
-        frame.VotesLeft:SetText("CLOSED")
+        frame.VotesLeft:SetText(DTC.L["CLOSED"])
         frame.VotesLeft:SetTextColor(1, 0, 0)
     end
 
@@ -160,9 +160,9 @@ function DTC.VoteFrame:UpdateList()
             elseif p.role == "HEALER" then table.insert(h, p)
             else table.insert(d, p) end
         end
-        rowIndex, yOffset = self:RenderSection(content, "TANKS", t, rowIndex, yOffset)
-        rowIndex, yOffset = self:RenderSection(content, "HEALERS", h, rowIndex, yOffset)
-        rowIndex, yOffset = self:RenderSection(content, "DPS / OTHERS", d, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["TANKS"], t, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["HEALERS"], h, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["DPS / OTHERS"], d, rowIndex, yOffset)
     end
 
     -- CRITICAL FIX: Resize the content frame so scrolling works and items aren't clipped!
@@ -214,13 +214,13 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
             row.DeadbeatIcon:SetVertexColor(1, 0.2, 0.2)
 
             row.VoteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText("Vote")
+            row.VoteBtn:SetSize(50, 20); row.VoteBtn:SetPoint("RIGHT", -5, 0); row.VoteBtn:SetText(DTC.L["Vote"])
 
             row.BribeBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.BribeBtn:SetSize(50, 20); row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0); row.BribeBtn:SetText("Bribe")
+            row.BribeBtn:SetSize(50, 20); row.BribeBtn:SetPoint("RIGHT", row.VoteBtn, "LEFT", -5, 0); row.BribeBtn:SetText(DTC.L["Bribe"])
 
             row.LobbyBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-            row.LobbyBtn:SetSize(50, 20); row.LobbyBtn:SetPoint("RIGHT", row.BribeBtn, "LEFT", -5, 0); row.LobbyBtn:SetText("Lobby")
+            row.LobbyBtn:SetSize(50, 20); row.LobbyBtn:SetPoint("RIGHT", row.BribeBtn, "LEFT", -5, 0); row.LobbyBtn:SetText(DTC.L["Lobby"])
             
             row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             row.Count:SetPoint("RIGHT", row.LobbyBtn, "LEFT", -10, 0)

@@ -34,7 +34,7 @@ function DTC.BribeUI:Init()
             self.OfferFrame:Hide()
         end)
         self.OfferFrame.CancelBtn:SetScript("OnClick", function() self.OfferFrame:Hide() end)
-        if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle("DTC Tracker - Bribe Offer") end
+        if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle(DTC.L["DTC Tracker - Bribe Offer"]) end
     end
 
     -- 2. Proposition Input
@@ -48,19 +48,19 @@ function DTC.BribeUI:Init()
             self.PropInputFrame:Hide()
         end)
         self.PropInputFrame.CancelBtn:SetScript("OnClick", function() self.PropInputFrame:Hide() end)
-        if self.PropInputFrame.SetTitle then self.PropInputFrame:SetTitle("Proposition Bribe") end
+        if self.PropInputFrame.SetTitle then self.PropInputFrame:SetTitle(DTC.L["Proposition Bribe"]) end
     end
 
     -- 3. Proposition List
     self.PropListFrame = DTC_PropositionListFrame
     InjectTitle(self.PropListFrame)
-    if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle("DTC Tracker - Proposition") end
+    if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle(DTC.L["DTC Tracker - Proposition"]) end
 
     -- 4. Incoming Bribe
     self.IncomingFrame = DTC_BribeIncomingPopup
     if self.IncomingFrame then
         InjectTitle(self.IncomingFrame)
-        if self.IncomingFrame.SetTitle then self.IncomingFrame:SetTitle("DTC Tracker - Incoming Bribe") end
+        if self.IncomingFrame.SetTitle then self.IncomingFrame:SetTitle(DTC.L["DTC Tracker - Incoming Bribe"]) end
         self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
         self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
         
@@ -83,7 +83,7 @@ function DTC.BribeUI:Init()
     self.TrackerFrame = DTC_BribeTrackerFrame
     if self.TrackerFrame then
         InjectTitle(self.TrackerFrame)
-        if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle("DTC Tracker - Bribe Ledger") end
+        if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle(DTC.L["DTC Tracker - Bribe Ledger"]) end
         self.TrackerFrame.ClearBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_CLEAR_BRIBES_CONFIRM") end)
         
         -- NEW: Filter Dropdown
@@ -94,11 +94,11 @@ function DTC.BribeUI:Init()
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) self.FilterMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
             
-            info.text, info.arg1, info.value = "All", "ALL", "All"; info.checked = (self.FilterMode == "ALL"); UIDropDownMenu_AddButton(info, level)
-            info.text, info.arg1, info.value = "My Debts", "OWE", "My Debts"; info.checked = (self.FilterMode == "OWE"); UIDropDownMenu_AddButton(info, level)
-            info.text, info.arg1, info.value = "Debts Owed to Me", "OWED", "Debts Owed to Me"; info.checked = (self.FilterMode == "OWED"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["All"], "ALL", DTC.L["All"]; info.checked = (self.FilterMode == "ALL"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["My Debts"], "OWE", DTC.L["My Debts"]; info.checked = (self.FilterMode == "OWE"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["Debts Owed to Me"], "OWED", DTC.L["Debts Owed to Me"]; info.checked = (self.FilterMode == "OWED"); UIDropDownMenu_AddButton(info, level)
         end)
-        UIDropDownMenu_SetText(self.TrackerFrame.FilterDD, "All")
+        UIDropDownMenu_SetText(self.TrackerFrame.FilterDD, DTC.L["All"])
         self.FilterMode = "ALL"
 
         -- NEW: Sort Dropdown
@@ -109,12 +109,12 @@ function DTC.BribeUI:Init()
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) self.SortMode = s.arg1; UIDropDownMenu_SetText(frame, s.value); self:UpdateTracker() end
             
-            info.text, info.arg1, info.value = "Date (Newest)", "DATE_DESC", "Date (Newest)"; info.checked = (self.SortMode == "DATE_DESC"); UIDropDownMenu_AddButton(info, level)
-            info.text, info.arg1, info.value = "Date (Oldest)", "DATE_ASC", "Date (Oldest)"; info.checked = (self.SortMode == "DATE_ASC"); UIDropDownMenu_AddButton(info, level)
-            info.text, info.arg1, info.value = "Amount (High)", "AMT_DESC", "Amount (High)"; info.checked = (self.SortMode == "AMT_DESC"); UIDropDownMenu_AddButton(info, level)
-            info.text, info.arg1, info.value = "Amount (Low)", "AMT_ASC", "Amount (Low)"; info.checked = (self.SortMode == "AMT_ASC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["Date (Newest)"], "DATE_DESC", DTC.L["Date (Newest)"]; info.checked = (self.SortMode == "DATE_DESC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["Date (Oldest)"], "DATE_ASC", DTC.L["Date (Oldest)"]; info.checked = (self.SortMode == "DATE_ASC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["Amount (High)"], "AMT_DESC", DTC.L["Amount (High)"]; info.checked = (self.SortMode == "AMT_DESC"); UIDropDownMenu_AddButton(info, level)
+            info.text, info.arg1, info.value = DTC.L["Amount (Low)"], "AMT_ASC", DTC.L["Amount (Low)"]; info.checked = (self.SortMode == "AMT_ASC"); UIDropDownMenu_AddButton(info, level)
         end)
-        UIDropDownMenu_SetText(self.TrackerFrame.SortDD, "Date (Newest)")
+        UIDropDownMenu_SetText(self.TrackerFrame.SortDD, DTC.L["Date (Newest)"])
         self.SortMode = "DATE_DESC"
 
         -- NEW: Search Dropdown
@@ -124,11 +124,11 @@ function DTC.BribeUI:Init()
         UIDropDownMenu_Initialize(self.TrackerFrame.SearchDD, function(frame, level)
             local info = UIDropDownMenu_CreateInfo()
             
-            info.text = "All Names"
+            info.text = DTC.L["All Names"]
             info.value = nil
             info.func = function(s) 
                 self.SearchFilter = nil
-                UIDropDownMenu_SetText(frame, "All Names")
+                UIDropDownMenu_SetText(frame, DTC.L["All Names"])
                 self:UpdateTracker() 
             end
             info.checked = (self.SearchFilter == nil)
@@ -155,35 +155,35 @@ function DTC.BribeUI:Init()
                 UIDropDownMenu_AddButton(info, level)
             end
         end)
-        UIDropDownMenu_SetText(self.TrackerFrame.SearchDD, "All Names")
+        UIDropDownMenu_SetText(self.TrackerFrame.SearchDD, DTC.L["All Names"])
 
         -- NEW: Total Debt Label
         self.TrackerFrame.TotalDebt = self.TrackerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         self.TrackerFrame.TotalDebt:SetPoint("TOPRIGHT", -20, -30)
-        self.TrackerFrame.TotalDebt:SetText("Total Debt: 0g")
+        self.TrackerFrame.TotalDebt:SetText(DTC.L["Total Debt: %s"]:format("0g"))
         
         self.TrackerFrame.ExportBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
         self.TrackerFrame.ExportBtn:SetSize(80, 20)
         self.TrackerFrame.ExportBtn:SetPoint("BOTTOMRIGHT", -20, 2)
-        self.TrackerFrame.ExportBtn:SetText("Export CSV")
+        self.TrackerFrame.ExportBtn:SetText(DTC.L["Export CSV"])
         self.TrackerFrame.ExportBtn:SetScript("OnClick", function() self:ShowExportPopup() end)
         
         self.TrackerFrame.AnnounceBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
         self.TrackerFrame.AnnounceBtn:SetSize(120, 22)
         self.TrackerFrame.AnnounceBtn:SetPoint("BOTTOM", 0, 2)
-        self.TrackerFrame.AnnounceBtn:SetText("Announce Debts")
+        self.TrackerFrame.AnnounceBtn:SetText(DTC.L["Announce Debts"])
         self.TrackerFrame.AnnounceBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:AnnounceDebts() end end)
         
         self.TrackerFrame.PayTaxBtn = CreateFrame("Button", nil, self.TrackerFrame, "UIPanelButtonTemplate")
         self.TrackerFrame.PayTaxBtn:SetSize(120, 22)
         self.TrackerFrame.PayTaxBtn:SetPoint("BOTTOMLEFT", 20, 2)
-        self.TrackerFrame.PayTaxBtn:SetText("Mark Taxes Paid")
+        self.TrackerFrame.PayTaxBtn:SetText(DTC.L["Mark Taxes Paid"])
         self.TrackerFrame.PayTaxBtn:SetScript("OnClick", function() if DTC.Bribe then DTC.Bribe:PayAllTaxes() end end)
         self.TrackerFrame.PayTaxBtn:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText("Mark Taxes Paid")
-            GameTooltip:AddLine("Marks all 'Corruption Fee' debts owed to you as PAID.", 1, 1, 1, true)
-            GameTooltip:AddLine("Use this after collecting gold from the mailbox or trade.", 0.8, 0.8, 0.8, true)
+            GameTooltip:SetText(DTC.L["Mark Taxes Paid"])
+            GameTooltip:AddLine(DTC.L["Marks all 'Corruption Fee' debts owed to you as PAID."], 1, 1, 1, true)
+            GameTooltip:AddLine(DTC.L["Use this after collecting gold from the mailbox or trade."], 0.8, 0.8, 0.8, true)
             GameTooltip:Show()
         end)
         self.TrackerFrame.PayTaxBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -229,17 +229,17 @@ function DTC.BribeUI:Init()
                 DTC.Bribe:SendLobby(cand, amt)
                 self.LobbyInputFrame:Hide()
             else
-                print("|cFFFF0000DTC:|r Select a candidate.")
+                print("|cFFFF0000DTC:|r " .. DTC.L["Select a candidate."])
             end
         end)
         self.LobbyInputFrame.CancelBtn:SetScript("OnClick", function() self.LobbyInputFrame:Hide() end)
-        if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle("Lobbying") end
+        if self.LobbyInputFrame.SetTitle then self.LobbyInputFrame:SetTitle(DTC.L["Lobbying"]) end
     end
     
     -- NEW: 7. Lobby List
     self.LobbyListFrame = DTC_LobbyListFrame
     InjectTitle(self.LobbyListFrame)
-    if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle("DTC Tracker - Lobby") end
+    if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle(DTC.L["DTC Tracker - Lobby"]) end
     
 end
 
@@ -250,8 +250,8 @@ function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then return end
     self.OfferFrame.target = targetName
     self.OfferFrame.AmountBox:SetText(""); self.OfferFrame.AmountBox:SetFocus()
-    self.OfferFrame.Title:SetText("DTC Tracker - Bribe Offer")
-    if self.OfferFrame.Label then self.OfferFrame.Label:SetText("Enter Amount for " .. targetName .. " (Gold):") end
+    self.OfferFrame.Title:SetText(DTC.L["DTC Tracker - Bribe Offer"])
+    if self.OfferFrame.Label then self.OfferFrame.Label:SetText(DTC.L["Enter Amount for %s (Gold):"]:format(targetName)) end
     self.OfferFrame:Show()
 end
 
@@ -269,7 +269,7 @@ function DTC.BribeUI:OpenLobbyInput(targetName)
     if not self.LobbyInputFrame then return end
     self.LobbyInputFrame.AmountBox:SetText(""); self.LobbyInputFrame.AmountBox:SetFocus()
     self.LobbyInputFrame.candidate = targetName
-    UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName and DTC:GetDisplayColoredName(targetName) or "Select Candidate")
+    UIDropDownMenu_SetText(self.LobbyInputFrame.CandidateDD, targetName and DTC:GetDisplayColoredName(targetName) or DTC.L["Select Candidate"])
     self.LobbyInputFrame:Show()
 end
 
@@ -280,7 +280,7 @@ function DTC.BribeUI:ShowNextOffer()
     if #DTC.Bribe.IncomingQueue == 0 then self.IncomingFrame:Hide(); self.CurrentOfferID = nil; return end
     local offer = DTC.Bribe.IncomingQueue[1]
     self.CurrentOfferID = offer.id
-    self.IncomingFrame.Desc:SetText(string.format("|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r", DTC:GetDisplayColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
+    self.IncomingFrame.Desc:SetText(DTC.L["|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r"]:format(DTC:GetDisplayColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
     self.IncomingFrame:Show()
     
     self.IncomingFrame:SetScript("OnUpdate", function(f, elapsed)
@@ -378,7 +378,7 @@ function DTC.BribeUI:UpdateLobbyList()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
         -- Text: "[Lobbyist] pays [Amt] for [Candidate]"
-        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetDisplayColoredName(l.lobbyist), BreakUpLargeNumbers(l.amount), DTC:GetDisplayColoredName(l.candidate))
+        local txt = DTC.L["|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r"]:format(DTC:GetDisplayColoredName(l.lobbyist), BreakUpLargeNumbers(l.amount), DTC:GetDisplayColoredName(l.candidate))
         row.Text:SetText(txt)
         
         row:SetScript("OnUpdate", function(self, elapsed)
@@ -443,7 +443,7 @@ function DTC.BribeUI:ShowExportPopup()
         p:SetPoint("CENTER", 0, 0)
         p:SetFrameStrata("DIALOG")
         InjectTitle(p)
-        if p.SetTitle then p:SetTitle("Export Bribe Ledger (Ctrl+C)") end
+        if p.SetTitle then p:SetTitle(DTC.L["Export Bribe Ledger (Ctrl+C)"]) end
         
         p.Scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
         p.Scroll:SetPoint("TOPLEFT", 10, -30)
@@ -530,12 +530,12 @@ function DTC.BribeUI:UpdateTracker()
                 row.ForgiveBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
                 row.ForgiveBtn:SetSize(60, 22)
                 row.ForgiveBtn:SetPoint("RIGHT", row.TradeBtn, "LEFT", -5, 0)
-                row.ForgiveBtn:SetText("Forgive")
+                row.ForgiveBtn:SetText(DTC.L["Forgive"])
                 
                 row.MarkPaidBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
                 row.MarkPaidBtn:SetSize(80, 22)
                 row.MarkPaidBtn:SetPoint("RIGHT", row.ForgiveBtn, "LEFT", -5, 0)
-                row.MarkPaidBtn:SetText("Mark Paid")
+                row.MarkPaidBtn:SetText(DTC.L["Mark Paid"])
                 table.insert(self.rows, row)
             end
             row:SetParent(content)
@@ -550,7 +550,7 @@ function DTC.BribeUI:UpdateTracker()
                 row.Text:SetTextColor(1, 1, 1)
             end
             
-            local status = entry.paid and "|cFF00FF00PAID|r" or "|cFFFF0000OWED|r"
+            local status = entry.paid and DTC.L["|cFF00FF00PAID|r"] or DTC.L["|cFFFF0000OWED|r"]
             row.Amount:SetText(BreakUpLargeNumbers(entry.amount or 0) .. "g  " .. status)
             row.TradeBtn:SetScript("OnClick", function()
                 if entry.offerer == UnitName("player") then 
@@ -586,6 +586,6 @@ function DTC.BribeUI:UpdateTracker()
         end
     end
     
-    if self.TrackerFrame.TotalDebt then self.TrackerFrame.TotalDebt:SetText("Total Debt: " .. BreakUpLargeNumbers(displayedDebt) .. "g") end
+    if self.TrackerFrame.TotalDebt then self.TrackerFrame.TotalDebt:SetText(DTC.L["Total Debt: %s"]:format(BreakUpLargeNumbers(displayedDebt) .. "g")) end
     content:SetHeight(math.abs(yOffset) + 20)
 end
