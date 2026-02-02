@@ -1,5 +1,15 @@
 # DTC Raid Tracker
 
+## [v7.3.12](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.12) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.9...v7.3.12)
+
+### Fixes & Improvements
+- **Security:** Fixed a critical vulnerability where players could spoof debt payments. Now only the creditor can mark a debt as paid.
+- **Logic:** Fixed a potential self-voting exploit via addon messages.
+- **Logic:** Fixed a potential self-lobbying inconsistency.
+- **Stability:** Improved unique ID generation for bribe/lobby offers to prevent collisions.
+- **Code Quality:** Refactored helper functions (GetFullName, GetCanonicalName) to a shared utility module for better maintainability.
+
 ## [v7.3.9](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.9) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.7...v7.3.9)
 
