@@ -124,8 +124,7 @@ function DTC.Vote:Finalize()
         return
     end
     
-    local raidInfo = GetInstanceInfo()
-    local _, _, _, diffName = GetInstanceInfo()
+    local raidInfo, _, _, diffName = GetInstanceInfo()
     local dateStr = date("%Y-%m-%d")
     
     for name, count in pairs(self.votes) do

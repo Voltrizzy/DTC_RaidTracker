@@ -376,7 +376,7 @@ function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
         if IsInRaid() then
             for i=1, GetNumGroupMembers() do
                 local u = "raid"..i
-                local name = GetUnitName(u, true)
+                local name = GetRaidRosterInfo(i)
                 if name then
                     local short = name
                     if string.find(name, "-") then short = strsplit("-", name) end
@@ -386,7 +386,7 @@ function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
         elseif IsInGroup() then
             for i=1, GetNumGroupMembers() - 1 do
                 local u = "party"..i
-                local name = GetUnitName(u, true)
+                local name = UnitName(u)
                 if name then
                     local short = name
                     if string.find(name, "-") then short = strsplit("-", name) end
@@ -404,12 +404,13 @@ function DTC.Bribe:OnTradeShow()
     self.PlayerMoneyStart = GetMoney()
     if self.ActiveTrade then
         local target = UnitName("NPC")
+        if not target then target = GetUnitName("NPC", false) end
         
         local expected = self.ActiveTrade.target
         
         if target == expected then
             if self.ActiveTrade.isPaying and TradePlayerInputMoneyFrame then 
-                MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, math.floor(self.ActiveTrade.amount * 10000)) 
+                MoneyInputFrame_SetMoney(TradePlayerInputMoneyFrame, math.floor(self.ActiveTrade.amount * 10000)) 
             end
         else
             self.ActiveTrade = nil -- Mismatch, clear to prevent accidents

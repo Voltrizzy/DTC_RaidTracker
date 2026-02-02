@@ -13,13 +13,6 @@
         </Layers>
         
         <Frames>
-            <Frame parentKey="Inset" inherits="InsetFrameTemplate">
-                <Anchors>
-                    <Anchor point="TOPLEFT" x="4" y="-24"/>
-                    <Anchor point="BOTTOMRIGHT" x="-6" y="60"/> 
-                </Anchors>
-            </Frame>
-        
             <ScrollFrame parentKey="ListScroll" inherits="UIPanelScrollFrameTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" x="10" y="-30"/>
