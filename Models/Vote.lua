@@ -11,6 +11,7 @@ DTC.Vote.versions = {}
 DTC.Vote.myHistory = {}
 DTC.Vote.isTestMode = false
 DTC.Vote.sessionTimer = nil -- NEW: Timer reference
+DTC.Vote.sessionToken = nil -- Secure Mode Token
 
 -- 1. Initialization
 function DTC.Vote:Init()
@@ -25,11 +26,17 @@ end
 function DTC.Vote:OnEncounterEnd(encounterID, encounterName, difficultyID, raidSize, endStatus)
     if endStatus ~= 1 then return end
     if not DTC:IsValidRaid() then return end
+    
+    -- Secure Mode: Only Leader starts session locally
+    if DTCRaidDB.settings.secureVoteMode and not UnitIsGroupLeader("player") then
+        return
+    end
+    
     self:StartSession(encounterName) 
 end
 
 -- 3. Session Management
-function DTC.Vote:StartSession(bossName, isTest)
+function DTC.Vote:StartSession(bossName, isTest, remoteToken)
     self.isOpen = true
     self.currentBoss = bossName
     self.myVotesLeft = DTCRaidDB.settings.votesPerPerson or 3
@@ -38,6 +45,15 @@ function DTC.Vote:StartSession(bossName, isTest)
     self.versions = {} 
     self.myHistory = {}
     self.isTestMode = isTest or false
+    
+    -- Secure Mode Token Generation
+    if remoteToken then
+        self.sessionToken = remoteToken
+    elseif DTCRaidDB.settings.secureVoteMode and UnitIsGroupLeader("player") then
+        self.sessionToken = tostring(math.random(100000, 999999))
+    else
+        self.sessionToken = nil
+    end
     
     if self.sessionTimer then self.sessionTimer:Cancel() end
     
@@ -49,8 +65,12 @@ function DTC.Vote:StartSession(bossName, isTest)
         end)
     end
     
-    if not isTest then
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
+    if not isTest and not remoteToken then
+        if self.sessionToken then
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTE_START:"..bossName.."||"..self.sessionToken, "RAID")
+        else
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
+        end
     end
     
     if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
@@ -67,7 +87,6 @@ end
 function DTC.Vote:CastVote(targetName)
     if not self.isOpen or self.myVotesLeft <= 0 then return end
     
-    if targetName and string.find(targetName, "-") then targetName = strsplit("-", targetName) end
     
     if targetName == UnitName("player") then print("|cFFFF0000DTC:|r You cannot vote for yourself."); return end
     if self.myHistory[targetName] then return end
@@ -84,7 +103,9 @@ function DTC.Vote:CastVote(targetName)
     end
     
     if not self.isTestMode then
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..targetName, "RAID")
+        local payload = targetName
+        if self.sessionToken then payload = payload .. "||" .. self.sessionToken end
+        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "VOTE:"..payload, "RAID")
     end
     if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
 end
@@ -109,8 +130,14 @@ function DTC.Vote:Finalize()
     
     for name, count in pairs(self.votes) do
         if count > 0 then
-            local payload = string.format("%s,%d,%s,%s,%s,%s", 
-                name, count, (self.currentBoss:gsub(",", "")), (raidInfo:gsub(",", "")), dateStr, diffName or "Normal")
+            local payload = table.concat({
+                name,
+                count,
+                (self.currentBoss:gsub("||", "")),
+                (raidInfo:gsub("||", "")),
+                dateStr,
+                diffName or "Normal"
+            }, "||")
             if not self.isTestMode then
                 C_ChatInfo.SendAddonMessage(DTC.PREFIX, "FINALIZE:"..payload, "RAID")
             end
@@ -191,7 +218,11 @@ function DTC.Vote:GetRosterData()
     for i = 1, GetNumGroupMembers() do
         local name, _, _, _, _, classFile, _, _, _, role = GetRaidRosterInfo(i)
         if name then
-            if string.find(name, "-") then name = strsplit("-", name) end
+            -- Canonicalize Name: Ensure Name-Realm format to prevent vote splitting
+            if not string.find(name, "-") then
+                local r = GetRealmName()
+                if r then name = name .. "-" .. r:gsub(" ", "") end
+            end
             local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
             if nick == name then nick = nil end -- Avoid redundant "Name (Name)"
             local hasAddon = (self.versions[name] ~= nil)
@@ -215,22 +246,54 @@ function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
 function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 
 -- 7. Comms
-function DTC.Vote:OnComm(action, data, sender)
-    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
-    if action == "VOTE" then
+local commHandlers = {
+    ["VOTE"] = function(self, data, sender)
         if sender ~= UnitName("player") then
+            local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
+            local currentVotes = self.voters[sender] or 0
+            
             local target = data
-            self.votes[target] = (self.votes[target] or 0) + 1
-            self.voters[sender] = (self.voters[sender] or 0) + 1
-            if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
+            -- Verify Token if active
+            if self.sessionToken then
+                local tName, token = DTC.Utils:SplitString(data, "||")
+                if token ~= self.sessionToken then return end -- Reject spoofed/old vote
+                target = tName
+            end
+            
+            -- Prevent self-voting via addon channel
+            if target == sender then return end
+            
+            if currentVotes < maxVotes and target then
+                self.votes[target] = (self.votes[target] or 0) + 1
+                self.voters[sender] = currentVotes + 1
+                if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
+            end
         end
-    elseif action == "PING_ADDON" then
+    end,
+    ["PING_ADDON"] = function(self, data, sender)
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PONG_ADDON:"..DTC.VERSION, "RAID")
-    elseif action == "PONG_ADDON" then
+    end,
+    ["PONG_ADDON"] = function(self, data, sender)
         self.versions[sender] = data or "Unknown"
         if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
-    elseif action == "FINALIZE" then
+    end,
+    ["FINALIZE"] = function(self, data, sender)
         self:EndSession()
+    end,
+    ["SYNC_VOTE_START"] = function(self, data, sender)
+        if DTC.Utils:IsSenderLeader(sender) then
+            local boss, token = DTC.Utils:SplitString(data, "||")
+            if boss and token then
+                self:StartSession(boss, false, token)
+            end
+        end
+    end
+}
+
+function DTC.Vote:OnComm(action, data, sender)
+    local handler = commHandlers[action]
+    if handler then
+        handler(self, data, sender)
     end
 end
 

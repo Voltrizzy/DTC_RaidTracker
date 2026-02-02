@@ -7,6 +7,8 @@
 local folderName, DTC = ...
 DTC.History = {}
 
+local DELIMITER = "||"
+
 -- 1. Mock Data
 local MOCK_DATA = {
     {d="2026-01-28", r="Nerub-ar Palace", diff="Mythic", b="Queen Ansurek", w="Mickey", p=1, v="20"},
@@ -101,11 +103,18 @@ function DTC.History:PushSync(target, filters)
     
     for _, h in ipairs(raw) do
         if self:MatchesFilter(h, filters) then
-            -- Format: Boss,Winner,Points,Date,Raid,Diff,Voters
-            local payload = string.format("%s,%s,%d,%s,%s,%s,%s", 
-                (h.b or "?"):gsub(",", ""), (h.w or "?"):gsub(",", ""), h.p or 0, h.d or "?", (h.r or "?"):gsub(",", ""), h.diff or "", (h.v or ""):gsub(",", ""))
+            -- Format: Boss||Winner||Points||Date||Raid||Diff||Voters
+            local payload = table.concat({
+                (h.b or "?"):gsub(DELIMITER, ""),
+                (h.w or "?"):gsub(DELIMITER, ""),
+                h.p or 0,
+                h.d or "?",
+                (h.r or "?"):gsub(DELIMITER, ""),
+                h.diff or "",
+                (h.v or ""):gsub(DELIMITER, "")
+            }, DELIMITER)
             
-            local fullTarget = DTC:GetFullName(target)
+            local fullTarget = DTC.Utils:GetFullName(target)
             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_PUSH:"..payload, "WHISPER", fullTarget)
             count = count + 1
         end
@@ -115,11 +124,10 @@ end
 
 -- 6. Receiver Logic (OnComm)
 -- Handles incoming history data synchronization messages.
-function DTC.History:OnComm(action, data, sender)
-    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
-    if action == "SYNC_PUSH" then
-        -- Parse CSV: Boss,Winner,Points,Date,Raid,Diff,Voters
-        local boss, winner, pts, dateStr, raid, diff, voters = strsplit(",", data)
+local commHandlers = {
+    ["SYNC_PUSH"] = function(self, data, sender)
+        -- Parse DSV: Boss||Winner||Points||Date||Raid||Diff||Voters
+        local boss, winner, pts, dateStr, raid, diff, voters = DTC.Utils:SplitString(data, DELIMITER)
         
         if boss and winner and dateStr then
             local newEntry = {
@@ -149,9 +157,10 @@ function DTC.History:OnComm(action, data, sender)
                 if DTC.HistoryUI and DTC.HistoryUI.UpdateList then DTC.HistoryUI:UpdateList() end
             end
         end
-    elseif action == "FINALIZE" then
-        -- payload: name(Winner), count(Points), boss, raid, date, diff
-        local winner, pts, boss, raid, dateStr, diff = strsplit(",", data)
+    end,
+    ["FINALIZE"] = function(self, data, sender)
+        -- payload: name(Winner)||count(Points)||boss||raid||date||diff
+        local winner, pts, boss, raid, dateStr, diff = DTC.Utils:SplitString(data, DELIMITER)
         if winner and boss and dateStr then
             local newEntry = {
                 b = boss,
@@ -175,6 +184,14 @@ function DTC.History:OnComm(action, data, sender)
             end
         end
     end
+}
+
+function DTC.History:OnComm(action, data, sender)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
+    local handler = commHandlers[action]
+    if handler then
+        handler(self, data, sender)
+    end
 end
 
 -- 7. Helpers
@@ -196,7 +213,15 @@ function DTC.History:GetCSV()
     local data = self:GetData(false)
     local buffer = { "Date,Raid,Diff,Boss,Winner,Points,Voters" }
     for _, h in ipairs(data) do
-        table.insert(buffer, string.format("%s,%s,%s,%s,%s,%d,%s", h.d, (h.r or "?"):gsub(",", ""), h.diff, (h.b or "?"):gsub(",", ""), (h.w or "?"):gsub(",", ""), h.p, (h.v or ""):gsub(",", "")))
+        table.insert(buffer, string.format("%s,%s,%s,%s,%s,%d,%s",
+            h.d,
+            (h.r or "?"):gsub(",", ""),
+            h.diff,
+            (h.b or "?"):gsub(",", ""),
+            (h.w or "?"):gsub(",", ""),
+            h.p,
+            (h.v or ""):gsub(",", "")
+        ))
     end
     return table.concat(buffer, "\n")
 end

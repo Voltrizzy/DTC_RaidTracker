@@ -7,6 +7,8 @@
 local folderName, DTC = ...
 DTC.Leaderboard = {}
 
+local DELIMITER = "||"
+
 DTC.Leaderboard.Filters = {
     Time = "ALL", 
     Exp = "ALL",  
@@ -90,20 +92,27 @@ function DTC.Leaderboard:AwardTrip(winnerNickname)
     DTCRaidDB.trips = DTCRaidDB.trips or {}
     DTCRaidDB.trips[winnerNickname] = (DTCRaidDB.trips[winnerNickname] or 0) + 1
     if IsInRaid() then
-        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_DATA:TRIP,"..winnerNickname..","..DTCRaidDB.trips[winnerNickname], "RAID")
+        C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_DATA:TRIP||"..winnerNickname.."||"..DTCRaidDB.trips[winnerNickname], "RAID")
     end
     return DTCRaidDB.trips[winnerNickname]
 end
 
--- Handles incoming leaderboard synchronization messages.
-function DTC.Leaderboard:OnComm(action, data, sender)
-    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
-    if action == "SYNC_DATA" then
-        local subType, name, count = strsplit(",", data)
+local commHandlers = {
+    ["SYNC_DATA"] = function(self, data, sender)
+        local subType, name, count = DTC.Utils:SplitString(data, DELIMITER)
         if subType == "TRIP" and name and count then
             DTCRaidDB.trips = DTCRaidDB.trips or {}
             DTCRaidDB.trips[name] = tonumber(count)
             if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
         end
+    end
+}
+
+-- Handles incoming leaderboard synchronization messages.
+function DTC.Leaderboard:OnComm(action, data, sender)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
+    local handler = commHandlers[action]
+    if handler then
+        handler(self, data, sender)
     end
 end

@@ -144,6 +144,8 @@ f:SetScript("OnEvent", function(self, event, ...)
                     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:"..(s.votesPerPerson or 3), "RAID")
                     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..(s.corruptionFee or 10), "RAID")
                     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_LIMIT:"..(s.debtLimit or 0), "RAID")
+                    local b, p, l = s.bribeTimer or 90, s.propTimer or 90, s.lobbyTimer or 120
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_TIMERS:"..b.."||"..p.."||"..l, "RAID")
                 end
             elseif action == "SESSION_STATUS" then
                 DTC.SessionActive = (data == "1")
@@ -219,8 +221,7 @@ end
 -- @param name: The name of the player.
 function DTC:GetColoredName(name)
     if not name then return "" end
-    local lookup = name
-    if string.find(name, "-") then lookup = strsplit("-", name) end
+    local lookup = DTC.Utils:GetCanonicalName(name)
     if DTCRaidDB.classes and DTCRaidDB.classes[lookup] then
         local c = RAID_CLASS_COLORS[DTCRaidDB.classes[lookup]]
         if c then return string.format("|cFF%02x%02x%02x%s|r", c.r*255, c.g*255, c.b*255, name) end
@@ -232,26 +233,12 @@ end
 -- Handles class coloring and avoids redundant "Name (Name)" display.
 function DTC:GetDisplayColoredName(name)
     local cName = self:GetColoredName(name)
-    local nick = DTCRaidDB.identities and DTCRaidDB.identities[name]
-    if nick and nick ~= "" and nick ~= name then
+    local lookup = DTC.Utils:GetCanonicalName(name)
+    local nick = DTCRaidDB.identities and DTCRaidDB.identities[lookup]
+    if nick and nick ~= "" and nick ~= name and nick ~= lookup then
         return cName .. " (" .. nick .. ")"
     end
     return cName
-end
-
--- Returns the full name (Name-Realm) of a player if they are in the raid group.
--- Useful for whispering players cross-realm.
-function DTC:GetFullName(shortName)
-    if not IsInRaid() then return shortName end
-    for i=1, GetNumGroupMembers() do
-        local name = GetRaidRosterInfo(i)
-        if name then
-            local sName = name
-            if string.find(sName, "-") then sName = strsplit("-", sName) end
-            if sName == shortName then return name end
-        end
-    end
-    return shortName
 end
 
 -- Triggers the database reset confirmation popup.
@@ -287,8 +274,8 @@ function DTC:CheckRosterForNicknames()
         local charName, _, _, _, _, classFile = GetRaidRosterInfo(i)
         
         if charName then
-            if string.find(charName, "-") then charName = strsplit("-", charName) end
-            if not DTCRaidDB.identities[charName] then DTCRaidDB.identities[charName] = charName end
+            charName = DTC.Utils:GetCanonicalName(charName)
+            if not DTCRaidDB.identities[charName] or DTCRaidDB.identities[charName] == "" then DTCRaidDB.identities[charName] = charName end
             if classFile then DTCRaidDB.classes[charName] = classFile end
             
             local guildName, _, _, _ = GetGuildInfo(unitID)
@@ -321,6 +308,52 @@ function DTC:SyncSessionStatus()
     if IsInRaid() then
         C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SESSION_STATUS:"..status, "RAID")
     end
+end
+
+-- Unit Test: Verify Self-Voting Prevention
+function DTC:TestSelfVoting()
+    if not DTC.Vote then print("Vote module not loaded."); return end
+    
+    print("|cFFFFD700DTC Test:|r Starting Self-Voting Prevention Test...")
+    
+    -- Mock Session
+    DTC.Vote:StartSession("Test Boss", true)
+    local myName = UnitName("player")
+    
+    -- Attempt 1: Local CastVote (Should be blocked by UI/Logic)
+    DTC.Vote:CastVote(myName)
+    
+    -- Attempt 2: Spoofed Addon Message (Should be blocked by OnComm)
+    -- Simulate receiving a VOTE message from myself targeting myself
+    DTC.Vote:OnComm("VOTE", myName, myName)
+    
+    local votes = DTC.Vote.votes[myName] or 0
+    if votes == 0 then
+        print("|cFF00FF00PASS:|r Self-voting successfully blocked.")
+    else
+        print("|cFFFF0000FAIL:|r Self-voting allowed! Votes: " .. votes)
+    end
+    
+    DTC.Vote:EndSession()
+end
+
+-- Unit Test: Verify GenerateUniqueID Uniqueness
+function DTC:TestUniqueID()
+    print("|cFFFFD700DTC Test:|r Starting Unique ID Generation Test...")
+    local ids = {}
+    local count = 1000
+    local collisions = 0
+    
+    for i = 1, count do
+        local id = DTC.Utils:GenerateUniqueID("TestUser")
+        if ids[id] then
+            collisions = collisions + 1
+        else
+            ids[id] = true
+        end
+    end
+    
+    if collisions == 0 then print("|cFF00FF00PASS:|r Generated " .. count .. " unique IDs with 0 collisions.") else print("|cFFFF0000FAIL:|r " .. collisions .. " collisions detected!") end
 end
 
 -- ============================================================================
@@ -359,6 +392,10 @@ SlashCmdList["DTC"] = function(msg)
         else InterfaceOptionsFrame_OpenToCategory("DTC Raid Tracker") end
     elseif cmd == "reset" then 
         DTC:ResetDatabase()
+    elseif cmd == "testselfvote" then
+        DTC:TestSelfVoting()
+    elseif cmd == "testuid" then
+        DTC:TestUniqueID()
     else 
         print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
     end

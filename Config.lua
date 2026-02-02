@@ -283,8 +283,16 @@ function DTC.Config:RefreshNicknames(content)
             local val = DTCRaidDB.identities[name]
             if not val or val == "" then val = name end
             row.EditBox:SetText(val)
-            row.EditBox:SetScript("OnEnterPressed", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", ""); self:ClearFocus() end)
-            row.EditBox:SetScript("OnEditFocusLost", function(self) DTCRaidDB.identities[name] = self:GetText():gsub(",", "") end)
+            row.EditBox:SetScript("OnEnterPressed", function(self) 
+                local txt = self:GetText():gsub(",", "")
+                if txt == "" then txt = name end
+                DTCRaidDB.identities[name] = txt; self:SetText(txt); self:ClearFocus() 
+            end)
+            row.EditBox:SetScript("OnEditFocusLost", function(self) 
+                local txt = self:GetText():gsub(",", "")
+                if txt == "" then txt = name end
+                DTCRaidDB.identities[name] = txt; self:SetText(txt)
+            end)
             row.DelBtn:SetScript("OnClick", function() 
                 DTCRaidDB.identities[name] = nil
                 if DTCRaidDB.guilds then DTCRaidDB.guilds[name] = nil end
@@ -506,7 +514,7 @@ function DTC.Config:BuildVotingTab(frame)
         DTCRaidDB.settings.voteWinCount = val
         valLabel:SetText(val)
         for i=1,10 do if i<=val then msgBoxes[i]:Show() else msgBoxes[i]:Hide() end end
-        content:SetHeight(60 + (val * 25) + 20)
+        content:SetHeight(math.max(480, 60 + (val * 25) + 200))
     end
     sCount:SetScript("OnValueChanged", function(self, v) 
         if self.isSettingUp then return end
@@ -535,6 +543,14 @@ function DTC.Config:BuildVotingTab(frame)
     end
     AddEdit("Runner Up Message:", "voteRunnerUpMsg", -330, "voteRunnerUpEnabled")
     AddEdit("Lowest Vote Message:", "voteLowMsg", -375, "voteLowEnabled")
+
+    -- NEW: Secure Mode
+    local cbSec = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    cbSec:SetSize(24, 24); cbSec:SetPoint("TOPLEFT", 15, -420)
+    cbSec:SetScript("OnShow", function(self) self:SetChecked(DTCRaidDB.settings.secureVoteMode) end)
+    cbSec:SetScript("OnClick", function(self) DTCRaidDB.settings.secureVoteMode = self:GetChecked() end)
+    local lblSec = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    lblSec:SetPoint("LEFT", cbSec, "RIGHT", 5, 0); lblSec:SetText("Secure Mode (Leader Only Start)")
 
     btnReset:SetScript("OnClick", function()
         -- Defaults
@@ -611,8 +627,13 @@ function DTC.Config:BuildBribeTab(frame)
         end)
         
         s:SetScript("OnMouseUp", function(self)
-            if key == "corruptionFee" and IsInRaid() and UnitIsGroupLeader("player") then
-                C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..DTCRaidDB.settings[key], "RAID")
+            if IsInRaid() and UnitIsGroupLeader("player") then
+                if key == "corruptionFee" then
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_FEE:"..DTCRaidDB.settings[key], "RAID")
+                elseif key == "bribeTimer" or key == "propTimer" or key == "lobbyTimer" then
+                    local b, p, l = DTCRaidDB.settings.bribeTimer or 90, DTCRaidDB.settings.propTimer or 90, DTCRaidDB.settings.lobbyTimer or 120
+                    C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_TIMERS:"..b.."||"..p.."||"..l, "RAID")
+                end
             end
         end)
         

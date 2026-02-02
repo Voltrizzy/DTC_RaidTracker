@@ -196,6 +196,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
     local isMe = nil
 
     for i, p in ipairs(list) do
+        local player = p -- Capture loop variable for closures
         local row = rows[rowIndex]
         
         if not row then
@@ -252,7 +253,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         local targetHasVotesLeft = (targetVotesCast < maxVotes)
 
         -- VOTE
-        row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(p.name) end end)
+        row.VoteBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:CastVote(player.name) end end)
         if isOpen and myVotesRemaining and not alreadyVotedFor and not isMe then 
             row.VoteBtn:Enable() 
         else 
@@ -260,7 +261,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         end
 
         -- BRIBE
-        row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(p.name) end end)
+        row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(player.name) end end)
         if isOpen and not isMe and targetHasVotesLeft and not hasDebt then
             row.BribeBtn:Enable()
         else
@@ -268,7 +269,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         end
 
         -- LOBBY
-        row.LobbyBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenLobbyInput(p.name) end end)
+        row.LobbyBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenLobbyInput(player.name) end end)
         if isOpen and not isMe and not hasDebt then
             row.LobbyBtn:Enable()
         else

@@ -310,6 +310,7 @@ function DTC.BribeUI:UpdatePropositionList()
     
     local yOffset = 0
     for i, prop in ipairs(list) do
+        local p = prop -- Capture for closure
         local row = self.propRows[i]
         if not row then
             row = CreateFrame("Frame", nil, content, "DTC_PropRowTemplate")
@@ -319,16 +320,16 @@ function DTC.BribeUI:UpdatePropositionList()
         row:Show()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
-        row.Text:SetText(DTC:GetDisplayColoredName(prop.offerer) .. " (" .. BreakUpLargeNumbers(prop.amount) .. "g)")
+        row.Text:SetText(DTC:GetDisplayColoredName(p.offerer) .. " (" .. BreakUpLargeNumbers(p.amount) .. "g)")
         
-        row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptProposition(prop.id) end)
+        row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptProposition(p.id) end)
         
         row:SetScript("OnUpdate", function(self, elapsed)
             local now = GetTime()
-            local finish = (prop.startTime or now) + (prop.duration or 0)
+            local finish = (p.startTime or now) + (p.duration or 0)
             local left = finish - now
             if left < 0 then left = 0 end
-            self.Timer:SetMinMaxValues(0, prop.duration or 0)
+            self.Timer:SetMinMaxValues(0, p.duration or 0)
             self.Timer:SetValue(left)
         end)
         
@@ -336,12 +337,12 @@ function DTC.BribeUI:UpdatePropositionList()
              -- Local hide only? Or ignore?
              -- Usually "Decline" just hides it from MY screen.
              -- For now let's just trigger a "remove from my list" visual
-             DTC.Bribe:ExpireProposition(prop.id)
+             DTC.Bribe:ExpireProposition(p.id)
         end)
         
         -- Logic: If offerer has no votes left (should be caught by model check, but double check here)
         if DTC.Vote then
-            local votes = DTC.Vote:GetVotesCastBy(prop.offerer)
+            local votes = DTC.Vote:GetVotesCastBy(p.offerer)
             local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
             if votes >= maxVotes then row.AcceptBtn:Disable() else row.AcceptBtn:Enable() end
         else
@@ -366,6 +367,7 @@ function DTC.BribeUI:UpdateLobbyList()
     
     local yOffset = 0
     for i, lobby in ipairs(list) do
+        local l = lobby -- Capture for closure
         local row = self.lobbyRows[i]
         if not row then
             row = CreateFrame("Frame", nil, content, "DTC_LobbyRowTemplate")
@@ -376,20 +378,20 @@ function DTC.BribeUI:UpdateLobbyList()
         row:SetPoint("TOPLEFT", 0, yOffset)
         
         -- Text: "[Lobbyist] pays [Amt] for [Candidate]"
-        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetDisplayColoredName(lobby.lobbyist), BreakUpLargeNumbers(lobby.amount), DTC:GetDisplayColoredName(lobby.candidate))
+        local txt = string.format("|cFFFFD700%s|r pays |cFFFFD700%sg|r for |cFF00FF00%s|r", DTC:GetDisplayColoredName(l.lobbyist), BreakUpLargeNumbers(l.amount), DTC:GetDisplayColoredName(l.candidate))
         row.Text:SetText(txt)
         
         row:SetScript("OnUpdate", function(self, elapsed)
             local now = GetTime()
-            local finish = (lobby.startTime or now) + (lobby.duration or 0)
+            local finish = (l.startTime or now) + (l.duration or 0)
             local left = finish - now
             if left < 0 then left = 0 end
-            self.Timer:SetMinMaxValues(0, lobby.duration or 0)
+            self.Timer:SetMinMaxValues(0, l.duration or 0)
             self.Timer:SetValue(left)
         end)
         
-        row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptLobby(lobby.id) end)
-        row.DeclineBtn:SetScript("OnClick", function() DTC.Bribe:ExpireLobby(lobby.id) end)
+        row.AcceptBtn:SetScript("OnClick", function() DTC.Bribe:AcceptLobby(l.id) end)
+        row.DeclineBtn:SetScript("OnClick", function() DTC.Bribe:ExpireLobby(l.id) end)
         
         -- Logic: Disable if I have no votes
         if DTC.Vote and DTC.Vote.myVotesLeft > 0 then row.AcceptBtn:Enable() else row.AcceptBtn:Disable() end
@@ -491,9 +493,9 @@ function DTC.BribeUI:UpdateTracker()
             local tA, tB = dA.timestamp or "", dB.timestamp or ""
             if tA ~= tB then return tA < tB end
         elseif sortMode == "AMT_DESC" then 
-            if dA.amount ~= dB.amount then return (dA.amount or 0) > (dB.amount or 0) end
+            if (dA.amount or 0) ~= (dB.amount or 0) then return (dA.amount or 0) > (dB.amount or 0) end
         elseif sortMode == "AMT_ASC" then 
-            if dA.amount ~= dB.amount then return (dA.amount or 0) < (dB.amount or 0) end
+            if (dA.amount or 0) ~= (dB.amount or 0) then return (dA.amount or 0) < (dB.amount or 0) end
         else 
             local tA, tB = dA.timestamp or "", dB.timestamp or ""
             if tA ~= tB then return tA > tB end
