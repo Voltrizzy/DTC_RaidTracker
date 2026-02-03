@@ -1,5 +1,14 @@
 # DTC Raid Tracker
 
+## [v7.3.15](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.15) (2026-01-29)
+[Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.14...v7.3.15)
+
+### Fixes & Improvements
+- **Security:** Fixed leader spoofing vulnerability in Bribe module.
+- **Usability:** Added "Force Start Session" to allow usage in unrecognized raids.
+- **UI:** Restricted Announce/Finalize buttons to leader only.
+- **Logic:** Added session active check to prevent unauthorized vote sessions.
+
 ## [v7.3.14](https://github.com/Voltrizzy/DTC_RaidTracker/tree/v7.3.14) (2026-01-29)
 [Full Changelog](https://github.com/Voltrizzy/DTC_RaidTracker/compare/v7.3.13...v7.3.14)
 

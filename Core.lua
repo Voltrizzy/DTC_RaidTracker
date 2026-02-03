@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.14"
+DTC.VERSION = "7.3.15"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -98,7 +98,7 @@ StaticPopupDialogs["DTC_FORCE_START_CONFIRM"] = {
     button1 = DTC.L["Yes"], button2 = DTC.L["No"],
     OnAccept = function()
         DTC.SessionDecided = false
-        DTC:CheckSessionStart()
+        DTC:CheckSessionStart(true)
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -284,8 +284,8 @@ function DTC:CheckRosterForNicknames()
     end
 end
 
-function DTC:CheckSessionStart()
-    if not self:IsValidRaid() then
+function DTC:CheckSessionStart(force)
+    if not force and not self:IsValidRaid() then
         self.SessionActive = nil
         self.SessionDecided = false
         return

@@ -26,6 +26,7 @@ end
 function DTC.Vote:OnEncounterEnd(encounterID, encounterName, difficultyID, raidSize, endStatus)
     if endStatus ~= 1 then return end
     if not DTC:IsValidRaid() then return end
+    if not DTC.SessionActive and not self.isTestMode then return end
     
     -- Secure Mode: Only Leader starts session locally
     if DTCRaidDB.settings.secureVoteMode and not UnitIsGroupLeader("player") then
@@ -61,7 +62,11 @@ function DTC.Vote:StartSession(bossName, isTest, remoteToken)
     self.sessionStartTime = GetTime()
     if UnitIsGroupLeader("player") or self.isTestMode then
         self.sessionTimer = C_Timer.NewTimer(self.sessionDuration, function()
-            self:Finalize()
+            if UnitIsGroupLeader("player") or self.isTestMode then
+                self:Finalize()
+            else
+                self:EndSession()
+            end
         end)
     end
     
@@ -153,6 +158,7 @@ end
 
 -- 5. Announcement Logic
 function DTC.Vote:Announce()
+    if not UnitIsGroupLeader("player") and not self.isTestMode then return end
     local sorted = {}
     for n, v in pairs(self.votes) do
         table.insert(sorted, {name=n, val=v}) 

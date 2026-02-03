@@ -39,8 +39,16 @@ function DTC.VoteFrame:Init()
         frame.ListScroll:SetPoint("BOTTOMRIGHT", -30, 65)
     end
 
-    frame.FinalizeBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Finalize() end end)
-    frame.AnnounceBtn:SetScript("OnClick", function() if DTC.Vote then DTC.Vote:Announce() end end)
+    frame.FinalizeBtn:SetScript("OnClick", function() 
+        if DTC.Vote and (UnitIsGroupLeader("player") or DTC.Vote.isTestMode) then 
+            DTC.Vote:Finalize() 
+        end 
+    end)
+    frame.AnnounceBtn:SetScript("OnClick", function() 
+        if DTC.Vote and (UnitIsGroupLeader("player") or DTC.Vote.isTestMode) then 
+            DTC.Vote:Announce() 
+        end 
+    end)
     
     if frame.PropBtn then
         frame.PropBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenPropInput() end end)
@@ -113,7 +121,7 @@ function DTC.VoteFrame:UpdateList()
         frame.FinalizeBtn:Hide()
     end
     
-    if isLeader then
+    if isLeader and not isOpen then
         frame.AnnounceBtn:Show()
         frame.AnnounceBtn:ClearAllPoints()
         if lastFrame then frame.AnnounceBtn:SetPoint("LEFT", lastFrame, "RIGHT", padding, 0)
@@ -262,7 +270,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
 
         -- BRIBE
         row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(player.name) end end)
-        if isOpen and not isMe and targetHasVotesLeft and not hasDebt then
+        if isOpen and not isMe and targetHasVotesLeft and not hasDebt and p.hasAddon then
             row.BribeBtn:Enable()
         else
             row.BribeBtn:Disable()

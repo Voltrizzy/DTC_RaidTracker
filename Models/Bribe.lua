@@ -34,13 +34,18 @@ end
 
 -- Sends a direct bribe offer to a target player via addon message.
 function DTC.Bribe:OfferBribe(targetPlayer, amount)
-    if not targetPlayer or not amount or tonumber(amount) <= 0 then return end
+    if not targetPlayer or not amount or (tonumber(amount) or 0) <= 0 then return end
     if IsInGroup() and not IsInRaid() then print(DTC.L["|cFFFF0000DTC:|r Bribes are only available in a raid group (or Solo for testing)."]); return end
     if self:HasUnpaidDebt() then print(DTC.L["|cFFFF0000DTC:|r Unpaid debts exist!"]); return end
     
     local limit = DTCRaidDB.settings.debtLimit or 0
     if limit > 0 and self:GetTotalDebt() >= limit then
         print(DTC.L["|cFFFF0000DTC:|r Cannot offer bribe. Total debt exceeds limit (%sg)."]:format(limit)); return
+    end
+    
+    if DTC.Vote and not DTC.Vote.isTestMode and DTC.Vote.versions and not DTC.Vote.versions[targetPlayer] then
+        print(DTC.L["|cFFFF0000DTC:|r Cannot bribe %s. They do not have the addon."]:format(targetPlayer))
+        return
     end
     
     local payload = string.format("%d", amount)
@@ -123,7 +128,7 @@ end
 
 -- Broadcasts a proposition (selling own vote) to the raid.
 function DTC.Bribe:SendProposition(amount)
-    if not amount or tonumber(amount) <= 0 then return end
+    if not amount or (tonumber(amount) or 0) <= 0 then return end
     if IsInGroup() and not IsInRaid() then print(DTC.L["|cFFFF0000DTC:|r Propositions are only available in a raid group (or Solo for testing)."]); return end
     self.MyCurrentPropPrice = tonumber(amount)
     if not DTC.Vote or not DTC.Vote.isOpen then print(DTC.L["Voting is closed."]); return end
@@ -199,7 +204,7 @@ end
 
 -- Broadcasts a lobby offer (paying others to vote for a candidate) to the raid.
 function DTC.Bribe:SendLobby(candidate, amount)
-    if not candidate or not amount or tonumber(amount) <= 0 then return end
+    if not candidate or not amount or (tonumber(amount) or 0) <= 0 then return end
     if IsInGroup() and not IsInRaid() then print(DTC.L["|cFFFF0000DTC:|r Lobbying is only available in a raid group (or Solo for testing)."]); return end
     
     if candidate == UnitName("player") then print(DTC.L["|cFFFF0000DTC:|r You cannot lobby for yourself."]); return end
@@ -386,17 +391,29 @@ function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
         elseif IsInGroup() then
             for i=1, GetNumGroupMembers() - 1 do
                 local u = "party"..i
-                local name = UnitName(u)
+                local name, realm = UnitName(u)
                 if name then
-                    local short = name
-                    if string.find(name, "-") then short = strsplit("-", name) end
-                    if name == player or short == player then unitID = u; break end
+                    local fullName = name
+                    if realm and realm ~= "" then fullName = name .. "-" .. realm end
+                    if fullName == player or name == player then unitID = u; break end
                 end
             end
         end
     end
 
-    if unitID then InitiateTrade(unitID) else print(DTC.L["|cFFFF0000DTC:|r Cannot trade: Unit '%s' not found in group or target."]:format(player)) end
+    if unitID then
+        if UnitIsDeadOrGhost(unitID) then
+            print(DTC.L["|cFFFF0000DTC:|r Cannot trade: Target is dead."])
+            return
+        end
+        if not CheckInteractDistance(unitID, 2) then
+            print(DTC.L["|cFFFF0000DTC:|r Cannot trade: Target is out of range."])
+            return
+        end
+        InitiateTrade(unitID)
+    else
+        print(DTC.L["|cFFFF0000DTC:|r Cannot trade: Unit '%s' not found in group or target."]:format(player))
+    end
 end
 
 -- Event handler for TRADE_SHOW. Auto-fills gold if paying.
@@ -404,7 +421,6 @@ function DTC.Bribe:OnTradeShow()
     self.PlayerMoneyStart = GetMoney()
     if self.ActiveTrade then
         local target = UnitName("NPC")
-        if not target then target = GetUnitName("NPC", false) end
         
         local expected = self.ActiveTrade.target
         
@@ -543,12 +559,13 @@ function DTC.Bribe:MarkDebtPaid(index)
 end
 
 -- Helper to find the name of the raid leader (Rank 2).
-function DTC.Bribe:GetLeaderName()
+-- Returns short name by default, or full name if requested for validation.
+function DTC.Bribe:GetLeaderName(returnFull)
     if not IsInRaid() then return UnitName("player") end
     for i = 1, GetNumGroupMembers() do
         local name, rank = GetRaidRosterInfo(i)
         if rank == 2 then
-            if name and string.find(name, "-") then name = strsplit("-", name) end
+            if not returnFull and name and string.find(name, "-") then name = strsplit("-", name) end
             return name
         end
     end
@@ -581,13 +598,13 @@ local commHandlers = {
         end
     end,
     ["SYNC_LIMIT"] = function(self, data, sender)
-        if sender == self:GetLeaderName() then DTCRaidDB.settings.debtLimit = tonumber(data) or 0 end
+        if sender == self:GetLeaderName(true) then DTCRaidDB.settings.debtLimit = tonumber(data) or 0 end
     end,
     ["SYNC_FEE"] = function(self, data, sender)
-        if sender == self:GetLeaderName() then DTCRaidDB.settings.corruptionFee = tonumber(data) or 10 end
+        if sender == self:GetLeaderName(true) then DTCRaidDB.settings.corruptionFee = tonumber(data) or 10 end
     end,
     ["SYNC_TIMERS"] = function(self, data, sender)
-        if sender == self:GetLeaderName() then
+        if sender == self:GetLeaderName(true) then
             local b, p, l = DTC.Utils:SplitString(data, DELIMITER)
             DTCRaidDB.settings.bribeTimer = tonumber(b) or 90
             DTCRaidDB.settings.propTimer = tonumber(p) or 90
@@ -595,7 +612,7 @@ local commHandlers = {
         end
     end,
     ["SYNC_VOTES"] = function(self, data, sender)
-        if sender == self:GetLeaderName() then
+        if sender == self:GetLeaderName(true) then
             DTCRaidDB.settings.votesPerPerson = tonumber(data) or 3
             if DTC.Vote and DTC.Vote.isOpen then
                 local max = DTCRaidDB.settings.votesPerPerson
@@ -613,12 +630,14 @@ local commHandlers = {
 
 -- Handles incoming addon communication messages for the Bribe module.
 function DTC.Bribe:OnComm(action, data, sender)
-    -- Sender sanitization handled by Core or passed raw? Core passes raw.
+    local rawSender = sender -- Keep raw sender for security checks
+    -- Sanitize sender for internal logic (DB storage, UI display)
+    if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
     if sender == UnitName("player") then return end 
 
     local handler = commHandlers[action]
     if handler then
-        handler(self, data, sender)
+        handler(self, data, sender, rawSender)
     end
 end
 

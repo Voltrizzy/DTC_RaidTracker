@@ -133,6 +133,7 @@ DTC.L["|cFFFF0000DTC:|r Bribes are only available in a raid group (or Solo for t
 DTC.L["|cFFFF0000DTC:|r Unpaid debts exist!"] = "|cFFFF0000DTC:|r Unpaid debts exist!"
 DTC.L["|cFFFF0000DTC:|r Cannot offer bribe. Total debt exceeds limit (%sg)."] = "|cFFFF0000DTC:|r Cannot offer bribe. Total debt exceeds limit (%sg)."
 DTC.L["|cFF00FF00DTC:|r Offered %sg to %s"] = "|cFF00FF00DTC:|r Offered %sg to %s"
+DTC.L["|cFFFF0000DTC:|r Cannot bribe %s. They do not have the addon."] = "|cFFFF0000DTC:|r Cannot bribe %s. They do not have the addon."
 DTC.L["|cFFFF0000DTC:|r Voting has ended. Offer expired."] = "|cFFFF0000DTC:|r Voting has ended. Offer expired."
 DTC.L["|cFFFF0000DTC:|r Unpaid debts exist! Cannot incur tax."] = "|cFFFF0000DTC:|r Unpaid debts exist! Cannot incur tax."
 DTC.L["|cFFFF0000DTC:|r Cannot accept offer. Total debt exceeds limit (%sg)."] = "|cFFFF0000DTC:|r Cannot accept offer. Total debt exceeds limit (%sg)."
@@ -163,6 +164,8 @@ DTC.L["|cFFFF0000DTC:|r You must be in a raid group to forgive debts."] = "|cFFF
 DTC.L["|cFF00FF00DTC:|r You forgave the debt of %s (%sg)."] = "|cFF00FF00DTC:|r You forgave the debt of %s (%sg)."
 DTC.L["|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."] = "|cFFFF0000DTC:|r You must be in a raid group to mark debts as paid."
 DTC.L["|cFF00FF00DTC:|r Manually marked debt from %s as PAID."] = "|cFF00FF00DTC:|r Manually marked debt from %s as PAID."
+DTC.L["|cFFFF0000DTC:|r Cannot trade: Target is dead."] = "|cFFFF0000DTC:|r Cannot trade: Target is dead."
+DTC.L["|cFFFF0000DTC:|r Cannot trade: Target is out of range."] = "|cFFFF0000DTC:|r Cannot trade: Target is out of range."
 
 -- Vote Messages
 DTC.L["|cFFFF0000DTC:|r You cannot vote for yourself."] = "|cFFFF0000DTC:|r You cannot vote for yourself."

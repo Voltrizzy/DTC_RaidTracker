@@ -1,4 +1,4 @@
-# DTC Raid Tracker (v7.3.14)
+# DTC Raid Tracker (v7.3.15)
 
 **DTC Raid Tracker** is a modular World of Warcraft addon designed to track raid attendance, performance voting, and leaderboard stats. Version 7.1 introduces major architectural improvements and a new **"Game Theory"** module that allows players to leverage gold to influence the vote via Bribes, Propositions, and Lobbying.
 
@@ -8,6 +8,7 @@
 * **Weighted Voting:** Every raider gets 3 votes per boss kill.
 * **Role Sorting:** View the roster sorted by Tank, Healer, and DPS/Other.
 * **Smart Validation:** Blocks self-voting and prevents voting if a player has disconnected or has an outdated addon version.
+* **Secure Session:** Only the Raid Leader can finalize or announce results. Includes a "Force Start" option for unrecognized raid zones.
 * **Tie-Breakers:** Standardized sorting (highest vote count wins).
 
 ### 2. "Game Theory" & Commerce
@@ -15,9 +16,12 @@ Turn your raid into a marketplace! Players can now leverage their gold to influe
 * **💰 Bribes:** Offer gold to a specific player to secure one of their votes.
 * **📜 Propositions:** Selling your own vote? Broadcast a "Proposition" to the raid, setting a price for your support.
 * **🤝 Lobbying:** Fund a campaign! Pay other players to vote for a specific candidate.
+* **💸 Corruption Fee:** A configurable tax (default 10%) on all bribes and lobbying is funneled to the Raid Leader.
 * **Debt Tracking:** The addon tracks who has paid and who owes money.
     * *Deadbeat Protocol:* If you have unpaid debts from a previous boss, your ability to bribe/lobby is disabled until you settle up.
+    * *Secure Payments:* Only the creditor can mark a debt as paid, preventing fraud.
 * **Automated Trading:** Clicking "Trade" in the Bribe Ledger automatically opens the trade window and fills in the correct gold amount.
+* **Solo Mode:** All features are available while Solo to facilitate testing.
 
 ### 3. Leaderboards & History
 * **Leaderboard:** Track who has the most votes across the entire expansion, specific raids, or bosses.
@@ -92,6 +96,6 @@ DTC_RaidTracker/
 ## 📜 License
 Author: Voltrizzy
 
-Version: 7.3.14
+Version: 7.3.15
 
 Project ID: 1442970 (CurseForge) / 56ndd5G9 (Wago)
