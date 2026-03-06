@@ -34,7 +34,7 @@ function DTC.BribeUI:Init()
             self.OfferFrame:Hide()
         end)
         self.OfferFrame.CancelBtn:SetScript("OnClick", function() self.OfferFrame:Hide() end)
-        if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle(DTC.L["DTC Tracker - Bribe Offer"]) end
+        if self.OfferFrame.SetTitle then self.OfferFrame:SetTitle(DTC.L["Bribe Offer"]) end
     end
 
     -- 2. Proposition Input
@@ -54,13 +54,13 @@ function DTC.BribeUI:Init()
     -- 3. Proposition List
     self.PropListFrame = DTC_PropositionListFrame
     InjectTitle(self.PropListFrame)
-    if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle(DTC.L["DTC Tracker - Proposition"]) end
+    if self.PropListFrame and self.PropListFrame.SetTitle then self.PropListFrame:SetTitle(DTC.L["Proposition List"]) end
 
     -- 4. Incoming Bribe
     self.IncomingFrame = DTC_BribeIncomingPopup
     if self.IncomingFrame then
         InjectTitle(self.IncomingFrame)
-        if self.IncomingFrame.SetTitle then self.IncomingFrame:SetTitle(DTC.L["DTC Tracker - Incoming Bribe"]) end
+        if self.IncomingFrame.SetTitle then self.IncomingFrame:SetTitle(DTC.L["Incoming Bribe"]) end
         self.IncomingFrame.AcceptBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:AcceptOffer(self.CurrentOfferID) end end)
         self.IncomingFrame.DeclineBtn:SetScript("OnClick", function() if self.CurrentOfferID then DTC.Bribe:DeclineOffer(self.CurrentOfferID) end end)
         
@@ -83,7 +83,7 @@ function DTC.BribeUI:Init()
     self.TrackerFrame = DTC_BribeTrackerFrame
     if self.TrackerFrame then
         InjectTitle(self.TrackerFrame)
-        if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle(DTC.L["DTC Tracker - Bribe Ledger"]) end
+        if self.TrackerFrame.SetTitle then self.TrackerFrame:SetTitle(DTC.L["Bribe Ledger"]) end
         self.TrackerFrame.ClearBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_CLEAR_BRIBES_CONFIRM") end)
         
         -- NEW: Filter Dropdown
@@ -239,7 +239,7 @@ function DTC.BribeUI:Init()
     -- NEW: 7. Lobby List
     self.LobbyListFrame = DTC_LobbyListFrame
     InjectTitle(self.LobbyListFrame)
-    if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle(DTC.L["DTC Tracker - Lobby"]) end
+    if self.LobbyListFrame and self.LobbyListFrame.SetTitle then self.LobbyListFrame:SetTitle(DTC.L["Lobby List"]) end
     
 end
 
@@ -250,7 +250,7 @@ function DTC.BribeUI:OpenOfferWindow(targetName)
     if not self.OfferFrame then return end
     self.OfferFrame.target = targetName
     self.OfferFrame.AmountBox:SetText(""); self.OfferFrame.AmountBox:SetFocus()
-    self.OfferFrame.Title:SetText(DTC.L["DTC Tracker - Bribe Offer"])
+    self.OfferFrame.Title:SetText(DTC.L["Bribe Offer"])
     if self.OfferFrame.Label then self.OfferFrame.Label:SetText(DTC.L["Enter Amount for %s (Gold):"]:format(targetName)) end
     self.OfferFrame:Show()
 end
