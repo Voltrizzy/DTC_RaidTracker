@@ -51,7 +51,7 @@ function DTC.Vote:StartSession(bossName, isTest, remoteToken)
     if remoteToken then
         self.sessionToken = remoteToken
     elseif DTCRaidDB.settings.secureVoteMode and UnitIsGroupLeader("player") then
-        self.sessionToken = tostring(math.random(100000, 999999))
+        self.sessionToken = tostring(math.random(100000, 999999)) .. tostring(math.random(100000, 999999))
     else
         self.sessionToken = nil
     end
@@ -78,7 +78,7 @@ function DTC.Vote:StartSession(bossName, isTest, remoteToken)
         end
     end
     
-    if DTC.VoteFrame then DTC.VoteFrame:Toggle() end
+    if DTC.VoteFrame then DTC.VoteFrame:Open() end
 end
 
 function DTC.Vote:EndSession()
@@ -233,7 +233,10 @@ function DTC.Vote:GetRosterData()
             local mismatch = false
             if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
             
-            local voteCount = self.voters[name] or 0
+            -- voters is keyed by short name; strip realm for the lookup
+            local shortName = name
+            if string.find(shortName, "-") then shortName = strsplit("-", shortName) end
+            local voteCount = self.voters[shortName] or 0
             local hasVotedBool = (voteCount > 0)
 
             table.insert(roster, {
@@ -252,10 +255,12 @@ function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
 -- 7. Comms
 local commHandlers = {
     ["VOTE"] = function(self, data, sender)
+        -- Normalize sender to short name for consistent voters table keying
+        if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
         if sender ~= UnitName("player") then
             local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
             local currentVotes = self.voters[sender] or 0
-            
+
             local target = data
             -- Verify Token if active
             if self.sessionToken then
@@ -263,10 +268,10 @@ local commHandlers = {
                 if token ~= self.sessionToken then return end -- Reject spoofed/old vote
                 target = tName
             end
-            
+
             -- Prevent self-voting via addon channel
             if target == sender then return end
-            
+
             if currentVotes < maxVotes and target then
                 self.votes[target] = (self.votes[target] or 0) + 1
                 self.voters[sender] = currentVotes + 1

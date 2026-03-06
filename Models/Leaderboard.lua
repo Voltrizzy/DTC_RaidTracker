@@ -99,6 +99,7 @@ end
 
 local commHandlers = {
     ["SYNC_DATA"] = function(self, data, sender)
+        if not DTC.Utils:IsSenderLeader(sender) then return end
         local subType, name, count = DTC.Utils:SplitString(data, DELIMITER)
         if subType == "TRIP" and name and count then
             DTCRaidDB.trips = DTCRaidDB.trips or {}

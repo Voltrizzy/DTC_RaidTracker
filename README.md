@@ -1,4 +1,4 @@
-# DTC Raid Tracker (v7.3.15)
+# DTC Raid Tracker (v7.3.16)
 
 **DTC Raid Tracker** is a modular World of Warcraft addon designed to track raid attendance, performance voting, and leaderboard stats. Version 7.1 introduces major architectural improvements and a new **"Game Theory"** module that allows players to leverage gold to influence the vote via Bribes, Propositions, and Lobbying.
 
@@ -96,6 +96,6 @@ DTC_RaidTracker/
 ## 📜 License
 Author: Voltrizzy
 
-Version: 7.3.15
+Version: 7.3.16
 
 Project ID: 1442970 (CurseForge) / 56ndd5G9 (Wago)

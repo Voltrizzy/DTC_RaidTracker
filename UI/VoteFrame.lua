@@ -82,6 +82,13 @@ function DTC.VoteFrame:Toggle()
     if frame:IsShown() then frame:Hide() else self:UpdateHeader(); frame:Show(); self:UpdateList() end
 end
 
+-- Always shows the Vote Frame (used by StartSession to avoid closing an already-open frame).
+function DTC.VoteFrame:Open()
+    if not frame then self:Init() end
+    if not frame:IsShown() then self:UpdateHeader(); frame:Show() end
+    self:UpdateList()
+end
+
 -- Updates the window title with the current boss name and difficulty.
 function DTC.VoteFrame:UpdateHeader()
     if not frame then return end
@@ -157,10 +164,22 @@ function DTC.VoteFrame:UpdateList()
     local roster = DTC.Vote:GetRosterData()
     local sortMode = DTCRaidDB.settings.voteSortMode or "ROLE"
     local rowIndex = 1
-    
+
+    -- Build debtors lookup and hasDebt flag once to avoid repeated O(n) scans per section
+    local debtors = {}
+    local hasDebt = false
+    if DTC.Bribe then
+        for _, entry in ipairs(DTCRaidDB.bribes or {}) do
+            if not entry.paid then
+                debtors[entry.offerer] = true
+                if entry.offerer == UnitName("player") then hasDebt = true end
+            end
+        end
+    end
+
     if sortMode == "ALPHA" then
         table.sort(roster, function(a,b) return a.name < b.name end)
-        rowIndex, yOffset = self:RenderSection(content, "", roster, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, "", roster, rowIndex, yOffset, debtors, hasDebt)
     else
         local t, h, d = {}, {}, {}
         for _, p in ipairs(roster) do
@@ -168,9 +187,9 @@ function DTC.VoteFrame:UpdateList()
             elseif p.role == "HEALER" then table.insert(h, p)
             else table.insert(d, p) end
         end
-        rowIndex, yOffset = self:RenderSection(content, DTC.L["TANKS"], t, rowIndex, yOffset)
-        rowIndex, yOffset = self:RenderSection(content, DTC.L["HEALERS"], h, rowIndex, yOffset)
-        rowIndex, yOffset = self:RenderSection(content, DTC.L["DPS / OTHERS"], d, rowIndex, yOffset)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["TANKS"], t, rowIndex, yOffset, debtors, hasDebt)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["HEALERS"], h, rowIndex, yOffset, debtors, hasDebt)
+        rowIndex, yOffset = self:RenderSection(content, DTC.L["DPS / OTHERS"], d, rowIndex, yOffset, debtors, hasDebt)
     end
 
     -- CRITICAL FIX: Resize the content frame so scrolling works and items aren't clipped!
@@ -188,17 +207,18 @@ function DTC.VoteFrame:GetHeader(parent)
 end
 
 -- Renders a section of the player list (e.g., "TANKS", "HEALERS").
-function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
+-- debtors: pre-built lookup table {[playerName]=true} for players with unpaid debts.
+-- hasDebt: pre-computed bool — whether the local player has any unpaid debt.
+function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset, debtors, hasDebt)
     if #list == 0 then return rowIndex, yOffset end
     if title ~= "" then
         local hdr = self:GetHeader(parent)
         hdr:SetPoint("TOPLEFT", 5, yOffset); hdr:SetText(title); hdr:Show()
         yOffset = yOffset - 20
     end
-    
+
     table.sort(list, function(a,b) return a.name < b.name end)
-    
-    local hasDebt = DTC.Bribe and DTC.Bribe:HasUnpaidDebt()
+
     local isOpen = DTC.Vote and DTC.Vote.isOpen
     local myVotesRemaining = DTC.Vote.myVotesLeft > 0
     local isMe = nil
@@ -243,7 +263,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         row.Name:SetTextColor(1, 1, 1) -- Reset base color, let GetDisplayColoredName handle class colors
         row.Name:SetText(DTC:GetDisplayColoredName(p.name))
         
-        if DTC.Bribe and DTC.Bribe:HasUnpaidDebt(p.name) then
+        if debtors and debtors[p.name] then
             row.DeadbeatIcon:Show()
         else
             row.DeadbeatIcon:Hide()
@@ -256,7 +276,10 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
         
         isMe = (p.name == UnitName("player"))
         local alreadyVotedFor = DTC.Vote and DTC.Vote:HasVotedFor(p.name)
-        local targetVotesCast = DTC.Vote:GetVotesCastBy(p.name)
+        -- voters{} is keyed by short name; strip realm before lookup
+        local shortTargetName = p.name
+        if string.find(shortTargetName, "-") then shortTargetName = strsplit("-", shortTargetName) end
+        local targetVotesCast = DTC.Vote:GetVotesCastBy(shortTargetName)
         local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
         local targetHasVotesLeft = (targetVotesCast < maxVotes)
 
@@ -270,7 +293,7 @@ function DTC.VoteFrame:RenderSection(parent, title, list, rowIndex, yOffset)
 
         -- BRIBE
         row.BribeBtn:SetScript("OnClick", function() if DTC.BribeUI then DTC.BribeUI:OpenOfferWindow(player.name) end end)
-        if isOpen and not isMe and targetHasVotesLeft and not hasDebt and p.hasAddon then
+        if isOpen and myVotesRemaining and not isMe and targetHasVotesLeft and not hasDebt and p.hasAddon then
             row.BribeBtn:Enable()
         else
             row.BribeBtn:Disable()

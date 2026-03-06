@@ -283,15 +283,21 @@ function DTC.BribeUI:ShowNextOffer()
     self.IncomingFrame.Desc:SetText(DTC.L["|cFFFFD700%s|r offers you |cFFFFD700%s Gold|r"]:format(DTC:GetDisplayColoredName(offer.sender), BreakUpLargeNumbers(offer.amount)))
     self.IncomingFrame:Show()
     
-    self.IncomingFrame:SetScript("OnUpdate", function(f, elapsed)
-        local duration = DTCRaidDB.settings.bribeTimer or 90
-        local now = GetTime()
-        local start = offer.startTime or now
-        local left = (start + duration) - now
-        if left < 0 then left = 0 end
-        f.TimerBar:SetMinMaxValues(0, duration)
-        f.TimerBar:SetValue(left)
-    end)
+    -- Store offer reference on the frame; set the OnUpdate script only once
+    self.IncomingFrame.currentOffer = offer
+    if not self.IncomingFrame.__timerScriptSet then
+        self.IncomingFrame:SetScript("OnUpdate", function(f, elapsed)
+            local o = f.currentOffer
+            if not o then f.TimerBar:SetValue(0); return end
+            local duration = DTCRaidDB.settings.bribeTimer or 90
+            local now = GetTime()
+            local left = (o.startTime or now) + duration - now
+            if left < 0 then left = 0 end
+            f.TimerBar:SetMinMaxValues(0, duration)
+            f.TimerBar:SetValue(left)
+        end)
+        self.IncomingFrame.__timerScriptSet = true
+    end
 end
 
 -- Updates the list of active propositions.

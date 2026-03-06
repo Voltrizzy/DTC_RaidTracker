@@ -44,7 +44,8 @@ function DTC.Utils:IsSenderLeader(sender)
         local name, rank = GetRaidRosterInfo(i)
         if rank == 2 then
             if name and string.find(name, "-") then name = strsplit("-", name) end
-            return sender == name
+            local senderName = sender and string.find(sender, "-") and strsplit("-", sender) or sender
+            return senderName == name
         end
     end
     return false

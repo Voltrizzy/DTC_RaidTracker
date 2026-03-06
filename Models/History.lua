@@ -159,6 +159,8 @@ local commHandlers = {
         end
     end,
     ["FINALIZE"] = function(self, data, sender)
+        -- Only the raid leader may inject history entries via FINALIZE
+        if not DTC.Utils:IsSenderLeader(sender) then return end
         -- payload: name(Winner)||count(Points)||boss||raid||date||diff
         local winner, pts, boss, raid, dateStr, diff = DTC.Utils:SplitString(data, DELIMITER)
         if winner and boss and dateStr then

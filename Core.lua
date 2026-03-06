@@ -7,7 +7,7 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.15"
+DTC.VERSION = "7.3.16"
 DTC.PREFIX = "DTCTRACKER"
 
 DTC.isTestModeLB = false
@@ -82,6 +82,10 @@ StaticPopupDialogs["DTC_START_SESSION"] = {
         DTC.SessionActive = true
         DTC.SessionDecided = true
         DTC:SyncSessionStatus()
+        DTC:CheckRosterForNicknames()
+        if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
+        if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
+        if DTC.BribeUI and DTC.BribeUI.UpdateTracker then DTC.BribeUI:UpdateTracker() end
         print(DTC.L["|cFF00FF00DTC:|r Session started."])
     end,
     OnCancel = function()
@@ -99,6 +103,15 @@ StaticPopupDialogs["DTC_FORCE_START_CONFIRM"] = {
     OnAccept = function()
         DTC.SessionDecided = false
         DTC:CheckSessionStart(true)
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DTC_PURGE_CONFIRM"] = {
+    text = DTC.L["Permanently delete matching entries?"],
+    button1 = DTC.L["Yes"], button2 = DTC.L["No"],
+    OnAccept = function(self, data)
+        if DTC.History then DTC.History:PurgeMatching(data) end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -149,15 +162,20 @@ f:SetScript("OnEvent", function(self, event, ...)
                 end
             elseif action == "SESSION_STATUS" then
                 DTC.SessionActive = (data == "1")
+                DTC.SessionQueryPending = false
             end
         end
         
-    elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "ZONE_CHANGED_NEW_AREA" then
         -- Update roster data and UI lists when group composition or zone changes
         DTC:CheckRosterForNicknames()
         DTC:CheckSessionStart()
         if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
         if DTC.LeaderboardUI and DTC.LeaderboardUI.UpdateList then DTC.LeaderboardUI:UpdateList() end
+        if DTC.BribeUI and DTC.BribeUI.UpdateTracker then DTC.BribeUI:UpdateTracker() end
+    elseif event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
+        -- Refresh UI only on death state changes; roster composition hasn't changed
+        if DTC.VoteFrame and DTC.VoteFrame.UpdateList then DTC.VoteFrame:UpdateList() end
         if DTC.BribeUI and DTC.BribeUI.UpdateTracker then DTC.BribeUI:UpdateTracker() end
     end
 end)
@@ -224,7 +242,7 @@ function DTC:GetColoredName(name)
     local lookup = DTC.Utils:GetCanonicalName(name)
     if DTCRaidDB.classes and DTCRaidDB.classes[lookup] then
         local c = RAID_CLASS_COLORS[DTCRaidDB.classes[lookup]]
-        if c then return string.format("|cFF%02x%02x%02x%s|r", c.r*255, c.g*255, c.b*255, name) end
+        if c then return string.format("|cFF%02x%02x%02x%s|r", math.floor(c.r*255 + 0.5), math.floor(c.g*255 + 0.5), math.floor(c.b*255 + 0.5), name) end
     end
     return name
 end
@@ -264,10 +282,11 @@ function DTC:IsValidRaid()
 end
 
 -- Scans the raid roster and populates the identities, classes, and guilds tables.
--- Only runs if in a valid raid.
+-- Only runs if in a valid raid with an active session.
 function DTC:CheckRosterForNicknames()
     if not IsInRaid() then return end
     if not self:IsValidRaid() then return end
+    if self.SessionActive ~= true then return end
 
     for i = 1, GetNumGroupMembers() do
         local unitID = "raid"..i
@@ -296,9 +315,16 @@ function DTC:CheckSessionStart(force)
             StaticPopup_Show("DTC_START_SESSION")
         end
     else
-        if IsInRaid() and self.SessionActive == nil then
-             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SESSION_QUERY", "RAID")
-             self.SessionActive = false -- Assume false until we hear back to prevent spam
+        if IsInRaid() and self.SessionActive == nil and not self.SessionQueryPending then
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SESSION_QUERY", "RAID")
+            self.SessionQueryPending = true
+            C_Timer.After(10, function()
+                if DTC.SessionQueryPending then
+                    DTC.SessionQueryPending = false
+                    -- No response received; SessionActive remains nil so the next
+                    -- CheckSessionStart (triggered by GROUP_ROSTER_UPDATE etc.) will re-query.
+                end
+            end)
         end
     end
 end
@@ -377,7 +403,7 @@ SLASH_DTC1 = "/dtc"
 SlashCmdList["DTC"] = function(msg)
     local cmd = msg:match("^(%S*)"):lower()
     
-    if DTC:IsValidRaid() and not DTC.SessionActive then
+    if DTC:IsValidRaid() and DTC.SessionActive == false then
         if cmd ~= "config" and cmd ~= "reset" then
             print("|cFFFF0000DTC:|r Addon is not active for this raid session (Leader disabled or not started).")
             return
@@ -404,13 +430,19 @@ SlashCmdList["DTC"] = function(msg)
         if Settings and Settings.OpenToCategory then Settings.OpenToCategory(DTC.OptionsCategoryID) end
     elseif cmd == "reset" then 
         DTC:ResetDatabase()
+    elseif cmd == "session" then
+        if UnitIsGroupLeader("player") and DTC:IsValidRaid() then
+            StaticPopup_Show("DTC_FORCE_START_CONFIRM")
+        else
+            print("|cFFFF0000DTC:|r You must be the raid leader in a valid raid instance to change the session.")
+        end
     elseif cmd == "testselfvote" then
         DTC:TestSelfVoting()
     elseif cmd == "testuid" then
         DTC:TestUniqueID()
     elseif cmd == "testtrade" then
         DTC:TestInitiateTradeSafe()
-    else 
-        print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset") 
+    else
+        print("|cFFFFD700DTC Commands:|r /dtc vote, /dtc lb, /dtc history, /dtc bribes, /dtc config, /dtc reset, /dtc session")
     end
 end

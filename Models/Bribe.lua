@@ -43,9 +43,18 @@ function DTC.Bribe:OfferBribe(targetPlayer, amount)
         print(DTC.L["|cFFFF0000DTC:|r Cannot offer bribe. Total debt exceeds limit (%sg)."]:format(limit)); return
     end
     
-    if DTC.Vote and not DTC.Vote.isTestMode and DTC.Vote.versions and not DTC.Vote.versions[targetPlayer] then
-        print(DTC.L["|cFFFF0000DTC:|r Cannot bribe %s. They do not have the addon."]:format(targetPlayer))
-        return
+    if DTC.Vote and not DTC.Vote.isTestMode and DTC.Vote.versions then
+        local shortTarget = strsplit("-", targetPlayer)
+        local hasAddon = DTC.Vote.versions[targetPlayer] ~= nil
+        if not hasAddon then
+            for k in pairs(DTC.Vote.versions) do
+                if strsplit("-", k) == shortTarget then hasAddon = true; break end
+            end
+        end
+        if not hasAddon then
+            print(DTC.L["|cFFFF0000DTC:|r Cannot bribe %s. They do not have the addon."]:format(targetPlayer))
+            return
+        end
     end
     
     local payload = string.format("%d", amount)
@@ -182,6 +191,7 @@ function DTC.Bribe:AcceptProposition(propID)
     
     local fullTarget = DTC.Utils:GetFullName(prop.offerer)
     C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PROP_ACCEPT", "WHISPER", fullTarget)
+    self:ExpireProposition(propID) -- Remove from queue immediately after accepting
 end
 
 -- Handles the confirmation from a buyer that they accepted your proposition.
@@ -342,7 +352,8 @@ function DTC.Bribe:HasUnpaidDebt(target)
     local myName = target or UnitName("player")
     local currentBoss = DTC.Vote and DTC.Vote.currentBoss or "Unknown"
     for _, entry in ipairs(DTCRaidDB.bribes) do
-        if entry.offerer == myName and not entry.paid and entry.boss ~= currentBoss then return true end
+        local entryBoss = (entry.boss or ""):gsub(" %(Tax%)$", "")
+        if entry.offerer == myName and not entry.paid and entryBoss ~= currentBoss then return true end
     end
     return false
 end
@@ -359,7 +370,11 @@ end
 
 function DTC.Bribe:ExpireProposition(propID)
     local _, index = self:GetProposition(propID)
-    if index then table.remove(self.PropositionQueue, index); if DTC.BribeUI then DTC.BribeUI:UpdatePropositionList() end end
+    if index then
+        if self.PropositionQueue[index].timer then self.PropositionQueue[index].timer:Cancel() end
+        table.remove(self.PropositionQueue, index)
+        if DTC.BribeUI then DTC.BribeUI:UpdatePropositionList() end
+    end
 end
 
 function DTC.Bribe:GetProposition(id)
@@ -374,8 +389,11 @@ function DTC.Bribe:InitiateTrade(player, amount, dbIndex, isPaying)
     self.ActiveTrade = { target = player, amount = tonumber(amount) or 0, index = dbIndex, isPaying = isPaying }
     
     -- Attempt to find a UnitID to avoid TargetUnit()
+    -- Normalize to short name before comparing since UnitName("target") returns a short name
+    local shortPlayer = player
+    if string.find(shortPlayer, "-") then shortPlayer = strsplit("-", shortPlayer) end
     local unitID
-    if player == UnitName("target") then unitID = "target" end
+    if shortPlayer == UnitName("target") then unitID = "target" end
     
     if not unitID then
         if IsInRaid() then
@@ -420,16 +438,10 @@ end
 function DTC.Bribe:OnTradeShow()
     self.PlayerMoneyStart = GetMoney()
     if self.ActiveTrade then
-        local target = UnitName("NPC")
-        
-        local expected = self.ActiveTrade.target
-        
-        if target == expected then
-            if self.ActiveTrade.isPaying and TradePlayerInputMoneyFrame then 
-                MoneyInputFrame_SetMoney(TradePlayerInputMoneyFrame, math.floor(self.ActiveTrade.amount * 10000)) 
-            end
-        else
-            self.ActiveTrade = nil -- Mismatch, clear to prevent accidents
+        -- ActiveTrade.target is stored before InitiateTrade() is called.
+        -- There is no reliable API to retrieve the trade partner name from the event itself.
+        if self.ActiveTrade.isPaying and TradePlayerInputMoneyFrame then
+            MoneyInputFrame_SetMoney(TradePlayerInputMoneyFrame, math.floor(self.ActiveTrade.amount * 10000))
         end
     end
 end
@@ -598,13 +610,13 @@ local commHandlers = {
         end
     end,
     ["SYNC_LIMIT"] = function(self, data, sender)
-        if sender == self:GetLeaderName(true) then DTCRaidDB.settings.debtLimit = tonumber(data) or 0 end
+        if sender == self:GetLeaderName() then DTCRaidDB.settings.debtLimit = tonumber(data) or 0 end
     end,
     ["SYNC_FEE"] = function(self, data, sender)
-        if sender == self:GetLeaderName(true) then DTCRaidDB.settings.corruptionFee = tonumber(data) or 10 end
+        if sender == self:GetLeaderName() then DTCRaidDB.settings.corruptionFee = tonumber(data) or 10 end
     end,
     ["SYNC_TIMERS"] = function(self, data, sender)
-        if sender == self:GetLeaderName(true) then
+        if sender == self:GetLeaderName() then
             local b, p, l = DTC.Utils:SplitString(data, DELIMITER)
             DTCRaidDB.settings.bribeTimer = tonumber(b) or 90
             DTCRaidDB.settings.propTimer = tonumber(p) or 90
@@ -612,13 +624,13 @@ local commHandlers = {
         end
     end,
     ["SYNC_VOTES"] = function(self, data, sender)
-        if sender == self:GetLeaderName(true) then
+        if sender == self:GetLeaderName() then
             DTCRaidDB.settings.votesPerPerson = tonumber(data) or 3
             if DTC.Vote and DTC.Vote.isOpen then
                 local max = DTCRaidDB.settings.votesPerPerson
                 local myName = UnitName("player")
                 local used = (DTC.Vote.voters and DTC.Vote.voters[myName]) or 0
-                DTC.Vote.myVotesLeft = max - used
+                DTC.Vote.myVotesLeft = math.max(0, max - used)
                 if DTC.VoteFrame then DTC.VoteFrame:UpdateList() end
             end
         end
