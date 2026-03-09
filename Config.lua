@@ -12,7 +12,7 @@ DTC.Config.nicknamePool = { rows = {}, headers = {} }
 -- Style Helpers
 -- ============================================================================
 
--- Creates a dark group box with a gold section title (Ayije CDM inspired).
+-- Creates a dark group box with a gold section title.
 local function CreateGroupBox(parent, title, width, height)
     local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     frame:SetSize(width, height)
@@ -27,7 +27,7 @@ local function CreateGroupBox(parent, title, width, height)
     local t = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     t:SetPoint("TOPLEFT", 10, -10)
     t:SetText(title)
-    t:SetTextColor(1, 0.78, 0.1) -- Gold, matching Ayije CDM section headers
+    t:SetTextColor(1, 0.78, 0.1) -- Gold section headers
     return frame
 end
 
@@ -553,7 +553,7 @@ function DTC.Config:BuildHistoryTab(frame)
             local info = UIDropDownMenu_CreateInfo()
             info.func = function(s) filters.date = s.arg1; UIDropDownMenu_SetText(ddDate, s.value) end
             info.text = DTC.L["All Dates"]; info.arg1 = "ALL"; info.value = DTC.L["All Dates"]; UIDropDownMenu_AddButton(info, level)
-            local dates = DTC.History and DTC.History:GetUniqueMenus() or {}
+            local dates = DTC.History and DTC.History:GetUniqueDates() or {}
             for _, d in ipairs(dates) do info.text=d; info.arg1=d; info.value=d; UIDropDownMenu_AddButton(info, level) end
         end)
         UIDropDownMenu_SetText(ddDate, DTC.L["All Dates"])
@@ -715,37 +715,30 @@ function DTC.Config:BuildVotingTab(frame)
     local lblSec = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     lblSec:SetPoint("LEFT", cbSec, "RIGHT", 5, 0); lblSec:SetText(DTC.L["Secure Mode (Leader Only Start)"])
 
+    local VOTING_RESET_KEYS = {
+        "voteSortMode", "voteTimer", "votesPerPerson", "voteWinCount",
+        "voteRunnerUpMsg", "voteLowMsg", "voteRunnerUpEnabled", "voteLowEnabled",
+        "voteWinMsg_1", "voteWinMsg_2", "voteWinMsg_3", "voteWinMsg_4", "voteWinMsg_5",
+        "voteWinMsg_6", "voteWinMsg_7", "voteWinMsg_8", "voteWinMsg_9", "voteWinMsg_10",
+    }
     btnReset:SetScript("OnClick", function()
-        DTCRaidDB.settings.voteSortMode        = "ROLE"
-        DTCRaidDB.settings.voteTimer           = 180
-        DTCRaidDB.settings.votesPerPerson      = 3
-        DTCRaidDB.settings.voteWinCount        = 10
-        DTCRaidDB.settings.voteRunnerUpMsg     = "Honorable mention goes to %s."
-        DTCRaidDB.settings.voteLowMsg          = "Don't worry %s, there's always next time."
-        DTCRaidDB.settings.voteRunnerUpEnabled = true
-        DTCRaidDB.settings.voteLowEnabled      = true
-        DTCRaidDB.settings.voteWinMsg_1  = "Congrats to %s for winning the vote!"
-        DTCRaidDB.settings.voteWinMsg_2  = "And the winner is... %s!"
-        DTCRaidDB.settings.voteWinMsg_3  = "STOP THE COUNT! %s has taken the lead!"
-        DTCRaidDB.settings.voteWinMsg_4  = "The tribe has spoken. %s is the winner!"
-        DTCRaidDB.settings.voteWinMsg_5  = "Democracy manifests! %s wins the vote."
-        DTCRaidDB.settings.voteWinMsg_6  = "By popular demand, %s takes the crown."
-        DTCRaidDB.settings.voteWinMsg_7  = "The people have chosen... wisely? %s wins!"
-        DTCRaidDB.settings.voteWinMsg_8  = "Victory! %s is the chosen one."
-        DTCRaidDB.settings.voteWinMsg_9  = "Against all odds, %s secures the win."
-        DTCRaidDB.settings.voteWinMsg_10 = "Look at me. %s is the captain now."
+        for _, k in ipairs(VOTING_RESET_KEYS) do
+            DTCRaidDB.settings[k] = DTC.DEFAULTS[k]
+        end
 
         UIDropDownMenu_SetText(dd, DTC.L["Show Players and Roles"])
-        s:SetValue(180); sVotes:SetValue(3); sCount:SetValue(10)
+        s:SetValue(DTC.DEFAULTS.voteTimer)
+        sVotes:SetValue(DTC.DEFAULTS.votesPerPerson)
+        sCount:SetValue(DTC.DEFAULTS.voteWinCount)
 
-        for i, eb in ipairs(winMsgEBs) do eb:SetText(DTCRaidDB.settings["voteWinMsg_"..i]) end
+        for i, eb in ipairs(winMsgEBs) do eb:SetText(DTC.DEFAULTS["voteWinMsg_"..i]) end
         for _, item in ipairs(otherEBs) do
-            item.e:SetText(DTCRaidDB.settings[item.key])
-            if item.cb then item.cb:SetChecked(DTCRaidDB.settings[item.toggleKey]) end
+            item.e:SetText(DTC.DEFAULTS[item.key] or "")
+            if item.cb then item.cb:SetChecked(DTC.DEFAULTS[item.toggleKey]) end
         end
         print(DTC.L["|cFFFFD700DTC:|r Voting settings reset to defaults."])
         if IsInRaid() and UnitIsGroupLeader("player") then
-            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:3", "RAID")
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTES:" .. DTC.DEFAULTS.votesPerPerson, "RAID")
         end
     end)
 end

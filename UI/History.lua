@@ -179,7 +179,7 @@ end
 
 -- 5. Dropdown Init Helpers (Fixed Checkboxes)
 function DTC.HistoryUI:InitDateMenu(menu, level)
-    local dates = DTC.History:GetUniqueMenus()
+    local dates = DTC.History:GetUniqueDates()
     local info = UIDropDownMenu_CreateInfo()
     
     info.text = DTC.L["All Dates"]
@@ -206,7 +206,7 @@ function DTC.HistoryUI:InitDateMenu(menu, level)
 end
 
 function DTC.HistoryUI:InitNameMenu(menu, level)
-    local _, names = DTC.History:GetUniqueMenus()
+    local names = DTC.History:GetUniqueNames()
     local info = UIDropDownMenu_CreateInfo()
     
     info.text = DTC.L["All Names"]

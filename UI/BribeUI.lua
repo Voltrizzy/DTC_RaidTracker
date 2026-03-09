@@ -201,13 +201,13 @@ function DTC.BribeUI:Init()
                 UIDropDownMenu_SetText(frame, DTC:GetDisplayColoredName(s.value)) 
             end
             
-            local myName = UnitName("player")
+            local myName = DTC.Utils:GetCanonicalName(UnitName("player"))
             local candidates = {}
             if IsInRaid() then
                 for i = 1, GetNumGroupMembers() do
                     local name = GetRaidRosterInfo(i)
                     if name then
-                        if string.find(name, "-") then name = strsplit("-", name) end
+                        name = DTC.Utils:GetCanonicalName(name)
                         if name ~= myName then table.insert(candidates, name) end
                     end
                 end
@@ -418,7 +418,7 @@ function DTC.BribeUI:ShowExportPopup()
         return tA > tB 
     end)
 
-    local myName = UnitName("player")
+    local myName = DTC.Utils:GetCanonicalName(UnitName("player"))
     local filter = self.FilterMode or "ALL"
     local search = (self.SearchFilter or ""):lower()
 
@@ -509,7 +509,7 @@ function DTC.BribeUI:UpdateTracker()
         return a.i < b.i -- Stable sort fallback
     end)
     
-    local myName = UnitName("player")
+    local myName = DTC.Utils:GetCanonicalName(UnitName("player"))
     local filter = self.FilterMode or "ALL"
     local search = (self.SearchFilter or ""):lower()
     
@@ -559,23 +559,23 @@ function DTC.BribeUI:UpdateTracker()
             local status = entry.paid and DTC.L["|cFF00FF00PAID|r"] or DTC.L["|cFFFF0000OWED|r"]
             row.Amount:SetText(BreakUpLargeNumbers(entry.amount or 0) .. "g  " .. status)
             row.TradeBtn:SetScript("OnClick", function()
-                if entry.offerer == UnitName("player") then 
-                    DTC.Bribe:InitiateTrade(entry.recipient, entry.amount, originalIndex, true)
-                elseif entry.recipient == UnitName("player") then 
-                    DTC.Bribe:InitiateTrade(entry.offerer, entry.amount, originalIndex, false) 
+                if entry.offerer == myName then
+                    DTC.Bribe:InitiateTrade(entry.recipient, entry.amount, entry, true)
+                elseif entry.recipient == myName then
+                    DTC.Bribe:InitiateTrade(entry.offerer, entry.amount, entry, false)
                 end
             end)
-            
-            if entry.paid or (entry.offerer ~= UnitName("player") and entry.recipient ~= UnitName("player")) or UnitIsDeadOrGhost("player") then 
-                row.TradeBtn:Disable() 
-            else 
-                row.TradeBtn:Enable() 
+
+            if entry.paid or (entry.offerer ~= myName and entry.recipient ~= myName) or UnitIsDeadOrGhost("player") then
+                row.TradeBtn:Disable()
+            else
+                row.TradeBtn:Enable()
             end
-            
-            row.ForgiveBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_FORGIVE_CONFIRM", nil, nil, originalIndex) end)
-            row.MarkPaidBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_MARKPAID_CONFIRM", nil, nil, originalIndex) end)
-            
-            if entry.recipient == UnitName("player") and not entry.paid then 
+
+            row.ForgiveBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_FORGIVE_CONFIRM", nil, nil, entry) end)
+            row.MarkPaidBtn:SetScript("OnClick", function() StaticPopup_Show("DTC_MARKPAID_CONFIRM", nil, nil, entry) end)
+
+            if entry.recipient == myName and not entry.paid then 
                 row.ForgiveBtn:Show(); row.MarkPaidBtn:Show() 
                 -- Anchor Amount to left of MarkPaidBtn
                 row.Amount:ClearAllPoints()

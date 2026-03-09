@@ -128,7 +128,7 @@ local commHandlers = {
     ["SYNC_PUSH"] = function(self, data, sender)
         -- Parse DSV: Boss||Winner||Points||Date||Raid||Diff||Voters
         local boss, winner, pts, dateStr, raid, diff, voters = DTC.Utils:SplitString(data, DELIMITER)
-        
+        winner = DTC.Utils:GetCanonicalName(winner)
         if boss and winner and dateStr then
             local newEntry = {
                 b = boss,
@@ -163,6 +163,7 @@ local commHandlers = {
         if not DTC.Utils:IsSenderLeader(sender) then return end
         -- payload: name(Winner)||count(Points)||boss||raid||date||diff
         local winner, pts, boss, raid, dateStr, diff = DTC.Utils:SplitString(data, DELIMITER)
+        winner = DTC.Utils:GetCanonicalName(winner)
         if winner and boss and dateStr then
             local newEntry = {
                 b = boss,
@@ -197,17 +198,24 @@ function DTC.History:OnComm(action, data, sender)
 end
 
 -- 7. Helpers
--- Returns unique lists of dates and winner names for dropdown menus.
-function DTC.History:GetUniqueMenus()
-    local dates, names = {}, {}
-    local seenD, seenN = {}, {}
+-- Returns unique sorted dates for the date dropdown menu.
+function DTC.History:GetUniqueDates()
+    local dates, seen = {}, {}
     for _, h in ipairs(DTCRaidDB.history or {}) do
-        if not seenD[h.d] then seenD[h.d]=true; table.insert(dates, h.d) end
-        if not seenN[h.w] then seenN[h.w]=true; table.insert(names, h.w) end
+        if not seen[h.d] then seen[h.d] = true; table.insert(dates, h.d) end
     end
-    table.sort(dates, function(a,b) return a > b end)
+    table.sort(dates, function(a, b) return a > b end)
+    return dates
+end
+
+-- Returns unique sorted winner names for the name dropdown menu.
+function DTC.History:GetUniqueNames()
+    local names, seen = {}, {}
+    for _, h in ipairs(DTCRaidDB.history or {}) do
+        if not seen[h.w] then seen[h.w] = true; table.insert(names, h.w) end
+    end
     table.sort(names)
-    return dates, names
+    return names
 end
 
 -- Generates a CSV string of the current history data.

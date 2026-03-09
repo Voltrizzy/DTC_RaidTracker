@@ -99,7 +99,7 @@ function DTC.Vote:CastVote(targetName)
     self.myVotesLeft = self.myVotesLeft - 1
     self.myHistory[targetName] = true
     
-    local myName = UnitName("player")
+    local myName = DTC.Utils:GetCanonicalName(UnitName("player"))
     self.voters[myName] = (self.voters[myName] or 0) + 1
     self.votes[targetName] = (self.votes[targetName] or 0) + 1
 
@@ -233,10 +233,7 @@ function DTC.Vote:GetRosterData()
             local mismatch = false
             if hasAddon and self.versions[name] ~= DTC.VERSION then mismatch = true end
             
-            -- voters is keyed by short name; strip realm for the lookup
-            local shortName = name
-            if string.find(shortName, "-") then shortName = strsplit("-", shortName) end
-            local voteCount = self.voters[shortName] or 0
+            local voteCount = self.voters[name] or 0
             local hasVotedBool = (voteCount > 0)
 
             table.insert(roster, {
@@ -250,14 +247,14 @@ end
 
 function DTC.Vote:GetVoteCount(name) return self.votes[name] or 0 end
 function DTC.Vote:HasVotedFor(name) return self.myHistory[name] end
-function DTC.Vote:GetVotesCastBy(name) return self.voters[name] or 0 end
+function DTC.Vote:GetVotesCastBy(name) return self.voters[DTC.Utils:GetCanonicalName(name)] or 0 end
 
 -- 7. Comms
 local commHandlers = {
     ["VOTE"] = function(self, data, sender)
-        -- Normalize sender to short name for consistent voters table keying
-        if sender and string.find(sender, "-") then sender = strsplit("-", sender) end
-        if sender ~= UnitName("player") then
+        -- Canonicalize sender for consistent voters table keying (Name-Realm format)
+        sender = DTC.Utils:GetCanonicalName(sender)
+        if sender ~= DTC.Utils:GetCanonicalName(UnitName("player")) then
             local maxVotes = DTCRaidDB.settings.votesPerPerson or 3
             local currentVotes = self.voters[sender] or 0
 

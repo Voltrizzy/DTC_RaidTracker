@@ -7,8 +7,41 @@
 local folderName, DTC = ...
 _G["DTC_Global"] = DTC -- Expose DTC to global scope for debugging/external access
 
-DTC.VERSION = "7.3.16"
+DTC.VERSION = "7.3.17"
 DTC.PREFIX = "DTCTRACKER"
+
+-- ============================================================================
+-- DEFAULT SETTINGS
+-- ============================================================================
+-- Single source of truth for all setting defaults.
+-- Used by InitDatabase (first-run) and the Voting tab Reset button (Config.lua).
+
+DTC.DEFAULTS = {
+    voteSortMode        = "ROLE",
+    lbDetailMode        = "ALL",
+    voteWinCount        = 10,
+    voteWinMsg_1        = "Congrats to %s for winning the vote!",
+    voteWinMsg_2        = "And the winner is... %s!",
+    voteWinMsg_3        = "STOP THE COUNT! %s has taken the lead!",
+    voteWinMsg_4        = "The tribe has spoken. %s is the winner!",
+    voteWinMsg_5        = "Democracy manifests! %s wins the vote.",
+    voteWinMsg_6        = "By popular demand, %s takes the crown.",
+    voteWinMsg_7        = "The people have chosen... wisely? %s wins!",
+    voteWinMsg_8        = "Victory! %s is the chosen one.",
+    voteWinMsg_9        = "Against all odds, %s secures the win.",
+    voteWinMsg_10       = "Look at me. %s is the captain now.",
+    voteRunnerUpMsg     = "Honorable mention goes to %s.",
+    voteLowMsg          = "Don't worry %s, there's always next time.",
+    votesPerPerson      = 3,
+    voteRunnerUpEnabled = true,
+    voteLowEnabled      = true,
+    voteTimer           = 180,
+    bribeTimer          = 90,
+    propTimer           = 90,
+    lobbyTimer          = 120,
+    corruptionFee       = 10,
+    debtLimit           = 0,
+}
 
 DTC.isTestModeLB = false
 DTC.isTestModeHist = false
@@ -193,41 +226,14 @@ function DTC:InitDatabase()
     DTCRaidDB.identities = DTCRaidDB.identities or {}
     DTCRaidDB.guilds = DTCRaidDB.guilds or {}
     DTCRaidDB.classes = DTCRaidDB.classes or {}
-    DTCRaidDB.bribes = DTCRaidDB.bribes or {} 
+    DTCRaidDB.bribes = DTCRaidDB.bribes or {}
     DTCRaidDB.settings = DTCRaidDB.settings or {}
-    
-    if DTCRaidDB.settings.voteSortMode == nil then DTCRaidDB.settings.voteSortMode = "ROLE" end
-    if DTCRaidDB.settings.lbDetailMode == nil then DTCRaidDB.settings.lbDetailMode = "ALL" end
-    
-    -- Default voting win messages
-    if DTCRaidDB.settings.voteWinCount == nil then
-        DTCRaidDB.settings.voteWinCount = 10
-        DTCRaidDB.settings.voteWinMsg_1 = "Congrats to %s for winning the vote!"
-        DTCRaidDB.settings.voteWinMsg_2 = "And the winner is... %s!"    
-        DTCRaidDB.settings.voteWinMsg_3 = "STOP THE COUNT! %s has taken the lead!"
-        DTCRaidDB.settings.voteWinMsg_4 = "The tribe has spoken. %s is the winner!"
-        DTCRaidDB.settings.voteWinMsg_5 = "Democracy manifests! %s wins the vote."
-        DTCRaidDB.settings.voteWinMsg_6 = "By popular demand, %s takes the crown."
-        DTCRaidDB.settings.voteWinMsg_7 = "The people have chosen... wisely? %s wins!"
-        DTCRaidDB.settings.voteWinMsg_8 = "Victory! %s is the chosen one."
-        DTCRaidDB.settings.voteWinMsg_9 = "Against all odds, %s secures the win."
-        DTCRaidDB.settings.voteWinMsg_10 = "Look at me. %s is the captain now."
+
+    local s = DTCRaidDB.settings
+    for k, v in pairs(DTC.DEFAULTS) do
+        if s[k] == nil then s[k] = v end
     end
-    
-    if DTCRaidDB.settings.voteRunnerUpMsg == nil then DTCRaidDB.settings.voteRunnerUpMsg = "Honorable mention goes to %s." end
-    if DTCRaidDB.settings.voteLowMsg == nil then DTCRaidDB.settings.voteLowMsg = "Don't worry %s, there's always next time." end
-    if DTCRaidDB.settings.votesPerPerson == nil then DTCRaidDB.settings.votesPerPerson = 3 end
-    
-    -- Timer Defaults
-    if DTCRaidDB.settings.voteTimer == nil then DTCRaidDB.settings.voteTimer = 180 end -- NEW: Voting Window
-    if DTCRaidDB.settings.voteRunnerUpEnabled == nil then DTCRaidDB.settings.voteRunnerUpEnabled = true end
-    if DTCRaidDB.settings.voteLowEnabled == nil then DTCRaidDB.settings.voteLowEnabled = true end
-    if DTCRaidDB.settings.bribeTimer == nil then DTCRaidDB.settings.bribeTimer = 90 end
-    if DTCRaidDB.settings.propTimer == nil then DTCRaidDB.settings.propTimer = 90 end
-    if DTCRaidDB.settings.lobbyTimer == nil then DTCRaidDB.settings.lobbyTimer = 120 end 
-    if DTCRaidDB.settings.corruptionFee == nil then DTCRaidDB.settings.corruptionFee = 10 end
-    if DTCRaidDB.settings.debtLimit == nil then DTCRaidDB.settings.debtLimit = 0 end
-    
+
     C_ChatInfo.RegisterAddonMessagePrefix(DTC.PREFIX)
 end
 
