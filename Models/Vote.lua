@@ -74,6 +74,7 @@ function DTC.Vote:StartSession(bossName, isTest, remoteToken)
         if self.sessionToken then
             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTE_START:"..bossName.."||"..self.sessionToken, "RAID")
         else
+            C_ChatInfo.SendAddonMessage(DTC.PREFIX, "SYNC_VOTE_START:"..bossName, "RAID")
             C_ChatInfo.SendAddonMessage(DTC.PREFIX, "PING_ADDON:"..DTC.VERSION, "RAID")
         end
     end
@@ -287,9 +288,9 @@ local commHandlers = {
         self:EndSession()
     end,
     ["SYNC_VOTE_START"] = function(self, data, sender)
-        if DTC.Utils:IsSenderLeader(sender) then
+        if DTC.Utils:IsSenderLeader(sender) and not self.isOpen then
             local boss, token = DTC.Utils:SplitString(data, "||")
-            if boss and token then
+            if boss then
                 self:StartSession(boss, false, token)
             end
         end
